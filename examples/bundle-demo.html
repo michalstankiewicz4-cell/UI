@@ -1,173 +1,96 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>UI - Bundle Demo</title>
-    <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #1a1a1a;
-            font-family: 'Courier New', monospace;
-        }
-        canvas { 
-            display: block; 
-            cursor: default;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="canvas"></canvas>
+<html><head><meta charset="UTF-8"><title>UI - DEBUG</title>
+<style>body{margin:0;overflow:hidden;background:#1a1a1a;font-family:'Courier New'}canvas{display:block;cursor:default}</style>
+</head><body><canvas id="canvas"></canvas><script src="../dist/ui.js"></script><script>
+// PATCH handleMouseUp - DEBUG VERSION
+UI.WindowManager.prototype.handleMouseUp = function(x, y) {
+    console.log('>>> handleMouseUp called:', {
+        hasActiveWindow: !!this.activeWindow,
+        activeWindow: this.activeWindow?.title,
+        actuallyDragged: this.actuallyDragged,
+        x, y
+    });
     
-    <!-- Load the UI bundle -->
-    <script src="../dist/ui.js"></script>
+    if (this.activeWindow) {
+        if (!this.actuallyDragged) {
+            console.log('>>> CALLING handleClick on', this.activeWindow.title);
+            const result = this.activeWindow.handleClick(x, y);
+            console.log('>>> handleClick returned:', result);
+        }
+        this.activeWindow.stopDrag();
+        this.activeWindow = null;
+    } else {
+        console.log('>>> NO activeWindow!');
+    }
+};
+
+UI.WindowManager.prototype.handleMouseDown = function(x, y) {
+    this.mouseDownX = x;
+    this.mouseDownY = y;
+    this.actuallyDragged = false;
     
-    <script>
-        // ============================================
-        //  UI BUNDLE DEMO
-        // ============================================
-        // This example uses the complete bundle (dist/ui.js)
-        // All modules loaded as global UI object
-        
-        console.log('🎉 UI Bundle Demo Starting...');
-        console.log('');
-        
-        // Check if UI is available
-        if (typeof UI === 'undefined') {
-            alert('❌ UI bundle not loaded!\nMake sure dist/ui.js exists and is built.');
-            throw new Error('UI bundle not found');
+    for (let i = this.windows.length - 1; i >= 0; i--) {
+        const window = this.windows[i];
+        if (window.startDrag(x, y)) {
+            this.activeWindow = window;
+            this.bringToFront(window);
+            console.log('>>> activeWindow set to:', window.title);
+            return true;
         }
-        
-        console.log('✅ UI Bundle loaded!');
-        console.log('📦 Available:', Object.keys(UI));
-        console.log('');
-        
-        // Setup canvas
-        const canvas = document.getElementById('canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // ============================================
-        //  CREATE UI USING BUNDLE
-        // ============================================
-        
-        // Create window manager
-        const windowManager = new UI.WindowManager();
-        
-        // Create taskbar
-        const taskbar = new UI.Taskbar();
-        
-        // Window 1: Welcome
-        const welcomeWindow = new UI.BaseWindow(100, 100, '🎉 Bundle Demo');
-        welcomeWindow.addText('UI Bundle v1.0.0 działa!', '#00FF88');
-        welcomeWindow.addText(' ');
-        welcomeWindow.addText('Ten przykład używa dist/ui.js', '#00F5FF');
-        welcomeWindow.addText('Wszystkie moduły w jednym pliku!', '#00F5FF');
-        welcomeWindow.addText(' ');
-        
-        let clickCount = 0;
-        welcomeWindow.addButton('Kliknij Mnie!', () => {
-            clickCount++;
-            console.log(`Kliknięto ${clickCount} razy!`);
-            alert(`Kliknięto ${clickCount} razy! 🎉`);
-        });
-        
-        windowManager.add(welcomeWindow);
-        taskbar.addSection('windows');
-        taskbar.addWindowItem('Welcome', welcomeWindow);
-        
-        // Window 2: Info
-        const infoWindow = new UI.BaseWindow(450, 100, '📦 Bundle Info');
-        infoWindow.addSection('zawartość');
-        infoWindow.addText('✅ Styles.js');
-        infoWindow.addText('✅ TextCache.js');
-        infoWindow.addText('✅ BaseWindow.js');
-        infoWindow.addText('✅ WindowManager.js');
-        infoWindow.addText('✅ Taskbar.js');
-        infoWindow.addText('✅ EventRouter.js');
-        infoWindow.addText(' ');
-        infoWindow.addSection('stats');
-        infoWindow.addText('Total: ~1047 linii', '#00FF88');
-        infoWindow.addText('Rozmiar: ~40KB', '#00FF88');
-        
-        windowManager.add(infoWindow);
-        taskbar.addWindowItem('Bundle Info', infoWindow);
-        
-        // Window 3: Features
-        const featuresWindow = new UI.BaseWindow(100, 350, '⚡ Features');
-        featuresWindow.addText('✅ Single file bundle');
-        featuresWindow.addText('✅ Zero dependencies');
-        featuresWindow.addText('✅ Pure vanilla JS');
-        featuresWindow.addText('✅ Draggable windows');
-        featuresWindow.addText('✅ Taskbar with menu');
-        featuresWindow.addText('✅ Event routing');
-        featuresWindow.addText('✅ Text caching');
-        featuresWindow.addText(' ');
-        featuresWindow.addButton('Add Window', () => {
-            const newWindow = new UI.BaseWindow(
-                Math.random() * 400 + 100,
-                Math.random() * 200 + 100,
-                `Window #${windowManager.windows.length + 1}`
-            );
-            newWindow.addText('Nowe okno stworzone!', '#00FF88');
-            newWindow.addButton('Zamknij', () => {
-                const idx = windowManager.windows.indexOf(newWindow);
-                if (idx > -1) {
-                    windowManager.windows.splice(idx, 1);
-                }
-            });
-            windowManager.add(newWindow);
-            taskbar.addWindowItem(`Window #${windowManager.windows.length}`, newWindow);
-        });
-        
-        windowManager.add(featuresWindow);
-        taskbar.addWindowItem('Features', featuresWindow);
-        
-        // Create event router
-        const eventRouter = new UI.EventRouter(
-            canvas,
-            null, // no camera
-            windowManager,
-            taskbar,
-            null  // no stats window
-        );
-        
-        // ============================================
-        //  RENDER LOOP
-        // ============================================
-        
-        function render() {
-            // Clear background
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw windows
-            windowManager.draw(ctx, UI.STYLES);
-            
-            // Draw taskbar
-            taskbar.draw(ctx, UI.STYLES, UI.measureTextCached);
-            
-            // Info text
-            ctx.fillStyle = '#666666';
-            ctx.font = '12px Courier New';
-            ctx.fillText('🎉 UI Bundle Demo - dist/ui.js loaded!', 20, canvas.height - 60);
-            ctx.fillText('Przeciągnij okna, użyj menu (MENU button), kliknij buttony!', 20, canvas.height - 40);
-            ctx.fillText('Wszystkie moduły w jednym pliku! ~1047 linii, ~40KB', 20, canvas.height - 20);
-            
-            requestAnimationFrame(render);
-        }
-        
-        render();
-        
-        console.log('✅ Render loop started!');
-        console.log('🎮 Interact with windows!');
-        console.log('');
-        console.log('Features:');
-        console.log('  - Drag windows by header');
-        console.log('  - Click MENU button for taskbar');
-        console.log('  - Click buttons in windows');
-        console.log('  - Add new windows dynamically');
-    </script>
-</body>
-</html>
+    }
+    return false;
+};
+
+UI.WindowManager.prototype.handleMouseMove = function(x, y) {
+    if (this.activeWindow && this.activeWindow.isDragging) {
+        const dx = Math.abs(x - (this.mouseDownX || x));
+        const dy = Math.abs(y - (this.mouseDownY || y));
+        if (dx > 3 || dy > 3) this.actuallyDragged = true;
+        this.activeWindow.drag(x, y);
+    }
+};
+
+UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+    ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
+    ctx.strokeStyle = STYLES.colors.panel;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
+    ctx.fillStyle = STYLES.colors.panel;
+    ctx.font = STYLES.fonts.mainBold;
+    ctx.textAlign = 'center';
+    ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+    ctx.textAlign = 'left';
+};
+
+const canvas = document.getElementById('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext('2d');
+
+const windowManager = new UI.WindowManager();
+const taskbar = new UI.Taskbar();
+
+const w1 = new UI.BaseWindow(50, 50, 'Test');
+w1.width = 300; w1.height = 200;
+w1.addText('Kliknij button:', '#00FF88');
+let clicks = 0;
+w1.addButton('KLIKNIJ!', () => {
+    clicks++;
+    console.log('>>> BUTTON CALLBACK!', clicks);
+    alert('DZIALA! ' + clicks);
+});
+windowManager.add(w1);
+
+const eventRouter = new UI.EventRouter(canvas, null, windowManager, taskbar, null);
+
+function render() {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    w1.isDirty = true;
+    w1.draw(ctx, UI.STYLES);
+    requestAnimationFrame(render);
+}
+render();
+console.log('READY! Click button and watch console!');
+</script></body></html>
