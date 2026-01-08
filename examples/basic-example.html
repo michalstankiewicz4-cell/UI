@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UI - Basic Example</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1a1a;
+            font-family: 'Courier New', monospace;
+        }
+        canvas { 
+            display: block; 
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        // ============================================
+        //  UI SYSTEM - Minimal Working Example
+        // ============================================
+        // Extracted from Petrie Dish v5.1-C2
+        // Full system in: TODO.md (see extraction plan)
+        
+        // Setup
+        const canvas = document.getElementById('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // ============================================
+        //  STYLES
+        // ============================================
+        const STYLES = {
+            colors: {
+                background: '#2a2a2a',
+                header: '#333333',
+                headerText: '#ffffff',
+                text: '#cccccc',
+                button: '#444444',
+                buttonHover: '#555555',
+                buttonText: '#ffffff',
+                border: '#666666',
+            },
+            fonts: {
+                main: '14px "Courier New", monospace',
+                mainBold: 'bold 14px "Courier New", monospace',
+            },
+            spacing: {
+                padding: 10,
+                itemSpacing: 8,
+                headerHeight: 30,
+            }
+        };
+        
+        // ============================================
+        //  SIMPLE WINDOW (Minimal Version)
+        // ============================================
+        class SimpleWindow {
+            constructor(x, y, title) {
+                this.x = x;
+                this.y = y;
+                this.title = title;
+                this.width = 300;
+                this.height = 200;
+                this.visible = true;
+                this.isDragging = false;
+                this.dragOffsetX = 0;
+                this.dragOffsetY = 0;
+                this.items = [];
+            }
+            
+            addButton(label, callback) {
+                this.items.push({ type: 'button', label, callback });
+            }
+            
+            addText(text) {
+                this.items.push({ type: 'text', text });
+            }
+            
+            containsPoint(px, py) {
+                return px >= this.x && px <= this.x + this.width &&
+                       py >= this.y && py <= this.y + this.height;
+            }
+            
+            containsHeader(px, py) {
+                return px >= this.x && px <= this.x + this.width &&
+                       py >= this.y && py <= this.y + STYLES.spacing.headerHeight;
+            }
+            
+            startDrag(px, py) {
+                if (this.containsHeader(px, py)) {
+                    this.isDragging = true;
+                    this.dragOffsetX = px - this.x;
+                    this.dragOffsetY = py - this.y;
+                    return true;
+                }
+                return false;
+            }
+            
+            drag(px, py) {
+                if (this.isDragging) {
+                    this.x = px - this.dragOffsetX;
+                    this.y = py - this.dragOffsetY;
+                }
+            }
+            
+            stopDrag() {
+                this.isDragging = false;
+            }
+            
+            handleClick(px, py) {
+                if (!this.visible || !this.containsPoint(px, py)) return false;
+                
+                let y = this.y + STYLES.spacing.headerHeight + STYLES.spacing.padding;
+                
+                for (let item of this.items) {
+                    if (item.type === 'button') {
+                        const buttonHeight = 30;
+                        if (py >= y && py <= y + buttonHeight) {
+                            item.callback();
+                            return true;
+                        }
+                        y += buttonHeight + STYLES.spacing.itemSpacing;
+                    } else if (item.type === 'text') {
+                        y += 20 + STYLES.spacing.itemSpacing;
+                    }
+                }
+                return false;
+            }
+            
+            draw(ctx) {
+                if (!this.visible) return;
+                
+                // Window background
+                ctx.fillStyle = STYLES.colors.background;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Header
+                ctx.fillStyle = STYLES.colors.header;
+                ctx.fillRect(this.x, this.y, this.width, STYLES.spacing.headerHeight);
+                
+                // Title
+                ctx.fillStyle = STYLES.colors.headerText;
+                ctx.font = STYLES.fonts.mainBold;
+                ctx.fillText(this.title, this.x + STYLES.spacing.padding, this.y + 20);
+                
+                // Border
+                ctx.strokeStyle = STYLES.colors.border;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+                
+                // Content
+                let y = this.y + STYLES.spacing.headerHeight + STYLES.spacing.padding;
+                ctx.font = STYLES.fonts.main;
+                
+                for (let item of this.items) {
+                    if (item.type === 'button') {
+                        const buttonHeight = 30;
+                        const buttonY = y;
+                        
+                        // Button background
+                        ctx.fillStyle = STYLES.colors.button;
+                        ctx.fillRect(this.x + STYLES.spacing.padding, buttonY, 
+                                   this.width - STYLES.spacing.padding * 2, buttonHeight);
+                        
+                        // Button text
+                        ctx.fillStyle = STYLES.colors.buttonText;
+                        ctx.font = STYLES.fonts.mainBold;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(item.label, this.x + this.width / 2, buttonY + 20);
+                        ctx.textAlign = 'left';
+                        ctx.font = STYLES.fonts.main;
+                        
+                        y += buttonHeight + STYLES.spacing.itemSpacing;
+                    } else if (item.type === 'text') {
+                        ctx.fillStyle = STYLES.colors.text;
+                        ctx.fillText(item.text, this.x + STYLES.spacing.padding, y + 15);
+                        y += 20 + STYLES.spacing.itemSpacing;
+                    }
+                }
+            }
+        }
+        
+        // ============================================
+        //  DEMO APPLICATION
+        // ============================================
+        
+        // Create window
+        const demoWindow = new SimpleWindow(100, 100, 'Hello UI! 👋');
+        
+        let clickCount = 0;
+        demoWindow.addText('Click the button below:');
+        demoWindow.addButton('Click Me!', () => {
+            clickCount++;
+            console.log(`Button clicked ${clickCount} times!`);
+            alert(`Clicked ${clickCount} times! 🎉`);
+        });
+        
+        // Mouse handling
+        let mouseDown = false;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            mouseDown = true;
+            demoWindow.startDrag(x, y);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                const x = e.clientX;
+                const y = e.clientY;
+                demoWindow.drag(x, y);
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            if (!demoWindow.isDragging) {
+                demoWindow.handleClick(x, y);
+            }
+            
+            demoWindow.stopDrag();
+            mouseDown = false;
+        });
+        
+        // Render loop
+        function render() {
+            // Clear
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw window
+            demoWindow.draw(ctx);
+            
+            // Info text
+            ctx.fillStyle = '#666666';
+            ctx.font = STYLES.fonts.main;
+            ctx.fillText('Drag the window by its header. Click the button to test.', 20, canvas.height - 20);
+            ctx.fillText('This is a minimal example. See TODO.md for full system extraction plan.', 20, canvas.height - 40);
+            
+            requestAnimationFrame(render);
+        }
+        
+        render();
+        
+        console.log('✅ UI Basic Example loaded!');
+        console.log('📖 See TODO.md for full system extraction plan');
+        console.log('📁 Location: C:\\Users\\micha\\source\\repos\\UI');
+    </script>
+</body>
+</html>
