@@ -9,46 +9,1038 @@
 // Source: https://github.com/michalstankiewicz4-cell/UI
 //
 // Includes:
-// - Styles (styling system)
-// - TextCache (performance optimization)
-// - BaseWindow (draggable windows)
-// - WindowManager (multi-window management)
-// - Taskbar (Windows-style taskbar)
-// - EventRouter (centralized events)
+// - Styles.js (styling system)
+// - TextCache.js (performance optimization)
+// - BaseWindow.js (draggable windows)
+// - WindowManager.js (multi-window management)
+// - Taskbar.js (Windows-style taskbar)
+// - EventRouter.js (centralized events)
 //
 // Total: ~1000+ lines of modular UI code
 //
 // Usage:
 //   <script src="dist/ui.js"></script>
 //   <script>
-//     const manager = new WindowManager();
-//     const window = new BaseWindow(100, 100, 'Hello!');
+//     const manager = new UI.WindowManager();
+//     const window = new UI.BaseWindow(100, 100, 'Hello!');
+//     window.addButton('Click', () => console.log('Clicked!'));
 //     manager.add(window);
 //   </script>
 // ═══════════════════════════════════════════════════════════════
 
 (function(global) {
     'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//   UI STYLES
+// ═══════════════════════════════════════════════════════════════
+// Extracted from Petrie Dish v5.1-C2
+// Complete styling system for Canvas UI
+
+const STYLES = {
+    fonts: {
+        main: '12px Courier New',
+        mainBold: 'bold 12px Courier New',
+        small: '12px Courier New'
+    },
+    colors: {
+        panel: '#00FF88',
+        panelHover: '#00FFAA',
+        stats: '#00F5FF',
+        sectionDim: 'rgba(0, 255, 136, 0.5)',
+        scrollbarTrack: 'rgba(0, 0, 0, 0.3)',
+        sliderTrack: 'rgba(0, 0, 0, 0.3)',
+        sliderFill: '#00FF88'
+    },
+    spacing: {
+        padding: 10,
+        itemSpacing: 8,
+        headerHeight: 26,
+        buttonSize: 20,
+        buttonSpacing: 4,
+        lineHeight: 18,
+        scrollbarWidth: 8
+    },
+    panel: {
+        bgColor: 'rgba(0, 0, 0, 0.85)',
+        borderColor: '#00FF88',
+        borderWidth: 2,
+        headerBgColor: 'rgba(0, 255, 136, 0.2)'
+    },
+    stats: {
+        bgColor: 'transparent',
+        borderColor: 'transparent',
+        textColor: '#00F5FF'
+    }
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+//   TEXT MEASUREMENT CACHE
+// ═══════════════════════════════════════════════════════════════
+// Extracted from Petrie Dish v5.1-C2
+// OPT-4: Text measurement caching for 2-5× faster UI rendering
+
+/**
+ * LRU Cache for text measurements
+ * measureText() is expensive - called 100+ times per frame!
+ * Cache hit rate: ~90% → massive speedup
+ */
+const textWidthCache = new Map();
+const MAX_CACHE_SIZE = 1000; // Prevent memory leaks
+
+/**
+ * Measure text width with caching
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {string} text - Text to measure
+ * @param {string} font - Font string (e.g., "12px monospace")
+ * @returns {number} Text width in pixels
+ */
+function measureTextCached(ctx, text, font) {
+    const key = `${font}:${text}`;
     
-    // This bundle will be completed by concatenating all modules
-    // For now, this is a placeholder
-    // Full bundle creation in progress...
+    // Check cache
+    if (textWidthCache.has(key)) {
+        return textWidthCache.get(key);
+    }
     
-    console.log('UI Library v1.0.0 - Loading...');
-    console.log('GitHub: https://github.com/michalstankiewicz4-cell/UI');
-    console.log('');
-    console.log('Modules to include:');
-    console.log('  - Styles.js (48 lines)');
-    console.log('  - TextCache.js (71 lines)');
-    console.log('  - BaseWindow.js (360 lines)');
-    console.log('  - WindowManager.js (92 lines)');
-    console.log('  - Taskbar.js (268 lines)');
-    console.log('  - EventRouter.js (145 lines)');
-    console.log('');
-    console.log('Total: ~984 lines');
-    console.log('');
-    console.log('⚠️ Full bundle creation requires build script');
-    console.log('📝 For now, use individual modules from src/');
-    console.log('💡 See examples/ for usage');
+    // Measure and cache
+    ctx.font = font;
+    const width = ctx.measureText(text).width;
     
+    // LRU eviction: Remove oldest entry if cache full
+    if (textWidthCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = textWidthCache.keys().next().value;
+        textWidthCache.delete(firstKey);
+    }
+    
+    textWidthCache.set(key, width);
+    return width;
+}
+
+/**
+ * Clear the text measurement cache
+ * Useful when changing fonts globally
+ */
+function clearTextCache() {
+    textWidthCache.clear();
+}
+
+/**
+ * Get cache statistics
+ * @returns {Object} Cache stats (size, maxSize)
+ */
+function getTextCacheStats() {
+    return {
+        size: textWidthCache.size,
+        maxSize: MAX_CACHE_SIZE
+    };
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//   BASE WINDOW
+// ═══════════════════════════════════════════════════════════════
+// Simplified version extracted from Petrie Dish v5.1-C2
+// For full version with all controls, see EXTRACTION_NOTES.md
+
+/**
+ * BaseWindow - Draggable window with UI controls
+ * 
+ * Full Petrie Dish version (~400 lines) includes:
+ * - Sliders, Toggles, Matrix, Sections
+ * - Scrolling with scrollbar
+ * - Minimize/maximize
+ * - Transparency toggle
+ * 
+ * This version includes essentials:
+ * - Buttons, Text
+ * - Dragging
+ * - Basic scrolling
+ */
+class BaseWindow {
+    constructor(x, y, title, type = 'panel') {
+        this.x = x;
+        this.y = y;
+        this.title = title;
+        this.type = type;
+        this.width = 300;
+        this.height = 200;
+        
+        // State
+        this.visible = true;
+        this.minimized = false;
+        this.transparent = false;
+        this.zIndex = 0;
+        
+        // Dragging
+        this.isDragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        
+        // Layout
+        this.padding = 10;
+        this.itemSpacing = 8;
+        this.headerHeight = 26;
+        
+        // Items (controls)
+        this.items = [];
+        
+        // Scrolling
+        this.scrollOffset = 0;
+        this.maxScroll = 0;
+        this.contentHeight = 0;
+        this.scrollbarWidth = 8;
+        
+        // Optimization
+        this.isDirty = true; // Needs redraw
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  CONTROL METHODS
+    // ═════════════════════════════════════════════════
+    
+    addButton(label, callback) {
+        this.items.push({ type: 'button', label, callback });
+        this.markDirty();
+    }
+    
+    addText(text, color = '#00F5FF', lines = 1) {
+        this.items.push({ type: 'text', text, color, lines });
+        this.markDirty();
+    }
+    
+    addSection(title) {
+        this.items.push({ type: 'section', title });
+        this.markDirty();
+    }
+    
+    // TODO: Add from full Petrie Dish version:
+    // - addSlider(label, getValue, setValue, min, max, step)
+    // - addToggle(label, getValue, setValue)
+    // - addMatrix(getMatrix, setMatrix, colorNames)
+    
+    markDirty() {
+        this.isDirty = true;
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  HIT TESTING
+    // ═════════════════════════════════════════════════
+    
+    containsPoint(x, y) {
+        return x >= this.x && x <= this.x + this.width &&
+               y >= this.y && y <= this.y + this.height;
+    }
+    
+    containsHeader(x, y) {
+        return x >= this.x && x <= this.x + this.width &&
+               y >= this.y && y <= this.y + this.headerHeight;
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  DRAGGING
+    // ═════════════════════════════════════════════════
+    
+    startDrag(mouseX, mouseY) {
+        if (this.containsHeader(mouseX, mouseY)) {
+            // TODO: Check header buttons (minimize, close) from Petrie Dish
+            
+            this.isDragging = true;
+            this.dragOffsetX = mouseX - this.x;
+            this.dragOffsetY = mouseY - this.y;
+            return true;
+        }
+        return false;
+    }
+    
+    drag(mouseX, mouseY) {
+        if (this.isDragging) {
+            this.x = mouseX - this.dragOffsetX;
+            this.y = mouseY - this.dragOffsetY;
+            this.markDirty();
+        }
+    }
+    
+    stopDrag() {
+        this.isDragging = false;
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  CLICK HANDLING
+    // ═════════════════════════════════════════════════
+    
+    handleClick(mouseX, mouseY) {
+        if (!this.visible || !this.containsPoint(mouseX, mouseY)) {
+            return false;
+        }
+        
+        let y = this.y + this.headerHeight + this.padding - this.scrollOffset;
+        
+        for (let item of this.items) {
+            if (item.type === 'button') {
+                const buttonHeight = 20;
+                if (mouseY >= y && mouseY <= y + buttonHeight) {
+                    item.callback();
+                    return true;
+                }
+                y += buttonHeight + this.itemSpacing;
+            } else if (item.type === 'text') {
+                y += (item.lines || 1) * 14 + this.itemSpacing;
+            } else if (item.type === 'section') {
+                y += 20 + this.itemSpacing;
+            }
+        }
+        
+        return false;
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  SCROLLING
+    // ═════════════════════════════════════════════════
+    
+    handleScroll(deltaY) {
+        const oldScroll = this.scrollOffset;
+        this.scrollOffset = Math.max(0, Math.min(this.maxScroll, this.scrollOffset + deltaY));
+        
+        if (oldScroll !== this.scrollOffset) {
+            this.markDirty();
+        }
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  DRAWING (requires STYLES from Styles.js)
+    // ═════════════════════════════════════════════════
+    
+    draw(ctx, STYLES) {
+        if (!this.visible) return;
+        if (this.minimized) {
+            this.drawMinimized(ctx, STYLES);
+            return;
+        }
+        
+        // Window background
+        const bgColor = this.type === 'stats' ? 
+            STYLES.stats.bgColor : STYLES.panel.bgColor;
+        const borderColor = this.type === 'stats' ? 
+            STYLES.stats.borderColor : STYLES.panel.borderColor;
+        
+        if (bgColor !== 'transparent') {
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+        
+        // Header
+        ctx.fillStyle = STYLES.panel.headerBgColor;
+        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
+        
+        // Title
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.mainBold;
+        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        
+        // Border
+        if (borderColor !== 'transparent') {
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = STYLES.panel.borderWidth;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+        }
+        
+        // Content (with clipping and scroll)
+        this.drawContent(ctx, STYLES);
+        
+        // Scrollbar (if needed)
+        if (this.contentHeight > this.height - this.headerHeight) {
+            this.drawScrollbar(ctx, STYLES);
+        }
+        
+        this.isDirty = false;
+    }
+    
+    drawMinimized(ctx, STYLES) {
+        // Just draw header when minimized
+        ctx.fillStyle = STYLES.panel.bgColor;
+        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
+        
+        ctx.fillStyle = STYLES.panel.headerBgColor;
+        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
+        
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.mainBold;
+        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        
+        ctx.strokeStyle = STYLES.panel.borderColor;
+        ctx.lineWidth = STYLES.panel.borderWidth;
+        ctx.strokeRect(this.x, this.y, this.width, this.headerHeight);
+    }
+    
+    drawContent(ctx, STYLES) {
+        // Setup clipping region
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(this.x, this.y + this.headerHeight, 
+                 this.width, this.height - this.headerHeight);
+        ctx.clip();
+        
+        // Apply scroll transform
+        ctx.translate(0, -this.scrollOffset);
+        
+        // Draw items
+        let y = this.y + this.headerHeight + this.padding;
+        this.contentHeight = 0;
+        
+        ctx.font = STYLES.fonts.main;
+        
+        for (let item of this.items) {
+            if (item.type === 'button') {
+                this.drawButton(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
+            } else if (item.type === 'text') {
+                this.drawText(ctx, STYLES, item, y);
+                const height = (item.lines || 1) * 14;
+                y += height + this.itemSpacing;
+                this.contentHeight += height + this.itemSpacing;
+            } else if (item.type === 'section') {
+                this.drawSection(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
+            }
+        }
+        
+        ctx.restore();
+        
+        // Update max scroll
+        this.maxScroll = Math.max(0, this.contentHeight - (this.height - this.headerHeight));
+    }
+    
+    drawButton(ctx, STYLES, item, y) {
+        const buttonHeight = 20;
+        
+        // Button background
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+        ctx.fillRect(this.x + this.padding, y, 
+                   this.width - this.padding * 2, buttonHeight);
+        
+        // Button text
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.mainBold;
+        ctx.textAlign = 'center';
+        ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+        ctx.textAlign = 'left';
+    }
+    
+    drawText(ctx, STYLES, item, y) {
+        const lines = item.text.split('\n');
+        const maxLines = Math.min(lines.length, item.lines || 1);
+        
+        ctx.fillStyle = item.color || STYLES.colors.text || '#00F5FF';
+        ctx.font = STYLES.fonts.main;
+        
+        for (let i = 0; i < maxLines; i++) {
+            ctx.fillText(lines[i], this.x + this.padding, y + 12 + i * 14);
+        }
+    }
+    
+    drawSection(ctx, STYLES, item, y) {
+        const sectionY = y + 10;
+        
+        // Section lines
+        ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
+        ctx.lineWidth = 1;
+        
+        // Left line
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.padding, sectionY);
+        ctx.lineTo(this.x + 30, sectionY);
+        ctx.stroke();
+        
+        // Title
+        ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
+        ctx.font = STYLES.fonts.main;
+        const titleWidth = ctx.measureText(item.title).width;
+        ctx.fillText(item.title, this.x + 35, sectionY + 4);
+        
+        // Right line
+        ctx.beginPath();
+        ctx.moveTo(this.x + 40 + titleWidth, sectionY);
+        ctx.lineTo(this.x + this.width - this.padding, sectionY);
+        ctx.stroke();
+    }
+    
+    drawScrollbar(ctx, STYLES) {
+        const scrollbarX = this.x + this.width - this.scrollbarWidth - 2;
+        const scrollbarY = this.y + this.headerHeight + 2;
+        const scrollbarHeight = this.height - this.headerHeight - 4;
+        
+        // Track
+        ctx.fillStyle = STYLES.colors.scrollbarTrack || 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(scrollbarX, scrollbarY, this.scrollbarWidth, scrollbarHeight);
+        
+        // Thumb
+        const thumbHeight = Math.max(20, (this.height - this.headerHeight) / this.contentHeight * scrollbarHeight);
+        const thumbY = scrollbarY + (this.scrollOffset / this.maxScroll) * (scrollbarHeight - thumbHeight);
+        
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.fillRect(scrollbarX, thumbY, this.scrollbarWidth, thumbHeight);
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//   WINDOW MANAGER
+// ═══════════════════════════════════════════════════════════════
+// Simplified version extracted from Petrie Dish v5.1-C2
+// Manages multiple windows, z-index, and rendering
+
+class WindowManager {
+    constructor() {
+        this.windows = [];
+        this.activeWindow = null;
+    }
+    
+    add(window) {
+        this.windows.push(window);
+        window.zIndex = this.windows.length;
+    }
+    
+    remove(window) {
+        const index = this.windows.indexOf(window);
+        if (index > -1) {
+            this.windows.splice(index, 1);
+        }
+    }
+    
+    bringToFront(window) {
+        const index = this.windows.indexOf(window);
+        if (index > -1) {
+            this.windows.splice(index, 1);
+            this.windows.push(window);
+            
+            // Update z-indices
+            this.windows.forEach((w, i) => {
+                w.zIndex = i;
+            });
+        }
+    }
+    
+    draw(ctx, STYLES) {
+        // Draw windows in z-index order
+        for (let window of this.windows) {
+            window.draw(ctx, STYLES);
+        }
+    }
+    
+    handleMouseDown(x, y) {
+        // Check from top to bottom (reverse order)
+        for (let i = this.windows.length - 1; i >= 0; i--) {
+            const window = this.windows[i];
+            if (window.startDrag(x, y)) {
+                this.activeWindow = window;
+                this.bringToFront(window);
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    handleMouseMove(x, y) {
+        if (this.activeWindow && this.activeWindow.isDragging) {
+            this.activeWindow.drag(x, y);
+        }
+    }
+    
+    handleMouseUp(x, y) {
+        if (this.activeWindow) {
+            if (!this.activeWindow.isDragging) {
+                // It was a click, not a drag
+                this.activeWindow.handleClick(x, y);
+            }
+            this.activeWindow.stopDrag();
+            this.activeWindow = null;
+        }
+    }
+    
+    handleWheel(x, y, deltaY) {
+        // Find window under mouse
+        for (let i = this.windows.length - 1; i >= 0; i--) {
+            const window = this.windows[i];
+            if (window.containsPoint(x, y)) {
+                window.handleScroll(deltaY);
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//   TASKBAR (Windows-style)
+// ═══════════════════════════════════════════════════════════════
+// Extracted from Petrie Dish v5.1-C2
+// Windows-style taskbar with menu and window management
+
+class Taskbar {
+    constructor() {
+        this.height = 48;
+        this.menuOpen = false;
+        this.menuWidth = 200;
+        this.menuItemHeight = 36;
+        this.buttonWidth = 100;
+        this.buttonHeight = 32;
+        this.buttonSpacing = 4;
+        this.startButtonWidth = 80;
+        this.buttonPadding = 16; // Horizontal padding for buttons
+        
+        // Menu items - names from windows
+        this.menuItems = [];
+        
+        // OPT: Button position cache
+        this.cachedPositions = [];
+        this.cachedCount = 0;
+    }
+    
+    // Calculate dynamic button width based on text
+    getButtonWidth(text, ctx, measureTextCached) {
+        ctx.font = '12px Courier New';
+        const textWidth = measureTextCached ? 
+            measureTextCached(ctx, text, '12px Courier New') :
+            ctx.measureText(text).width;
+        return textWidth + this.buttonPadding * 2;
+    }
+    
+    getMenuHeight() {
+        // Dynamic menu height based on items
+        let totalHeight = 16; // padding (8px top + 8px bottom)
+        for (let i = 0; i < this.menuItems.length; i++) {
+            const item = this.menuItems[i];
+            if (item.type === 'section') {
+                totalHeight += 24; // Section height
+            } else if (item.type === 'window') {
+                totalHeight += this.menuItemHeight;
+            }
+        }
+        return totalHeight;
+    }
+
+    addSection(title) {
+        // Add section header to menu
+        this.menuItems.push({
+            type: 'section',
+            title: title
+        });
+    }
+    
+    addWindowItem(title, window) {
+        // Add window to menu with custom display title
+        this.menuItems.push({
+            type: 'window',
+            title: title,
+            windowTitle: window.title,
+            window: window,
+            isOpen: true
+        });
+    }
+
+
+    getStartButtonBounds(canvasHeight) {
+        return {
+            x: 0,
+            y: canvasHeight - this.height + (this.height - this.buttonHeight) / 2,
+            width: this.startButtonWidth,
+            height: this.buttonHeight
+        };
+    }
+
+    getMenuBounds(canvasHeight) {
+        const menuHeight = this.getMenuHeight();
+        return {
+            x: 0,
+            y: canvasHeight - this.height - menuHeight,
+            width: this.menuWidth,
+            height: menuHeight
+        };
+    }
+
+    getTaskbarButtonBounds(index, ctx, minimizedWindows, measureTextCached) {
+        // OPT: Cache positions in O(n) instead of O(n²)
+        if (this.cachedCount !== minimizedWindows.length) {
+            this.cachedPositions = [];
+            let x = this.startButtonWidth + 8;
+            const canvasHeight = ctx.canvas.height;
+            const y = canvasHeight - this.height + (this.height - this.buttonHeight) / 2;
+            
+            for (let i = 0; i < minimizedWindows.length; i++) {
+                const item = minimizedWindows[i];
+                const width = this.getButtonWidth(item.title, ctx, measureTextCached);
+                
+                this.cachedPositions.push({
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: this.buttonHeight
+                });
+                
+                x += width + this.buttonSpacing;
+            }
+            
+            this.cachedCount = minimizedWindows.length;
+        }
+        
+        return this.cachedPositions[index];
+    }
+
+
+    handleClick(mouseX, mouseY, ctx, windowManager, measureTextCached) {
+        const canvasHeight = ctx.canvas.height;
+        
+        // Check start button
+        const startBtn = this.getStartButtonBounds(canvasHeight);
+        if (mouseX >= startBtn.x && mouseX <= startBtn.x + startBtn.width &&
+            mouseY >= startBtn.y && mouseY <= startBtn.y + startBtn.height) {
+            this.menuOpen = !this.menuOpen;
+            return true;
+        }
+
+        // Check menu items if open
+        if (this.menuOpen) {
+            const menu = this.getMenuBounds(canvasHeight);
+            const padding = 8;
+            let currentY = menu.y + padding;
+            
+            for (let i = 0; i < this.menuItems.length; i++) {
+                const item = this.menuItems[i];
+                
+                if (item.type === 'section') {
+                    currentY += 24;
+                    continue;
+                } else if (item.type === 'window') {
+                    const itemHeight = this.menuItemHeight;
+                    
+                    if (mouseX >= menu.x && mouseX <= menu.x + menu.width &&
+                        mouseY >= currentY && mouseY <= currentY + itemHeight) {
+                        
+                        // Toggle window visibility
+                        item.window.visible = true;
+                        item.window.minimized = false;
+                        item.isOpen = true;
+                        if (windowManager) {
+                            windowManager.bringToFront(item.window);
+                        }
+                        
+                        this.menuOpen = false;
+                        return true;
+                    }
+                    
+                    currentY += itemHeight;
+                }
+            }
+        }
+
+        // Check taskbar buttons (minimized windows)
+        const minimizedWindows = this.menuItems.filter(item => 
+            item.type === 'window' && item.window.minimized && item.window.visible
+        );
+        
+        for (let i = 0; i < minimizedWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
+            
+            if (mouseX >= btn.x && mouseX <= btn.x + btn.width &&
+                mouseY >= btn.y && mouseY <= btn.y + btn.height) {
+                
+                // Restore window
+                minimizedWindows[i].window.minimized = false;
+                if (windowManager) {
+                    windowManager.bringToFront(minimizedWindows[i].window);
+                }
+                return true;
+            }
+        }
+
+        // If menu is open, any click closes it
+        if (this.menuOpen) {
+            this.menuOpen = false;
+            return true;
+        }
+        
+        // Block clicks on entire taskbar area
+        const taskbarY = canvasHeight - this.height;
+        if (mouseY >= taskbarY) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    draw(ctx, STYLES, measureTextCached) {
+        const canvasWidth = ctx.canvas.width;
+        const canvasHeight = ctx.canvas.height;
+        
+        // Taskbar background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, canvasHeight - this.height, canvasWidth, this.height);
+        
+        // Taskbar border
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, canvasHeight - this.height);
+        ctx.lineTo(canvasWidth, canvasHeight - this.height);
+        ctx.stroke();
+
+        // Start button
+        const startBtn = this.getStartButtonBounds(canvasHeight);
+        
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+        ctx.fillRect(startBtn.x, startBtn.y, startBtn.width, startBtn.height);
+        
+        ctx.strokeStyle = STYLES.colors.panel;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(startBtn.x, startBtn.y, startBtn.width, startBtn.height);
+        
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.mainBold;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('MENU', startBtn.x + startBtn.width / 2, startBtn.y + startBtn.height / 2);
+
+        // Menu (if open)
+        if (this.menuOpen) {
+            const menu = this.getMenuBounds(canvasHeight);
+            
+            // Menu background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+            ctx.fillRect(menu.x, menu.y, menu.width, menu.height);
+            
+            // Menu border
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(menu.x, menu.y, menu.width, menu.height);
+            
+            // Menu items
+            const padding = 8;
+            let currentY = menu.y + padding;
+            
+            for (let i = 0; i < this.menuItems.length; i++) {
+                const item = this.menuItems[i];
+                
+                if (item.type === 'section') {
+                    // Section header
+                    const sectionHeight = 24;
+                    
+                    ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
+                    ctx.font = STYLES.fonts.small;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`━━━ ${item.title} ━━━`, menu.x + menu.width / 2, currentY + sectionHeight / 2);
+                    
+                    currentY += sectionHeight;
+                } else if (item.type === 'window') {
+                    // Window item
+                    const itemHeight = this.menuItemHeight;
+                    
+                    // Item background
+                    ctx.fillStyle = 'rgba(0, 255, 136, 0.05)';
+                    ctx.fillRect(menu.x + 4, currentY + 2, menu.width - 8, itemHeight - 4);
+                    
+                    // Item text
+                    ctx.fillStyle = STYLES.colors.panel;
+                    ctx.font = STYLES.fonts.mainBold;
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(item.title, menu.x + 12, currentY + itemHeight / 2);
+                    
+                    currentY += itemHeight;
+                }
+            }
+        }
+
+        // Taskbar buttons (minimized windows)
+        const minimizedWindows = this.menuItems.filter(item => 
+            item.type === 'window' && item.window.minimized && item.window.visible
+        );
+        
+        for (let i = 0; i < minimizedWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
+            const item = minimizedWindows[i];
+            
+            // Button background
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+            ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
+            
+            // Button border
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(btn.x, btn.y, btn.width, btn.height);
+            
+            // Button text
+            ctx.fillStyle = '#00ff88';
+            ctx.font = STYLES.fonts.mainBold;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.title, btn.x + btn.width / 2, btn.y + btn.height / 2);
+        }
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+//   EVENT ROUTER
+// ═══════════════════════════════════════════════════════════════
+// Extracted from Petrie Dish v5.1-C2
+// Centralized event handling for UI
+
+/**
+ * EventRouter - Centralized event handling for UI
+ * Manages mouse, keyboard, and wheel events
+ * Coordinates between windows, taskbar, and camera
+ */
+class EventRouter {
+    constructor(canvas, camera, windowManager, taskbar, statsWindow = null) {
+        this.canvas = canvas;
+        this.camera = camera;
+        this.windowManager = windowManager;
+        this.taskbar = taskbar;
+        this.statsWindow = statsWindow;
+        
+        // Mouse state
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.mouseDown = false;
+        this.mouseClicked = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+        this.clickedWindow = null;
+        
+        // Panning state (for camera)
+        this.isPanning = false;
+        this.panStarted = false;
+        this.panStartX = 0;
+        this.panStartY = 0;
+        this.panThreshold = 5;
+        
+        this.attachListeners();
+    }
+    
+    attachListeners() {
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+    }
+    
+    handleMouseDown(e) {
+        this.mouseDown = true;
+        this.mouseClicked = true;
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+
+        // Check taskbar FIRST (highest priority)
+        if (this.taskbar) {
+            const ctx = this.canvas.getContext('2d');
+            if (this.taskbar.handleClick(e.clientX, e.clientY, ctx, this.windowManager)) {
+                e.preventDefault();
+                this.clickedWindow = null;
+                this.isPanning = false;
+                this.mouseClicked = false;
+                return;
+            }
+        }
+
+        // WindowManager handles all windows
+        if (this.windowManager.handleMouseDown(e.clientX, e.clientY)) {
+            this.clickedWindow = this.windowManager.activeWindow;
+            e.preventDefault();
+            this.isPanning = false;
+        } else {
+            // Start camera panning
+            this.clickedWindow = null;
+            this.isPanning = true;
+            this.panStarted = false;
+            this.panStartX = e.clientX;
+            this.panStartY = e.clientY;
+        }
+    }
+    
+    handleMouseUp(e) {
+        if (this.windowManager) {
+            this.windowManager.handleMouseUp(e.clientX, e.clientY);
+        }
+        
+        this.clickedWindow = null;
+        this.mouseDown = false;
+        this.mouseClicked = false;
+        this.isPanning = false;
+        this.panStarted = false;
+    }
+    
+    handleMouseMove(e) {
+        this.mouseX = e.clientX;
+        this.mouseY = e.clientY;
+
+        if (this.windowManager && this.windowManager.activeWindow) {
+            this.windowManager.handleMouseMove(e.clientX, e.clientY);
+        } else if (this.isPanning && this.camera) {
+            // Check threshold before starting actual pan
+            if (!this.panStarted) {
+                const dx = e.clientX - this.panStartX;
+                const dy = e.clientY - this.panStartY;
+                // OPT: Compare squared distances (avoid Math.sqrt)
+                const distSq = dx * dx + dy * dy;
+                
+                if (distSq >= this.panThreshold * this.panThreshold) {
+                    this.panStarted = true;
+                    this.lastMouseX = e.clientX;
+                    this.lastMouseY = e.clientY;
+                }
+            } else {
+                // Already panning
+                const dx = e.clientX - this.lastMouseX;
+                const dy = e.clientY - this.lastMouseY;
+                if (this.camera.pan) {
+                    this.camera.pan(dx, dy);
+                }
+                this.lastMouseX = e.clientX;
+                this.lastMouseY = e.clientY;
+            }
+        }
+    }
+    
+    handleWheel(e) {
+        e.preventDefault();
+        
+        // Check windows for scrolling
+        if (this.windowManager && this.windowManager.handleWheel(e.clientX, e.clientY, e.deltaY)) {
+            return;
+        }
+        
+        // Otherwise, zoom camera (if available)
+        if (this.camera && this.camera.setZoom) {
+            const factor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = (this.camera.targetZoom || this.camera.zoom) * factor;
+            this.camera.setZoom(newZoom, e.clientX, e.clientY);
+        }
+    }
+}
+
+
+
+    // Export to global
+    global.UI = {
+        STYLES: STYLES,
+        BaseWindow: BaseWindow,
+        WindowManager: WindowManager,
+        Taskbar: Taskbar,
+        EventRouter: EventRouter,
+        measureTextCached: measureTextCached,
+        clearTextCache: clearTextCache,
+        getTextCacheStats: getTextCacheStats
+    };
+    
+    console.log('✅ UI Library v1.0.0 loaded!');
+    console.log('📦 Modules: Styles, TextCache, BaseWindow, WindowManager, Taskbar, EventRouter');
+    console.log('🎯 Ready to use: new UI.BaseWindow(x, y, title)');
+
 })(typeof window !== 'undefined' ? window : global);
