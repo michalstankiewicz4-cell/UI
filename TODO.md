@@ -1,38 +1,47 @@
 # UI - TODO & Progress
 
-## 📊 STATUS: v2.0 - DYNAMIC MULTI-SIMULATION! ✅ 🎉
+## 📊 STATUS: v2.1 - CORE ARCHITECTURE! ✅ 🎉
 **Created:** 2025-01-08  
 **Updated:** 2025-01-09  
-**Major Update:** v2.0 - Dynamic Multi-Simulation Architecture  
-**Progress:** FAZA C1 Complete, v2.0 Architecture Implemented!
+**Major Update:** v2.1 - Core Architecture (SimulationManager + EventBus + DataBridge)  
+**Progress:** FAZA C1 Complete, Core Architecture Implemented!
 
 ---
 
-## 🎉 **v2.0 - DYNAMIC MULTI-SIMULATION ARCHITECTURE** ✅
+## 🎉 **v2.1 - CORE ARCHITECTURE** ✅
 
 ### **What's New:**
 
 | Feature | Status | Lines | Description |
 |---------|--------|-------|-------------|
-| **Simulations/** | ✅ 100% | ~527 | 4 placeholder simulations |
-| **ui-config/** | ✅ 100% | ~413 | Dynamic controls & sync |
-| **main.js** | ✅ 100% | 287 | Orchestrator |
-| **index.html** | ✅ 100% | 141 | Entry point |
-| **Architecture** | ✅ 100% | - | Simulation → UI (Dynamic) |
+| **/core/** | ✅ 100% | ~776 | Central management systems |
+| **SimulationManager** | ✅ 100% | 360 | Central controller |
+| **EventBus** | ✅ 100% | 192 | Pub-sub event system |
+| **DataBridge** | ✅ 100% | 224 | UI ↔ Sim data flow |
+| **main.js refactor** | ✅ 100% | 357 | Uses core modules |
+| **sync.js update** | ✅ 100% | 256 | EventBus-based |
 
-### **Architecture Decision:**
-**✅ CHOSEN: Simulation → UI with Dynamic Approach**
+### **Architecture (Your Diagram):**
+```
+index.html → main.js
+              ↓
+        ┌─────┴─────┐
+        ↓           ↓
+     /core/       /ui/
+  SimulationMgr  WindowMgr
+  EventBus       Taskbar
+  DataBridge     BaseWindow
+        ↓           ↓
+   /simulations  components
+```
 
-**Why:**
-- ✅ Performance: 99% for sim, 1% for UI
-- ✅ Zero interference between simulations
-- ✅ Easy cross-sim linking (callbacks)
-- ✅ Reusable UI in other projects
-- ✅ Dynamic add/remove at runtime
-
-**Rejected alternatives:**
-- ❌ UI → Simulation (tight coupling, 5-10% overhead)
-- ❌ Pasek → Okna → Sim (10-20% overhead)
+### **Benefits:**
+- ✅ Centralized management (SimulationManager)
+- ✅ Event-driven communication (EventBus)
+- ✅ Data binding (DataBridge)
+- ✅ Loose coupling
+- ✅ Easy cross-sim linking
+- ✅ Professional architecture
 
 ---
 
@@ -204,6 +213,7 @@ UI/
 | 2025-01-09 | FAZA C1: Header buttons | ✅ 100% |
 | 2025-01-09 | v2.0: Multi-sim architecture | ✅ 100% |
 | 2025-01-09 | Dynamic approach implemented | ✅ 100% |
+| 2025-01-09 | v2.1: Core architecture | ✅ 100% |
 | TBD | FAZA C2: Scrollbar | 🔜 |
 | TBD | FAZA C3: Controls | 🔜 |
 
@@ -215,15 +225,18 @@ UI/
 - ✅ FAZA C1: Header buttons (X, _, ○)
 - ✅ HUD mode (floating stats)
 - ✅ v2.0: Dynamic multi-simulation architecture
+- ✅ v2.1: Core architecture (SimulationManager + EventBus + DataBridge)
 - ✅ 4 placeholder simulations
 - ✅ Runtime add/remove simulations
 - ✅ Cross-simulation linking support
+- ✅ Event-driven communication
+- ✅ Data binding (UI ↔ Sims)
 - ✅ Production-ready bundle (~50KB)
-- ✅ Performance: ~1-4% UI overhead
-- ✅ Zero interference between simulations
+- ✅ Performance: ~1-2% Core overhead
+- ✅ Centralized management
 
 ---
 
 **Last Updated:** 2025-01-09  
-**Version:** v2.0  
-**Status:** FAZA C1 Complete, Ready for FAZA C2!
+**Version:** v2.1  
+**Status:** Core Architecture Complete, Ready for FAZA C2!

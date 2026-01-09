@@ -1,107 +1,169 @@
 // ═══════════════════════════════════════════════════════════════
-//   UI CONFIGURATION - CROSS-SIMULATION SYNC
+//   UI CONFIGURATION - CROSS-SIMULATION SYNC (v2.1)
 // ═══════════════════════════════════════════════════════════════
-// Handles linking between multiple simulations
-// Implements callbacks for simulation interdependencies
+// Uses Core architecture (EventBus, DataBridge, SimulationManager)
+// Handles linking between multiple simulations via event-driven approach
 
 /**
  * Create sync/link window for cross-simulation interactions
- * @param {Object} ui - UI system instance
- * @param {Object} simulations - Map of simulation instances
+ * @param {Object} ui - UI system (windowManager, taskbar)
+ * @param {SimulationManager} simulationManager - Simulation manager
+ * @param {EventBus} eventBus - Event bus
+ * @param {DataBridge} dataBridge - Data bridge
  * @returns {Object} Sync window instance
  */
-export function createSyncControls(ui, simulations) {
-    const syncWindow = new UI.BaseWindow(50, 600, 'Sync Controls');
+export function createSyncControls(ui, simulationManager, eventBus, dataBridge) {
+    const syncWindow = new UI.BaseWindow(50, 700, 'Sync Controls');
     syncWindow.width = 380;
-    syncWindow.height = 280;
+    syncWindow.height = 320;
     
     syncWindow.addSection('combined stats');
     
-    // Total FPS across all simulations
+    // Total FPS across all simulations (via DataBridge)
     syncWindow.addText(() => {
         let totalFps = 0;
-        if (simulations.sim1) totalFps += simulations.sim1.fps;
-        if (simulations.sim2) totalFps += simulations.sim2.fps;
-        if (simulations.sim3) totalFps += simulations.sim3.fps;
-        if (simulations.sim4) totalFps += simulations.sim4.fps;
+        const activeIds = simulationManager.getActiveSimulations();
+        
+        for (let simId of activeIds) {
+            const fps = dataBridge.getStat(simId, 'fps');
+            if (fps !== undefined) totalFps += fps;
+        }
+        
         return `Total FPS: ${totalFps}`;
     });
     
-    // Individual FPS
+    // Individual FPS (via DataBridge)
     syncWindow.addText(() => {
-        const fps = [];
-        if (simulations.sim1) fps.push(`S1:${simulations.sim1.fps}`);
-        if (simulations.sim2) fps.push(`S2:${simulations.sim2.fps}`);
-        if (simulations.sim3) fps.push(`S3:${simulations.sim3.fps}`);
-        if (simulations.sim4) fps.push(`S4:${simulations.sim4.fps}`);
+        const activeIds = simulationManager.getActiveSimulations();
+        const fps = activeIds.map(id => {
+            const fpsVal = dataBridge.getStat(id, 'fps') || 0;
+            return `${id}:${fpsVal}`;
+        });
+        
         return fps.length > 0 ? fps.join(' | ') : 'No sims active';
     });
     
+    // Active count (via SimulationManager)
     syncWindow.addText(() => {
-        const active = Object.keys(simulations).length;
-        return `Active Sims: ${active}`;
+        const count = simulationManager.getActiveCount();
+        return `Active Sims: ${count}`;
     });
     
-    syncWindow.addSection('linking');
+    syncWindow.addSection('event-driven linking');
     
-    // Example: Link Sim1 particles to Sim3 balls
-    syncWindow.addButton('Link: S1 → S3', () => {
-        if (!simulations.sim1 || !simulations.sim3) {
-            alert('Both Sim1 and Sim3 must be active!');
-            return;
+    // Example: Link Sim1 → Sim3 via EventBus
+    let sim1ToSim3Linked = false;
+    let sim1Listener = null;
+    
+    syncWindow.addButton('Toggle: S1 → S3', () => {
+        if (!sim1ToSim3Linked) {
+            // Setup link
+            if (!simulationManager.isActive('sim1') || !simulationManager.isActive('sim3')) {
+                alert('Both Sim1 and Sim3 must be active!');
+                return;
+            }
+            
+            // Listen for Sim1 events and affect Sim3
+            sim1Listener = eventBus.on('simulation:sim1:event', (data) => {
+                // Example: When Sim1 emits event, add ball to Sim3
+                const sim3 = simulationManager.getSimulation('sim3');
+                if (sim3 && sim3.balls) {
+                    sim3.balls.push({
+                        x: Math.random() * sim3.canvas.width,
+                        y: 0,
+                        vx: 0,
+                        vy: 0,
+                        radius: 5,
+                        color: '#FF0088'
+                    });
+                }
+            });
+            
+            sim1ToSim3Linked = true;
+            console.log('✅ Linked Sim1 → Sim3');
+            alert('Linked! (Note: Sims need to emit events)');
+        } else {
+            // Remove link
+            if (sim1Listener) {
+                sim1Listener(); // Unsubscribe
+                sim1Listener = null;
+            }
+            sim1ToSim3Linked = false;
+            console.log('❌ Unlinked Sim1 → Sim3');
+            alert('Unlinked!');
         }
-        
-        // When a particle in Sim1 hits the edge, add a ball to Sim3
-        // (This is just an example - customize as needed)
-        alert('Linking Sim1 → Sim3: Not yet implemented!');
-        console.log('TODO: Implement sim1 → sim3 callback');
     });
     
     // Example: Sync Sim2 rotation with Sim4 update speed
-    syncWindow.addButton('Sync: S2 ↔ S4', () => {
-        if (!simulations.sim2 || !simulations.sim4) {
-            alert('Both Sim2 and Sim4 must be active!');
-            return;
+    let sim2ToSim4Synced = false;
+    let syncInterval = null;
+    
+    syncWindow.addButton('Toggle: S2 ↔ S4 Sync', () => {
+        if (!sim2ToSim4Synced) {
+            if (!simulationManager.isActive('sim2') || !simulationManager.isActive('sim4')) {
+                alert('Both Sim2 and Sim4 must be active!');
+                return;
+            }
+            
+            // Sync every 100ms
+            syncInterval = setInterval(() => {
+                const sim2 = simulationManager.getSimulation('sim2');
+                const sim4 = simulationManager.getSimulation('sim4');
+                
+                if (sim2 && sim4 && sim2.cubes && sim2.cubes.length > 0) {
+                    // Calculate average rotation
+                    const avgRot = sim2.cubes.reduce((sum, c) => sum + c.rotY, 0) / sim2.cubes.length;
+                    const normalizedSpeed = Math.abs(avgRot) / Math.PI;
+                    const newUpdateSpeed = Math.floor(normalizedSpeed * 20) + 1;
+                    
+                    // Set via DataBridge
+                    dataBridge.setParameter('sim4', 'updateSpeed', newUpdateSpeed);
+                }
+            }, 100);
+            
+            sim2ToSim4Synced = true;
+            console.log('✅ Synced Sim2 ↔ Sim4');
+            alert('Synced! Sim2 rotation affects Sim4 speed.');
+        } else {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+            sim2ToSim4Synced = false;
+            console.log('❌ Unsynced Sim2 ↔ Sim4');
+            alert('Unsynced!');
         }
-        
-        // Sync rotation speed with cellular automata update speed
-        alert('Syncing Sim2 ↔ Sim4: Not yet implemented!');
-        console.log('TODO: Implement sim2 ↔ sim4 sync');
     });
     
     syncWindow.addSection('global controls');
     
-    // Pause all simulations
+    // Pause all (via SimulationManager)
     syncWindow.addButton('Pause All', () => {
-        if (simulations.sim1) simulations.sim1.setPaused(true);
-        if (simulations.sim2) simulations.sim2.setPaused(true);
-        if (simulations.sim3) simulations.sim3.setPaused(true);
-        if (simulations.sim4) simulations.sim4.setPaused(true);
-        console.log('⏸️ All simulations paused');
+        simulationManager.pauseAll();
+        console.log('⏸️ All simulations paused via Manager');
     });
     
-    // Resume all simulations
+    // Resume all (via SimulationManager)
     syncWindow.addButton('Resume All', () => {
-        if (simulations.sim1) simulations.sim1.setPaused(false);
-        if (simulations.sim2) simulations.sim2.setPaused(false);
-        if (simulations.sim3) simulations.sim3.setPaused(false);
-        if (simulations.sim4) simulations.sim4.setPaused(false);
-        console.log('▶️ All simulations resumed');
+        simulationManager.resumeAll();
+        console.log('▶️ All simulations resumed via Manager');
     });
     
-    // Reset all simulations
+    // Reset all (via SimulationManager)
     syncWindow.addButton('Reset All', () => {
-        if (simulations.sim1) simulations.sim1.reset();
-        if (simulations.sim2) simulations.sim2.reset();
-        if (simulations.sim3) simulations.sim3.reset();
-        if (simulations.sim4) simulations.sim4.reset();
-        console.log('🔄 All simulations reset');
+        simulationManager.resetAll();
+        console.log('🔄 All simulations reset via Manager');
     });
     
+    // Add to UI
     ui.windowManager.add(syncWindow);
     ui.taskbar.addWindowItem('Sync', syncWindow);
     
     syncWindow.onClose = () => {
+        // Cleanup
+        if (sim1Listener) sim1Listener();
+        if (syncInterval) clearInterval(syncInterval);
+        
         ui.windowManager.remove(syncWindow);
         ui.taskbar.removeWindowItem(syncWindow);
     };
@@ -110,36 +172,28 @@ export function createSyncControls(ui, simulations) {
 }
 
 /**
- * Example: Setup custom callbacks between simulations
- * Uncomment and modify as needed for your specific use case
+ * Setup event listeners for demonstration
+ * Shows how to use EventBus for cross-simulation communication
  */
-export function setupCustomCallbacks(simulations) {
-    // Example: When a particle dies in Sim1, add a ball to Sim3
-    /*
-    if (simulations.sim1 && simulations.sim3) {
-        simulations.sim1.onParticleDie = () => {
-            simulations.sim3.balls.push({
-                x: Math.random() * simulations.sim3.canvas.width,
-                y: 0,
-                vx: 0,
-                vy: 0,
-                radius: 5,
-                color: '#FF0088'
-            });
-        };
-    }
-    */
+export function setupEventListeners(eventBus, simulationManager) {
+    // Listen to all simulation events (wildcard)
+    eventBus.on('simulation:*', ({ event, data }) => {
+        console.log(`📢 Simulation Event: ${event}`, data);
+    });
     
-    // Example: Sync Sim2 rotation with Sim4 density
-    /*
-    if (simulations.sim2 && simulations.sim4) {
-        setInterval(() => {
-            const avgRotation = simulations.sim2.cubes.reduce((sum, c) => sum + c.rotY, 0) / simulations.sim2.cubes.length;
-            const normalizedSpeed = Math.abs(avgRotation) / Math.PI;
-            simulations.sim4.setUpdateSpeed(Math.floor(normalizedSpeed * 20) + 1);
-        }, 100);
-    }
-    */
+    // Listen to parameter changes
+    eventBus.on('parameter:changed', (data) => {
+        console.log(`🎚️ Parameter Changed: ${data.simId}.${data.paramName} = ${data.value}`);
+    });
     
-    console.log('Custom callbacks setup (if any)');
+    // Listen to simulation lifecycle
+    eventBus.on('simulation:added', (data) => {
+        console.log(`➕ Simulation Added: ${data.simId}`);
+    });
+    
+    eventBus.on('simulation:removed', (data) => {
+        console.log(`➖ Simulation Removed: ${data.simId}`);
+    });
+    
+    console.log('✅ Event listeners setup for cross-simulation communication');
 }

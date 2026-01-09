@@ -89,15 +89,16 @@
     <!-- Info panel (closeable) -->
     <div id="info">
         <button id="close-info">&times;</button>
-        <h1>🚀 Multi-Simulation System v2.0</h1>
-        <p><span class="key">Architecture:</span> Simulation → UI (Dynamic)</p>
-        <p><span class="key">Approach:</span> Runtime simulation management</p>
+        <h1>🚀 Multi-Simulation System v2.1</h1>
+        <p><span class="key">Architecture:</span> Core-based (SimulationManager)</p>
+        <p><span class="key">Flow:</span> main.js → SimulationManager → EventBus ↔ DataBridge → UI</p>
         <p> </p>
         <p><span class="key">Features:</span></p>
-        <p>• Add/Remove simulations dynamically (no restart)</p>
-        <p>• Independent simulation canvases</p>
-        <p>• UI overlay with HUD mode</p>
-        <p>• Cross-simulation sync (future)</p>
+        <p>• SimulationManager (central controller)</p>
+        <p>• EventBus (pub-sub communication)</p>
+        <p>• DataBridge (UI ↔ Sim data flow)</p>
+        <p>• Dynamic add/remove (no restart)</p>
+        <p>• Cross-simulation sync support</p>
         <p> </p>
         <p><span class="key">Controls:</span></p>
         <p>• Open "Master Controls" window</p>
@@ -132,8 +133,8 @@
             document.getElementById('info').style.display = 'none';
         });
         
-        console.log('%c=== MULTI-SIMULATION SYSTEM v2.0 ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
-        console.log('%cArchitecture: Simulation → UI (Dynamic)', 'color: #00F5FF;');
+        console.log('%c=== MULTI-SIMULATION SYSTEM v2.1 ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
+        console.log('%cArchitecture: Core-based (SimulationManager + EventBus + DataBridge)', 'color: #00F5FF;');
         console.log('%cReady to add simulations!', 'color: #00FF88;');
     </script>
 </body>
