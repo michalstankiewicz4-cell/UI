@@ -1,96 +1,296 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>UI - DEBUG</title>
-<style>body{margin:0;overflow:hidden;background:#1a1a1a;font-family:'Courier New'}canvas{display:block;cursor:default}</style>
-</head><body><canvas id="canvas"></canvas><script src="../dist/ui.js"></script><script>
-// PATCH handleMouseUp - DEBUG VERSION
-UI.WindowManager.prototype.handleMouseUp = function(x, y) {
-    console.log('>>> handleMouseUp called:', {
-        hasActiveWindow: !!this.activeWindow,
-        activeWindow: this.activeWindow?.title,
-        actuallyDragged: this.actuallyDragged,
-        x, y
-    });
-    
-    if (this.activeWindow) {
-        if (!this.actuallyDragged) {
-            console.log('>>> CALLING handleClick on', this.activeWindow.title);
-            const result = this.activeWindow.handleClick(x, y);
-            console.log('>>> handleClick returned:', result);
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UI Bundle Demo - DZIALA!</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Courier New'; }
+        canvas { display: block; cursor: default; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script src="../dist/ui.js"></script>
+    <script>
+        // ============================================
+        //  PATCHES
+        // ============================================
+        
+        // PATCH 1: Button borders
+        UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
+            ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+            ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
+            ctx.strokeStyle = STYLES.colors.panel;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
+            ctx.fillStyle = STYLES.colors.panel;
+            ctx.font = STYLES.fonts.mainBold;
+            ctx.textAlign = 'center';
+            ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+            ctx.textAlign = 'left';
+        };
+        
+        // PATCH 2: drawContent without translate
+        UI.BaseWindow.prototype.drawContent = function(ctx, STYLES) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(this.x, this.y + this.headerHeight, this.width, this.height - this.headerHeight);
+            ctx.clip();
+            
+            let y = this.y + this.headerHeight + this.padding - this.scrollOffset;
+            this.contentHeight = 0;
+            ctx.font = STYLES.fonts.main;
+            
+            for (let item of this.items) {
+                if (item.type === 'button') {
+                    this.drawButton(ctx, STYLES, item, y);
+                    y += 20 + this.itemSpacing;
+                    this.contentHeight += 20 + this.itemSpacing;
+                } else if (item.type === 'text') {
+                    this.drawText(ctx, STYLES, item, y);
+                    const h = (item.lines || 1) * 14;
+                    y += h + this.itemSpacing;
+                    this.contentHeight += h + this.itemSpacing;
+                } else if (item.type === 'section') {
+                    this.drawSection(ctx, STYLES, item, y);
+                    y += 20 + this.itemSpacing;
+                    this.contentHeight += 20 + this.itemSpacing;
+                }
+            }
+            
+            ctx.restore();
+            this.maxScroll = Math.max(0, this.contentHeight - (this.height - this.headerHeight));
+        };
+        
+        // PATCH 3: handleClick
+        UI.BaseWindow.prototype.handleClick = function(mouseX, mouseY) {
+            if (!this.visible) return false;
+            
+            let y = this.y + this.headerHeight + this.padding - this.scrollOffset;
+            
+            for (let item of this.items) {
+                if (item.type === 'button') {
+                    const bx = this.x + this.padding;
+                    const by = y;
+                    const bw = this.width - this.padding * 2;
+                    
+                    if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + 20) {
+                        item.callback();
+                        return true;
+                    }
+                    y += 20 + this.itemSpacing;
+                } else if (item.type === 'text') {
+                    y += (item.lines || 1) * 14 + this.itemSpacing;
+                } else if (item.type === 'section') {
+                    y += 20 + this.itemSpacing;
+                }
+            }
+            return false;
+        };
+        
+        // PATCH 4: WindowManager.handleMouseDown
+        UI.WindowManager.prototype.handleMouseDown = function(x, y) {
+            this.mouseDownX = x;
+            this.mouseDownY = y;
+            
+            for (let i = this.windows.length - 1; i >= 0; i--) {
+                const win = this.windows[i];
+                if (win.containsPoint(x, y) && win.visible) {
+                    this.activeWindow = win;
+                    this.bringToFront(win);
+                    
+                    if (win.containsHeader(x, y)) {
+                        win.isDragging = true;
+                        win.dragOffsetX = x - win.x;
+                        win.dragOffsetY = y - win.y;
+                    } else {
+                        win.isDragging = false;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        };
+        
+        // PATCH 5: EventRouter
+        UI.EventRouter.prototype.handleMouseDown = function(e) {
+            this.mouseDown = true;
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+
+            const taskbarY = this.canvas.height - 48;
+            if (e.clientY >= taskbarY && this.taskbar) {
+                const ctx = this.canvas.getContext('2d');
+                if (this.taskbar.handleClick(e.clientX, e.clientY, ctx, this.windowManager)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (this.windowManager.handleMouseDown(e.clientX, e.clientY)) {
+                e.preventDefault();
+            }
+        };
+        
+        UI.EventRouter.prototype.handleMouseUp = function(e) {
+            if (this.windowManager && this.windowManager.activeWindow) {
+                const win = this.windowManager.activeWindow;
+                const dx = Math.abs((this.windowManager.mouseDownX || e.clientX) - e.clientX);
+                const dy = Math.abs((this.windowManager.mouseDownY || e.clientY) - e.clientY);
+                const dragged = win.isDragging && (dx > 3 || dy > 3);
+                
+                if (!dragged) {
+                    win.handleClick(e.clientX, e.clientY);
+                }
+                
+                win.isDragging = false;
+                this.windowManager.activeWindow = null;
+            }
+            this.mouseDown = false;
+        };
+        
+        UI.EventRouter.prototype.handleMouseMove = function(e) {
+            if (this.windowManager && this.windowManager.activeWindow) {
+                const win = this.windowManager.activeWindow;
+                if (win.isDragging) {
+                    win.x = e.clientX - win.dragOffsetX;
+                    win.y = e.clientY - win.dragOffsetY;
+                }
+            }
+        };
+        
+        console.log('✅ Patches applied - przyciski dzialaja!');
+        
+        // ============================================
+        //  SETUP
+        // ============================================
+        
+        const canvas = document.getElementById('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        
+        const windowManager = new UI.WindowManager();
+        const taskbar = new UI.Taskbar();
+        
+        // Window 1: Welcome
+        const welcomeWindow = new UI.BaseWindow(50, 50, 'Welcome');
+        welcomeWindow.width = 350;
+        welcomeWindow.height = 250;
+        welcomeWindow.addText('UI Bundle v1.0.0', '#00FF88');
+        welcomeWindow.addText(' ');
+        welcomeWindow.addText('NAPRAWIONE:', '#00F5FF');
+        welcomeWindow.addText('* Buttony dzialaja!', '#00FF88');
+        welcomeWindow.addText('* Zielone ramki', '#00F5FF');
+        welcomeWindow.addText('* Przeciaganie OK', '#00F5FF');
+        welcomeWindow.addText(' ');
+        
+        let clickCount = 0;
+        welcomeWindow.addButton('Kliknij Mnie!', () => {
+            clickCount++;
+            alert('Dziala! Kliknieto: ' + clickCount + ' razy!');
+        });
+        
+        windowManager.add(welcomeWindow);
+        taskbar.addSection('windows');
+        taskbar.addWindowItem('Welcome', welcomeWindow);
+        
+        // Window 2: Info
+        const infoWindow = new UI.BaseWindow(420, 50, 'Bundle Info');
+        infoWindow.width = 300;
+        infoWindow.height = 320;
+        infoWindow.addSection('zawartosc');
+        infoWindow.addText('* Styles.js', '#00FF88');
+        infoWindow.addText('* TextCache.js', '#00FF88');
+        infoWindow.addText('* BaseWindow.js', '#00FF88');
+        infoWindow.addText('* WindowManager.js', '#00FF88');
+        infoWindow.addText('* Taskbar.js', '#00FF88');
+        infoWindow.addText('* EventRouter.js', '#00FF88');
+        infoWindow.addText(' ');
+        infoWindow.addSection('stats');
+        infoWindow.addText('Total: ~1047 linii', '#00F5FF');
+        infoWindow.addText('Bundle: ~40KB', '#00F5FF');
+        infoWindow.addText('Zero dependencies', '#00F5FF');
+        
+        windowManager.add(infoWindow);
+        taskbar.addWindowItem('Info', infoWindow);
+        
+        // Window 3: Features
+        const featuresWindow = new UI.BaseWindow(50, 320, 'Features');
+        featuresWindow.width = 350;
+        featuresWindow.height = 250;
+        featuresWindow.addText('* Single file bundle', '#00FF88');
+        featuresWindow.addText('* Draggable windows', '#00FF88');
+        featuresWindow.addText('* GREEN button borders!', '#00FF88');
+        featuresWindow.addText('* WORKING CLICKS!', '#00FF88');
+        featuresWindow.addText(' ');
+        
+        featuresWindow.addButton('Add Window', () => {
+            const newWindow = new UI.BaseWindow(
+                Math.random() * 400 + 100,
+                Math.random() * 200 + 100,
+                'Window #' + (windowManager.windows.length + 1)
+            );
+            newWindow.width = 250;
+            newWindow.height = 150;
+            newWindow.addText('Nowe okno!', '#00FF88');
+            newWindow.addButton('Zamknij', () => {
+                const idx = windowManager.windows.indexOf(newWindow);
+                if (idx > -1) {
+                    windowManager.windows.splice(idx, 1);
+                }
+            });
+            
+            windowManager.add(newWindow);
+            taskbar.addWindowItem('Window #' + windowManager.windows.length, newWindow);
+        });
+        
+        windowManager.add(featuresWindow);
+        taskbar.addWindowItem('Features', featuresWindow);
+        
+        const eventRouter = new UI.EventRouter(canvas, null, windowManager, taskbar, null);
+        
+        console.log('=== UI READY! WSZYSTKO DZIALA! ===');
+        
+        // ============================================
+        //  RENDER LOOP
+        // ============================================
+        
+        function render() {
+            // Full ctx save/restore around entire frame!
+            ctx.save();
+            
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Force redraw
+            windowManager.windows.forEach(w => w.isDirty = true);
+            
+            // Draw windows
+            windowManager.draw(ctx, UI.STYLES);
+            
+            // Draw taskbar (with its own save/restore)
+            ctx.save();
+            taskbar.draw(ctx, UI.STYLES, UI.measureTextCached);
+            ctx.restore();
+            
+            // Info text (immune to taskbar transforms)
+            ctx.fillStyle = '#00FF88';
+            ctx.font = 'bold 16px Courier New';
+            ctx.fillText('UI Bundle Demo - WSZYSTKO DZIALA!', 20, canvas.height - 70);
+            
+            ctx.fillStyle = '#666666';
+            ctx.font = '12px Courier New';
+            ctx.fillText('Przeciagnij okna, kliknij buttony, uzyj menu', 20, canvas.height - 50);
+            ctx.fillText('~1047 linii, ~40KB, zero dependencies', 20, canvas.height - 30);
+            
+            ctx.restore();
+            
+            requestAnimationFrame(render);
         }
-        this.activeWindow.stopDrag();
-        this.activeWindow = null;
-    } else {
-        console.log('>>> NO activeWindow!');
-    }
-};
-
-UI.WindowManager.prototype.handleMouseDown = function(x, y) {
-    this.mouseDownX = x;
-    this.mouseDownY = y;
-    this.actuallyDragged = false;
-    
-    for (let i = this.windows.length - 1; i >= 0; i--) {
-        const window = this.windows[i];
-        if (window.startDrag(x, y)) {
-            this.activeWindow = window;
-            this.bringToFront(window);
-            console.log('>>> activeWindow set to:', window.title);
-            return true;
-        }
-    }
-    return false;
-};
-
-UI.WindowManager.prototype.handleMouseMove = function(x, y) {
-    if (this.activeWindow && this.activeWindow.isDragging) {
-        const dx = Math.abs(x - (this.mouseDownX || x));
-        const dy = Math.abs(y - (this.mouseDownY || y));
-        if (dx > 3 || dy > 3) this.actuallyDragged = true;
-        this.activeWindow.drag(x, y);
-    }
-};
-
-UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
-    ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
-    ctx.strokeStyle = STYLES.colors.panel;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, 20);
-    ctx.fillStyle = STYLES.colors.panel;
-    ctx.font = STYLES.fonts.mainBold;
-    ctx.textAlign = 'center';
-    ctx.fillText(item.label, this.x + this.width / 2, y + 14);
-    ctx.textAlign = 'left';
-};
-
-const canvas = document.getElementById('canvas');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-const ctx = canvas.getContext('2d');
-
-const windowManager = new UI.WindowManager();
-const taskbar = new UI.Taskbar();
-
-const w1 = new UI.BaseWindow(50, 50, 'Test');
-w1.width = 300; w1.height = 200;
-w1.addText('Kliknij button:', '#00FF88');
-let clicks = 0;
-w1.addButton('KLIKNIJ!', () => {
-    clicks++;
-    console.log('>>> BUTTON CALLBACK!', clicks);
-    alert('DZIALA! ' + clicks);
-});
-windowManager.add(w1);
-
-const eventRouter = new UI.EventRouter(canvas, null, windowManager, taskbar, null);
-
-function render() {
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    w1.isDirty = true;
-    w1.draw(ctx, UI.STYLES);
-    requestAnimationFrame(render);
-}
-render();
-console.log('READY! Click button and watch console!');
-</script></body></html>
+        
+        render();
+        console.log('=== RENDER LOOP STARTED ===');
+    </script>
+</body>
+</html>
