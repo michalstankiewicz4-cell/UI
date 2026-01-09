@@ -65,6 +65,16 @@ class Taskbar {
             isOpen: true
         });
     }
+    
+    removeWindowItem(window) {
+        // Remove window from taskbar menu
+        const index = this.menuItems.findIndex(item => 
+            item.type === 'window' && item.window === window
+        );
+        if (index > -1) {
+            this.menuItems.splice(index, 1);
+        }
+    }
 
 
     getStartButtonBounds(canvasHeight) {
@@ -163,7 +173,7 @@ class Taskbar {
 
         // Check taskbar buttons (minimized windows)
         const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && item.window.visible
+            item.type === 'window' && item.window.minimized && !item.window.visible
         );
         
         for (let i = 0; i < minimizedWindows.length; i++) {
@@ -173,6 +183,7 @@ class Taskbar {
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
                 // Restore window
+                minimizedWindows[i].window.visible = true;
                 minimizedWindows[i].window.minimized = false;
                 if (windowManager) {
                     windowManager.bringToFront(minimizedWindows[i].window);
@@ -282,7 +293,7 @@ class Taskbar {
 
         // Taskbar buttons (minimized windows)
         const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && item.window.visible
+            item.type === 'window' && item.window.minimized && !item.window.visible
         );
         
         for (let i = 0; i < minimizedWindows.length; i++) {

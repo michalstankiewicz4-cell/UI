@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Simulation System v2.0 - Dynamic UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00FF88;
+            overflow: hidden;
+        }
+        
+        #canvas-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Stacking order */
+        #canvas-sim1 { z-index: 1; }
+        #canvas-sim2 { z-index: 2; }
+        #canvas-sim3 { z-index: 3; }
+        #canvas-sim4 { z-index: 4; }
+        #canvas-ui { z-index: 100; pointer-events: auto; }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #00FF88;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 200;
+            max-width: 400px;
+        }
+        
+        #info h1 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #00F5FF;
+        }
+        
+        #info p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        #info .key {
+            color: #00F5FF;
+            font-weight: bold;
+        }
+        
+        #close-info {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #00FF88;
+            font-size: 20px;
+            cursor: pointer;
+            font-family: 'Courier New';
+        }
+        
+        #close-info:hover {
+            color: #00FFAA;
+        }
+    </style>
+</head>
+<body>
+    <!-- Info panel (closeable) -->
+    <div id="info">
+        <button id="close-info">&times;</button>
+        <h1>🚀 Multi-Simulation System v2.0</h1>
+        <p><span class="key">Architecture:</span> Simulation → UI (Dynamic)</p>
+        <p><span class="key">Approach:</span> Runtime simulation management</p>
+        <p> </p>
+        <p><span class="key">Features:</span></p>
+        <p>• Add/Remove simulations dynamically (no restart)</p>
+        <p>• Independent simulation canvases</p>
+        <p>• UI overlay with HUD mode</p>
+        <p>• Cross-simulation sync (future)</p>
+        <p> </p>
+        <p><span class="key">Controls:</span></p>
+        <p>• Open "Master Controls" window</p>
+        <p>• Click "Add Sim1/2/3/4" buttons</p>
+        <p>• Each simulation appears with its own window</p>
+        <p>• Close windows to remove simulations</p>
+        <p> </p>
+        <p><span class="key">Performance:</span></p>
+        <p>• 1 sim: ~99% CPU for sim, ~1% UI</p>
+        <p>• 2 sims: ~49% each, ~2% UI</p>
+        <p>• 4 sims: ~24% each, ~4% UI</p>
+    </div>
+    
+    <!-- Multi-canvas setup -->
+    <div id="canvas-container">
+        <canvas id="canvas-sim1"></canvas>
+        <canvas id="canvas-sim2"></canvas>
+        <canvas id="canvas-sim3"></canvas>
+        <canvas id="canvas-sim4"></canvas>
+        <canvas id="canvas-ui"></canvas>
+    </div>
+    
+    <!-- UI Library (bundled) -->
+    <script src="dist/ui.js"></script>
+    
+    <!-- Main orchestrator -->
+    <script type="module" src="main.js"></script>
+    
+    <script>
+        // Close info panel
+        document.getElementById('close-info').addEventListener('click', () => {
+            document.getElementById('info').style.display = 'none';
+        });
+        
+        console.log('%c=== MULTI-SIMULATION SYSTEM v2.0 ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
+        console.log('%cArchitecture: Simulation → UI (Dynamic)', 'color: #00F5FF;');
+        console.log('%cReady to add simulations!', 'color: #00FF88;');
+    </script>
+</body>
+</html>

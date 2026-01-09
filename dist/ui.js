@@ -141,22 +141,19 @@ function getTextCacheStats() {
 // ═══════════════════════════════════════════════════════════════
 //   BASE WINDOW
 // ═══════════════════════════════════════════════════════════════
-// Simplified version extracted from Petrie Dish v5.1-C2
-// For full version with all controls, see EXTRACTION_NOTES.md
+// Extracted from Petrie Dish v5.1-C2
+// Draggable window with UI controls and header buttons
 
 /**
  * BaseWindow - Draggable window with UI controls
  * 
- * Full Petrie Dish version (~400 lines) includes:
- * - Sliders, Toggles, Matrix, Sections
+ * Features:
+ * - Header buttons: Close (X), Minimize (_), Eye (👁)
+ * - Buttons, Text, Sections
+ * - Dragging
  * - Scrolling with scrollbar
  * - Minimize/maximize
  * - Transparency toggle
- * 
- * This version includes essentials:
- * - Buttons, Text
- * - Dragging
- * - Basic scrolling
  */
 class BaseWindow {
     constructor(x, y, title, type = 'panel') {
@@ -183,6 +180,10 @@ class BaseWindow {
         this.itemSpacing = 8;
         this.headerHeight = 26;
         
+        // Header buttons
+        this.buttonSize = 16;
+        this.buttonPadding = 5;
+        
         // Items (controls)
         this.items = [];
         
@@ -193,7 +194,12 @@ class BaseWindow {
         this.scrollbarWidth = 8;
         
         // Optimization
-        this.isDirty = true; // Needs redraw
+        this.isDirty = true;
+        
+        // Callbacks
+        this.onClose = null;
+        this.onMinimize = null;
+        this.onToggleTransparent = null;
     }
     
     // ═════════════════════════════════════════════════
@@ -215,11 +221,6 @@ class BaseWindow {
         this.markDirty();
     }
     
-    // TODO: Add from full Petrie Dish version:
-    // - addSlider(label, getValue, setValue, min, max, step)
-    // - addToggle(label, getValue, setValue)
-    // - addMatrix(getMatrix, setMatrix, colorNames)
-    
     markDirty() {
         this.isDirty = true;
     }
@@ -239,13 +240,114 @@ class BaseWindow {
     }
     
     // ═════════════════════════════════════════════════
+    //  HEADER BUTTONS HIT TESTING
+    // ═════════════════════════════════════════════════
+    
+    getCloseButtonBounds() {
+        return {
+            x: this.x + this.width - this.buttonSize - this.buttonPadding,
+            y: this.y + (this.headerHeight - this.buttonSize) / 2,
+            width: this.buttonSize,
+            height: this.buttonSize
+        };
+    }
+    
+    getMinimizeButtonBounds() {
+        return {
+            x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 2,
+            y: this.y + (this.headerHeight - this.buttonSize) / 2,
+            width: this.buttonSize,
+            height: this.buttonSize
+        };
+    }
+    
+    getEyeButtonBounds() {
+        return {
+            x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 3,
+            y: this.y + (this.headerHeight - this.buttonSize) / 2,
+            width: this.buttonSize,
+            height: this.buttonSize
+        };
+    }
+    
+    containsCloseButton(x, y) {
+        const btn = this.getCloseButtonBounds();
+        return x >= btn.x && x <= btn.x + btn.width &&
+               y >= btn.y && y <= btn.y + btn.height;
+    }
+    
+    containsMinimizeButton(x, y) {
+        const btn = this.getMinimizeButtonBounds();
+        return x >= btn.x && x <= btn.x + btn.width &&
+               y >= btn.y && y <= btn.y + btn.height;
+    }
+    
+    containsEyeButton(x, y) {
+        const btn = this.getEyeButtonBounds();
+        return x >= btn.x && x <= btn.x + btn.width &&
+               y >= btn.y && y <= btn.y + btn.height;
+    }
+    
+    // ═════════════════════════════════════════════════
     //  DRAGGING
     // ═════════════════════════════════════════════════
     
     startDrag(mouseX, mouseY) {
-        if (this.containsHeader(mouseX, mouseY)) {
-            // TODO: Check header buttons (minimize, close) from Petrie Dish
+        // TRANSPARENT MODE: No header, but can drag by content and toggle via eye button
+        if (this.transparent) {
+            // Check if clicked on floating eye button (top-right of content area)
+            const eyeBtn = {
+                x: this.x + this.width - this.buttonSize - this.buttonPadding,
+                y: this.y + this.buttonPadding,
+                width: this.buttonSize,
+                height: this.buttonSize
+            };
             
+            if (mouseX >= eyeBtn.x && mouseX <= eyeBtn.x + eyeBtn.width &&
+                mouseY >= eyeBtn.y && mouseY <= eyeBtn.y + eyeBtn.height) {
+                // Toggle back to normal mode
+                this.transparent = false;
+                if (this.onToggleTransparent) this.onToggleTransparent(this.transparent);
+                this.markDirty();
+                return true;
+            }
+            
+            // Allow dragging by clicking anywhere in content area
+            if (this.containsPoint(mouseX, mouseY)) {
+                this.isDragging = true;
+                this.dragOffsetX = mouseX - this.x;
+                this.dragOffsetY = mouseY - this.y;
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // NORMAL MODE: Header with buttons
+        if (this.containsHeader(mouseX, mouseY)) {
+            // Check header buttons FIRST (before starting drag)
+            if (this.containsCloseButton(mouseX, mouseY)) {
+                if (this.onClose) this.onClose();
+                return true; // Handled
+            }
+            
+            if (this.containsMinimizeButton(mouseX, mouseY)) {
+                // Minimize = hide window completely, show on taskbar
+                this.visible = false;
+                this.minimized = true;
+                if (this.onMinimize) this.onMinimize(this.minimized);
+                this.markDirty();
+                return true; // Handled
+            }
+            
+            if (this.containsEyeButton(mouseX, mouseY)) {
+                this.transparent = !this.transparent;
+                if (this.onToggleTransparent) this.onToggleTransparent(this.transparent);
+                this.markDirty();
+                return true; // Handled
+            }
+            
+            // No button clicked - start dragging
             this.isDragging = true;
             this.dragOffsetX = mouseX - this.x;
             this.dragOffsetY = mouseY - this.y;
@@ -275,7 +377,13 @@ class BaseWindow {
             return false;
         }
         
-        let y = this.y + this.headerHeight + this.padding - this.scrollOffset;
+        // In transparent mode, content starts at this.y + padding (no header)
+        // In normal mode, content starts at this.y + headerHeight + padding
+        const startY = this.transparent ? 
+            (this.y + this.padding) : 
+            (this.y + this.headerHeight + this.padding - this.scrollOffset);
+        
+        let y = startY;
         
         for (let item of this.items) {
             if (item.type === 'button') {
@@ -319,9 +427,14 @@ class BaseWindow {
             return;
         }
         
-        // Window background
-        const bgColor = this.type === 'stats' ? 
-            STYLES.stats.bgColor : STYLES.panel.bgColor;
+        if (this.transparent) {
+            // TRANSPARENT MODE: Only draw content, no header/border/buttons
+            this.drawContentOnly(ctx, STYLES);
+            return;
+        }
+        
+        // NORMAL MODE: Full window with header and border
+        const bgColor = this.type === 'stats' ? STYLES.stats.bgColor : STYLES.panel.bgColor;
         const borderColor = this.type === 'stats' ? 
             STYLES.stats.borderColor : STYLES.panel.borderColor;
         
@@ -338,6 +451,9 @@ class BaseWindow {
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
         ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        
+        // Header buttons
+        this.drawHeaderButtons(ctx, STYLES);
         
         // Border
         if (borderColor !== 'transparent') {
@@ -369,9 +485,65 @@ class BaseWindow {
         ctx.font = STYLES.fonts.mainBold;
         ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
         
+        // Header buttons
+        this.drawHeaderButtons(ctx, STYLES);
+        
         ctx.strokeStyle = STYLES.panel.borderColor;
         ctx.lineWidth = STYLES.panel.borderWidth;
         ctx.strokeRect(this.x, this.y, this.width, this.headerHeight);
+    }
+    
+    // ═════════════════════════════════════════════════
+    //  HEADER BUTTONS DRAWING
+    // ═════════════════════════════════════════════════
+    
+    drawHeaderButtons(ctx, STYLES) {
+        const color = STYLES.colors.panel;
+        
+        // Close button (X)
+        const closeBtn = this.getCloseButtonBounds();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(closeBtn.x, closeBtn.y, closeBtn.width, closeBtn.height);
+        
+        // X symbol
+        const padding = 4;
+        ctx.beginPath();
+        ctx.moveTo(closeBtn.x + padding, closeBtn.y + padding);
+        ctx.lineTo(closeBtn.x + closeBtn.width - padding, closeBtn.y + closeBtn.height - padding);
+        ctx.moveTo(closeBtn.x + closeBtn.width - padding, closeBtn.y + padding);
+        ctx.lineTo(closeBtn.x + padding, closeBtn.y + closeBtn.height - padding);
+        ctx.stroke();
+        
+        // Minimize button (_)
+        const minBtn = this.getMinimizeButtonBounds();
+        ctx.strokeRect(minBtn.x, minBtn.y, minBtn.width, minBtn.height);
+        
+        // _ symbol
+        ctx.beginPath();
+        ctx.moveTo(minBtn.x + padding, minBtn.y + minBtn.height - padding);
+        ctx.lineTo(minBtn.x + minBtn.width - padding, minBtn.y + minBtn.height - padding);
+        ctx.stroke();
+        
+        // Eye button (○ or ●)
+        const eyeBtn = this.getEyeButtonBounds();
+        ctx.strokeRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
+        
+        // Circle (filled if transparent)
+        ctx.beginPath();
+        ctx.arc(
+            eyeBtn.x + eyeBtn.width / 2,
+            eyeBtn.y + eyeBtn.height / 2,
+            4,
+            0,
+            Math.PI * 2
+        );
+        if (this.transparent) {
+            ctx.fillStyle = color;
+            ctx.fill();
+        } else {
+            ctx.stroke();
+        }
     }
     
     drawContent(ctx, STYLES) {
@@ -412,6 +584,68 @@ class BaseWindow {
         
         // Update max scroll
         this.maxScroll = Math.max(0, this.contentHeight - (this.height - this.headerHeight));
+    }
+    
+    // Draw ONLY content (no header, border, buttons) - for transparent mode (HUD style)
+    drawContentOnly(ctx, STYLES) {
+        // No clipping, no background - just floating content
+        ctx.save();
+        
+        // Draw items starting from window position
+        let y = this.y + this.padding;
+        this.contentHeight = 0;
+        
+        ctx.font = STYLES.fonts.main;
+        
+        for (let item of this.items) {
+            if (item.type === 'button') {
+                this.drawButton(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
+            } else if (item.type === 'text') {
+                this.drawText(ctx, STYLES, item, y);
+                const height = (item.lines || 1) * 14;
+                y += height + this.itemSpacing;
+                this.contentHeight += height + this.itemSpacing;
+            } else if (item.type === 'section') {
+                this.drawSection(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
+            }
+        }
+        
+        // Draw floating eye button (to restore header)
+        const eyeBtn = {
+            x: this.x + this.width - this.buttonSize - this.buttonPadding,
+            y: this.y + this.buttonPadding,
+            width: this.buttonSize,
+            height: this.buttonSize
+        };
+        
+        const color = STYLES.colors.panel;
+        
+        // Button background (slightly visible)
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+        ctx.fillRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
+        
+        // Button border
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
+        
+        // Filled circle (indicating transparent mode is ON)
+        ctx.beginPath();
+        ctx.arc(
+            eyeBtn.x + eyeBtn.width / 2,
+            eyeBtn.y + eyeBtn.height / 2,
+            4,
+            0,
+            Math.PI * 2
+        );
+        ctx.fillStyle = color;
+        ctx.fill();
+        
+        ctx.restore();
     }
     
     drawButton(ctx, STYLES, item, y) {
@@ -642,6 +876,16 @@ class Taskbar {
             isOpen: true
         });
     }
+    
+    removeWindowItem(window) {
+        // Remove window from taskbar menu
+        const index = this.menuItems.findIndex(item => 
+            item.type === 'window' && item.window === window
+        );
+        if (index > -1) {
+            this.menuItems.splice(index, 1);
+        }
+    }
 
 
     getStartButtonBounds(canvasHeight) {
@@ -740,7 +984,7 @@ class Taskbar {
 
         // Check taskbar buttons (minimized windows)
         const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && item.window.visible
+            item.type === 'window' && item.window.minimized && !item.window.visible
         );
         
         for (let i = 0; i < minimizedWindows.length; i++) {
@@ -750,6 +994,7 @@ class Taskbar {
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
                 // Restore window
+                minimizedWindows[i].window.visible = true;
                 minimizedWindows[i].window.minimized = false;
                 if (windowManager) {
                     windowManager.bringToFront(minimizedWindows[i].window);
@@ -859,7 +1104,7 @@ class Taskbar {
 
         // Taskbar buttons (minimized windows)
         const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && item.window.visible
+            item.type === 'window' && item.window.minimized && !item.window.visible
         );
         
         for (let i = 0; i < minimizedWindows.length; i++) {
