@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Simulation System v2.0 - Dynamic UI</title>
+    <title>UI System v2.1 - Core Architecture Demo</title>
     <style>
         * {
             margin: 0;
@@ -32,28 +32,28 @@
             height: 100%;
         }
         
-        /* Stacking order */
-        #canvas-sim1 { z-index: 1; }
-        #canvas-sim2 { z-index: 2; }
-        #canvas-sim3 { z-index: 3; }
-        #canvas-sim4 { z-index: 4; }
+        /* Stacking order - UI on top */
+        #canvas-sim1 { z-index: 1; display: none; }
+        #canvas-sim2 { z-index: 2; display: none; }
+        #canvas-sim3 { z-index: 3; display: none; }
+        #canvas-sim4 { z-index: 4; display: none; }
         #canvas-ui { z-index: 100; pointer-events: auto; }
         
         #info {
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             padding: 15px;
             border: 2px solid #00FF88;
             border-radius: 5px;
             font-size: 12px;
             z-index: 200;
-            max-width: 400px;
+            max-width: 500px;
         }
         
         #info h1 {
-            font-size: 16px;
+            font-size: 18px;
             margin-bottom: 10px;
             color: #00F5FF;
         }
@@ -86,33 +86,33 @@
     </style>
 </head>
 <body>
-    <!-- Info panel (closeable) -->
+    <!-- Info panel -->
     <div id="info">
         <button id="close-info">&times;</button>
-        <h1>🚀 Multi-Simulation System v2.1</h1>
-        <p><span class="key">Architecture:</span> Core-based (SimulationManager)</p>
-        <p><span class="key">Flow:</span> main.js → SimulationManager → EventBus ↔ DataBridge → UI</p>
+        <h1>🎨 UI System v2.1 - FAZA C2: SCROLLBAR</h1>
+        <p><span class="key">Architecture:</span> Core-based (SimulationManager + EventBus)</p>
+        <p><span class="key">Focus:</span> UI System Development & Testing</p>
         <p> </p>
-        <p><span class="key">Features:</span></p>
-        <p>• SimulationManager (central controller)</p>
-        <p>• EventBus (pub-sub communication)</p>
-        <p>• DataBridge (UI ↔ Sim data flow)</p>
-        <p>• Dynamic add/remove (no restart)</p>
-        <p>• Cross-simulation sync support</p>
+        <p><span class="key">NOWE w FAZA C2:</span></p>
+        <p>• <strong>Scrollbar</strong> - thumb dragging, mouse wheel</p>
+        <p>• <strong>Demo Window</strong> - wszystkie funkcje UI</p>
+        <p>• Lorem ipsum + długi content</p>
+        <p>• Auto-scroll gdy content > height</p>
         <p> </p>
-        <p><span class="key">Controls:</span></p>
-        <p>• Open "Master Controls" window</p>
-        <p>• Click "Add Sim1/2/3/4" buttons</p>
-        <p>• Each simulation appears with its own window</p>
-        <p>• Close windows to remove simulations</p>
+        <p><span class="key">Funkcje okien:</span></p>
+        <p>• <strong>X</strong> - Close (usuwa okno)</p>
+        <p>• <strong>_</strong> - Minimize (na taskbar)</p>
+        <p>• <strong>○</strong> - HUD mode (floating stats)</p>
+        <p>• <strong>Drag</strong> - Przeciągnij header</p>
+        <p>• <strong>Scroll</strong> - Mouse wheel + scrollbar thumb</p>
         <p> </p>
-        <p><span class="key">Performance:</span></p>
-        <p>• 1 sim: ~99% CPU for sim, ~1% UI</p>
-        <p>• 2 sims: ~49% each, ~2% UI</p>
-        <p>• 4 sims: ~24% each, ~4% UI</p>
+        <p><span class="key">Windows:</span></p>
+        <p>• Master Controls - dodaj symulacje</p>
+        <p>• Demo Window - testuj wszystkie funkcje UI</p>
+        <p>• System Stats - statystyki</p>
     </div>
     
-    <!-- Multi-canvas setup -->
+    <!-- Multi-canvas setup (simulations hidden for now) -->
     <div id="canvas-container">
         <canvas id="canvas-sim1"></canvas>
         <canvas id="canvas-sim2"></canvas>
@@ -133,9 +133,9 @@
             document.getElementById('info').style.display = 'none';
         });
         
-        console.log('%c=== MULTI-SIMULATION SYSTEM v2.1 ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
-        console.log('%cArchitecture: Core-based (SimulationManager + EventBus + DataBridge)', 'color: #00F5FF;');
-        console.log('%cReady to add simulations!', 'color: #00FF88;');
+        console.log('%c=== UI SYSTEM v2.1 - FAZA C2: SCROLLBAR ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
+        console.log('%cFocus: UI development & testing', 'color: #00F5FF;');
+        console.log('%cScrollbar + Demo Window implementation', 'color: #00FF88;');
     </script>
 </body>
 </html>

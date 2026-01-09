@@ -269,7 +269,82 @@ masterWindow.onClose = () => {
 };
 
 // ═════════════════════════════════════════════════
-//  7. COMBINED STATS WINDOW
+//  7. DEMO WINDOW - Full UI Feature Showcase
+// ═════════════════════════════════════════════════
+
+const demoWindow = new UI.BaseWindow(400, 50, 'UI Demo - All Features');
+demoWindow.width = 380;
+demoWindow.height = 500;
+
+demoWindow.addSection('header buttons');
+demoWindow.addText('Test all header buttons:', '#00F5FF');
+demoWindow.addText('• X = Close window', '#00FF88');
+demoWindow.addText('• _ = Minimize to taskbar', '#00FF88');
+demoWindow.addText('• ○ = HUD mode (floating)', '#00FF88');
+demoWindow.addText(' ');
+
+demoWindow.addSection('scrollbar test');
+demoWindow.addText('Long content for scrollbar:', '#00F5FF');
+demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit.');
+demoWindow.addText('Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.');
+demoWindow.addText('Ut enim ad minim veniam, quis nostrud exercitation ullamco.');
+demoWindow.addText('Laboris nisi ut aliquip ex ea commodo consequat.');
+demoWindow.addText('Duis aute irure dolor in reprehenderit in voluptate velit.');
+demoWindow.addText('Esse cillum dolore eu fugiat nulla pariatur.');
+demoWindow.addText('Excepteur sint occaecat cupidatat non proident.');
+demoWindow.addText('Sunt in culpa qui officia deserunt mollit anim id est laborum.');
+demoWindow.addText(' ');
+
+demoWindow.addSection('buttons');
+demoWindow.addButton('Test Button 1', () => {
+    alert('Button 1 clicked!');
+});
+demoWindow.addButton('Test Button 2', () => {
+    console.log('Button 2 clicked!');
+    alert('Check console!');
+});
+demoWindow.addText(' ');
+
+demoWindow.addSection('more content');
+demoWindow.addText('Sed ut perspiciatis unde omnis iste natus error sit.');
+demoWindow.addText('Voluptatem accusantium doloremque laudantium totam rem aperiam.');
+demoWindow.addText('Eaque ipsa quae ab illo inventore veritatis et quasi architecto.');
+demoWindow.addText('Beatae vitae dicta sunt explicabo nemo enim ipsam voluptatem.');
+demoWindow.addText('Quia voluptas sit aspernatur aut odit aut fugit.');
+demoWindow.addText('Sed quia consequuntur magni dolores eos qui ratione voluptatem.');
+demoWindow.addText(' ');
+
+demoWindow.addSection('dynamic content');
+let counter = 0;
+demoWindow.addText(() => {
+    counter++;
+    return `Dynamic counter: ${counter}`;
+}, '#00F5FF');
+demoWindow.addText(() => {
+    return `Timestamp: ${Date.now()}`;
+}, '#00FF88');
+demoWindow.addText(' ');
+
+demoWindow.addSection('final section');
+demoWindow.addText('At vero eos et accusamus et iusto odio dignissimos.');
+demoWindow.addText('Ducimus qui blanditiis praesentium voluptatum deleniti atque.');
+demoWindow.addText('Corrupti quos dolores et quas molestias excepturi sint.');
+demoWindow.addText('Occaecati cupiditate non provident similique sunt in culpa.');
+demoWindow.addText(' ');
+demoWindow.addText('✅ End of content', '#00FF88');
+
+windowManager.add(demoWindow);
+taskbar.addWindowItem('Demo', demoWindow);
+
+demoWindow.onClose = () => {
+    windowManager.remove(demoWindow);
+    taskbar.removeWindowItem(demoWindow);
+};
+
+console.log('✅ Demo window created with full content');
+
+// ═════════════════════════════════════════════════
+//  8. COMBINED STATS WINDOW
 // ═════════════════════════════════════════════════
 
 const statsWindow = new UI.BaseWindow(50, 520, 'System Stats');

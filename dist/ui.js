@@ -175,6 +175,10 @@ class BaseWindow {
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
         
+        // Scrollbar dragging
+        this.isDraggingThumb = false;
+        this.thumbDragOffset = 0;
+        
         // Layout
         this.padding = 10;
         this.itemSpacing = 8;
@@ -289,6 +293,44 @@ class BaseWindow {
     }
     
     // ═════════════════════════════════════════════════
+    //  SCROLLBAR HIT TESTING
+    // ═════════════════════════════════════════════════
+    
+    getScrollThumbBounds() {
+        if (this.maxScroll === 0) return null; // No scrolling needed
+        
+        const trackHeight = this.height - this.headerHeight - this.padding * 2;
+        const thumbHeight = Math.max(30, trackHeight * (trackHeight / (trackHeight + this.maxScroll)));
+        const thumbY = this.y + this.headerHeight + this.padding + 
+                      (this.scrollOffset / this.maxScroll) * (trackHeight - thumbHeight);
+        
+        return {
+            x: this.x + this.width - this.scrollbarWidth - 2,
+            y: thumbY,
+            width: this.scrollbarWidth,
+            height: thumbHeight
+        };
+    }
+    
+    containsScrollThumb(x, y) {
+        const thumb = this.getScrollThumbBounds();
+        if (!thumb) return false;
+        
+        return x >= thumb.x && x <= thumb.x + thumb.width &&
+               y >= thumb.y && y <= thumb.y + thumb.height;
+    }
+    
+    containsScrollTrack(x, y) {
+        // Check if in scrollbar area
+        const trackX = this.x + this.width - this.scrollbarWidth - 2;
+        const trackY = this.y + this.headerHeight;
+        const trackHeight = this.height - this.headerHeight;
+        
+        return x >= trackX && x <= trackX + this.scrollbarWidth &&
+               y >= trackY && y <= trackY + trackHeight;
+    }
+    
+    // ═════════════════════════════════════════════════
     //  DRAGGING
     // ═════════════════════════════════════════════════
     
@@ -323,7 +365,17 @@ class BaseWindow {
             return false;
         }
         
-        // NORMAL MODE: Header with buttons
+        // NORMAL MODE: Header with buttons + scrollbar
+        
+        // Check scrollbar thumb FIRST (highest priority)
+        if (this.containsScrollThumb(mouseX, mouseY)) {
+            const thumb = this.getScrollThumbBounds();
+            this.isDraggingThumb = true;
+            this.thumbDragOffset = mouseY - thumb.y;
+            return true;
+        }
+        
+        // Check header buttons
         if (this.containsHeader(mouseX, mouseY)) {
             // Check header buttons FIRST (before starting drag)
             if (this.containsCloseButton(mouseX, mouseY)) {
@@ -353,6 +405,20 @@ class BaseWindow {
             this.dragOffsetY = mouseY - this.y;
             return true;
         }
+        
+        // Check if clicked on scrollbar track (not thumb)
+        if (this.containsScrollTrack(mouseX, mouseY)) {
+            // Jump scroll to clicked position
+            const thumb = this.getScrollThumbBounds();
+            if (thumb) {
+                const trackHeight = this.height - this.headerHeight - this.padding * 2;
+                const clickY = mouseY - (this.y + this.headerHeight + this.padding);
+                const newScrollOffset = (clickY / trackHeight) * this.maxScroll;
+                this.scrollOffset = Math.max(0, Math.min(this.maxScroll, newScrollOffset));
+                this.markDirty();
+            }
+            return true;
+        }
         return false;
     }
     
@@ -362,10 +428,29 @@ class BaseWindow {
             this.y = mouseY - this.dragOffsetY;
             this.markDirty();
         }
+        
+        if (this.isDraggingThumb) {
+            const trackHeight = this.height - this.headerHeight - this.padding * 2;
+            const thumb = this.getScrollThumbBounds();
+            if (thumb) {
+                const thumbHeight = thumb.height;
+                const newThumbY = mouseY - this.thumbDragOffset;
+                const trackStartY = this.y + this.headerHeight + this.padding;
+                const thumbRelativeY = newThumbY - trackStartY;
+                
+                // Calculate new scroll offset
+                const scrollRatio = thumbRelativeY / (trackHeight - thumbHeight);
+                const newScrollOffset = scrollRatio * this.maxScroll;
+                
+                this.scrollOffset = Math.max(0, Math.min(this.maxScroll, newScrollOffset));
+                this.markDirty();
+            }
+        }
     }
     
     stopDrag() {
         this.isDragging = false;
+        this.isDraggingThumb = false;
     }
     
     // ═════════════════════════════════════════════════
@@ -703,20 +788,31 @@ class BaseWindow {
     }
     
     drawScrollbar(ctx, STYLES) {
+        if (this.maxScroll === 0) return; // No scrolling needed
+        
         const scrollbarX = this.x + this.width - this.scrollbarWidth - 2;
-        const scrollbarY = this.y + this.headerHeight + 2;
-        const scrollbarHeight = this.height - this.headerHeight - 4;
+        const scrollbarY = this.y + this.headerHeight + this.padding;
+        const scrollbarHeight = this.height - this.headerHeight - this.padding * 2;
         
         // Track
         ctx.fillStyle = STYLES.colors.scrollbarTrack || 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(scrollbarX, scrollbarY, this.scrollbarWidth, scrollbarHeight);
         
-        // Thumb
-        const thumbHeight = Math.max(20, (this.height - this.headerHeight) / this.contentHeight * scrollbarHeight);
-        const thumbY = scrollbarY + (this.scrollOffset / this.maxScroll) * (scrollbarHeight - thumbHeight);
-        
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.fillRect(scrollbarX, thumbY, this.scrollbarWidth, thumbHeight);
+        // Thumb (use calculated bounds)
+        const thumb = this.getScrollThumbBounds();
+        if (thumb) {
+            ctx.fillStyle = this.isDraggingThumb ? 
+                STYLES.colors.accent || '#00FFAA' : 
+                STYLES.colors.panel;
+            ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
+            
+            // Thumb border (when dragging)
+            if (this.isDraggingThumb) {
+                ctx.strokeStyle = STYLES.colors.panel;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(thumb.x, thumb.y, thumb.width, thumb.height);
+            }
+        }
     }
 }
 
