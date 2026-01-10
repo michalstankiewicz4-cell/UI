@@ -75,7 +75,9 @@ class BaseWindow {
         this.markDirty();
     }
     
-    addText(text, color = '#00F5FF', lines = 1) {
+    addText(text, color = null, lines = 1) {
+        // color = null means use STYLES.colors.text (green)
+        // color = '#00F5FF' for cyan stats
         this.items.push({ type: 'text', text, color, lines });
         this.markDirty();
     }
@@ -343,7 +345,9 @@ class BaseWindow {
                 }
                 y += buttonHeight + this.itemSpacing;
             } else if (item.type === 'text') {
-                y += (item.lines || 1) * 14 + this.itemSpacing;
+                // Use cached height from last draw (or estimate)
+                const height = item._cachedHeight || 14;
+                y += height + this.itemSpacing;
             } else if (item.type === 'section') {
                 y += 20 + this.itemSpacing;
             }
@@ -519,7 +523,8 @@ class BaseWindow {
                 this.contentHeight += 20 + this.itemSpacing;
             } else if (item.type === 'text') {
                 this.drawText(ctx, STYLES, item, y);
-                const height = (item.lines || 1) * 14;
+                const height = this.getTextHeight(ctx, item);
+                item._cachedHeight = height; // Cache for handleClick
                 y += height + this.itemSpacing;
                 this.contentHeight += height + this.itemSpacing;
             } else if (item.type === 'section') {
@@ -553,7 +558,8 @@ class BaseWindow {
                 this.contentHeight += 20 + this.itemSpacing;
             } else if (item.type === 'text') {
                 this.drawText(ctx, STYLES, item, y);
-                const height = (item.lines || 1) * 14;
+                const height = this.getTextHeight(ctx, item);
+                item._cachedHeight = height; // Cache for handleClick
                 y += height + this.itemSpacing;
                 this.contentHeight += height + this.itemSpacing;
             } else if (item.type === 'section') {
@@ -616,39 +622,93 @@ class BaseWindow {
     drawText(ctx, STYLES, item, y) {
         // Handle dynamic text (callbacks)
         const textValue = typeof item.text === 'function' ? item.text() : item.text;
-        const lines = String(textValue).split('\n');
-        const maxLines = Math.min(lines.length, item.lines || 1);
         
-        ctx.fillStyle = item.color || STYLES.colors.text || '#00F5FF';
+        // Default green, cyan for stats
+        ctx.fillStyle = item.color || STYLES.colors.text;
         ctx.font = STYLES.fonts.main;
         
+        // Get wrapped lines
+        const wrappedLines = this.wrapText(ctx, textValue, this.width - this.padding * 2);
+        
+        // Limit lines if specified
+        const maxLines = Math.min(wrappedLines.length, item.lines || wrappedLines.length);
+        
+        // Draw lines
         for (let i = 0; i < maxLines; i++) {
-            ctx.fillText(lines[i], this.x + this.padding, y + 12 + i * 14);
+            ctx.fillText(wrappedLines[i], this.x + this.padding, y + 12 + i * 14);
         }
+    }
+    
+    wrapText(ctx, text, maxWidth) {
+        // Split by newlines first
+        const paragraphs = String(text).split('\n');
+        const allLines = [];
+        
+        // Word wrap each paragraph
+        for (let para of paragraphs) {
+            if (para.trim() === '') {
+                allLines.push(''); // Empty line
+                continue;
+            }
+            
+            const words = para.split(' ');
+            let currentLine = '';
+            
+            for (let word of words) {
+                const testLine = currentLine ? currentLine + ' ' + word : word;
+                const metrics = ctx.measureText(testLine);
+                
+                if (metrics.width > maxWidth && currentLine) {
+                    // Line too long, push current line and start new
+                    allLines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            
+            if (currentLine) {
+                allLines.push(currentLine);
+            }
+        }
+        
+        return allLines;
+    }
+    
+    getTextHeight(ctx, item) {
+        const textValue = typeof item.text === 'function' ? item.text() : item.text;
+        const wrappedLines = this.wrapText(ctx, textValue, this.width - this.padding * 2);
+        const actualLines = Math.min(wrappedLines.length, item.lines || wrappedLines.length);
+        return actualLines * 14;
     }
     
     drawSection(ctx, STYLES, item, y) {
         const sectionY = y + 10;
         
-        // Section lines
+        // Section styling
         ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
+        ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
         ctx.lineWidth = 1;
+        ctx.font = STYLES.fonts.main;
         
-        // Left line
+        // Measure title width for centering
+        const titleWidth = ctx.measureText(item.title).width;
+        const totalWidth = this.width - this.padding * 2;
+        const lineLength = (totalWidth - titleWidth - 8) / 2; // 8px spacing around title
+        
+        // Left line (centered)
         ctx.beginPath();
         ctx.moveTo(this.x + this.padding, sectionY);
-        ctx.lineTo(this.x + 30, sectionY);
+        ctx.lineTo(this.x + this.padding + lineLength, sectionY);
         ctx.stroke();
         
-        // Title
-        ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-        ctx.font = STYLES.fonts.main;
-        const titleWidth = ctx.measureText(item.title).width;
-        ctx.fillText(item.title, this.x + 35, sectionY + 4);
+        // Title (centered)
+        const titleX = this.x + this.padding + lineLength + 4;
+        ctx.fillText(item.title, titleX, sectionY + 4);
         
-        // Right line
+        // Right line (centered)
         ctx.beginPath();
-        ctx.moveTo(this.x + 40 + titleWidth, sectionY);
+        ctx.moveTo(titleX + titleWidth + 4, sectionY);
         ctx.lineTo(this.x + this.width - this.padding, sectionY);
         ctx.stroke();
     }

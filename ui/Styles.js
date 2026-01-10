@@ -11,9 +11,10 @@ const STYLES = {
         small: '12px Courier New'
     },
     colors: {
-        panel: '#00FF88',
+        panel: '#00FF88',          // Zielony główny (przyciski, ramki)
         panelHover: '#00FFAA',
-        stats: '#00F5FF',
+        text: '#00FF88',           // Zielony zwykły tekst (default)
+        stats: '#00F5FF',          // Cyan dla statystyk
         sectionDim: 'rgba(0, 255, 136, 0.5)',
         scrollbarTrack: 'rgba(0, 0, 0, 0.3)',
         sliderTrack: 'rgba(0, 0, 0, 0.3)',
