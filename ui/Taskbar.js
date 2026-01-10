@@ -277,14 +277,37 @@ class Taskbar {
                 const item = this.menuItems[i];
                 
                 if (item.type === 'section') {
-                    // Section header
+                    // Section header (centered like in windows)
                     const sectionHeight = 24;
+                    const sectionY = currentY + sectionHeight / 2;
                     
+                    ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
                     ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-                    ctx.font = STYLES.fonts.small;
-                    ctx.textAlign = 'center';
+                    ctx.font = STYLES.fonts.main;
+                    ctx.lineWidth = 1;
+                    
+                    // Measure title for centering
+                    const titleWidth = ctx.measureText(item.title).width;
+                    const totalWidth = menu.width - 16; // 8px padding each side
+                    const lineLength = (totalWidth - titleWidth - 8) / 2; // 8px spacing around title
+                    
+                    // Left line
+                    ctx.beginPath();
+                    ctx.moveTo(menu.x + 8, sectionY);
+                    ctx.lineTo(menu.x + 8 + lineLength, sectionY);
+                    ctx.stroke();
+                    
+                    // Title (centered)
+                    ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(`━━━ ${item.title} ━━━`, menu.x + menu.width / 2, currentY + sectionHeight / 2);
+                    const titleX = menu.x + 8 + lineLength + 4;
+                    ctx.fillText(item.title, titleX, sectionY);
+                    
+                    // Right line
+                    ctx.beginPath();
+                    ctx.moveTo(titleX + titleWidth + 4, sectionY);
+                    ctx.lineTo(menu.x + menu.width - 8, sectionY);
+                    ctx.stroke();
                     
                     currentY += sectionHeight;
                 } else if (item.type === 'window') {

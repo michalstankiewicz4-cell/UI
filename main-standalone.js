@@ -135,7 +135,7 @@ demoWindow.addText(() => `Timestamp: ${Date.now()}`, '#00F5FF');
 demoWindow.addText('✅ End of content');
 
 windowManager.add(demoWindow);
-taskbar.addWindowItem('Demo', demoWindow);
+taskbar.addWindowItem(demoWindow.title, demoWindow);  // Pełna nazwa!
 
 demoWindow.onClose = () => {
     // Demo window nie znika z menu - tylko się chowa
@@ -167,7 +167,7 @@ masterWindow.addButton('Toggle Grid', () => {
 });
 
 windowManager.add(masterWindow);
-taskbar.addWindowItem('Master', masterWindow);
+taskbar.addWindowItem(masterWindow.title, masterWindow);  // Pełna nazwa!
 
 masterWindow.onClose = () => {
     masterWindow.visible = false;
@@ -187,7 +187,7 @@ statsWindow.addText(() => `FPS: ${Math.round(performance.now() / 1000)}`, '#00F5
 statsWindow.addText(() => `Memory: OK`, '#00F5FF');
 
 windowManager.add(statsWindow);
-taskbar.addWindowItem('Stats', statsWindow);
+taskbar.addWindowItem(statsWindow.title, statsWindow);  // Pełna nazwa!
 
 statsWindow.onClose = () => {
     statsWindow.visible = false;
