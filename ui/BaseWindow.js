@@ -387,14 +387,8 @@ class BaseWindow {
         }
         
         // NORMAL MODE: Full window with header and border
-        const bgColor = this.type === 'stats' ? STYLES.stats.bgColor : STYLES.panel.bgColor;
-        const borderColor = this.type === 'stats' ? 
-            STYLES.stats.borderColor : STYLES.panel.borderColor;
-        
-        if (bgColor !== 'transparent') {
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
+        ctx.fillStyle = STYLES.panel.bgColor;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
         
         // Header
         ctx.fillStyle = STYLES.panel.headerBgColor;
@@ -409,11 +403,9 @@ class BaseWindow {
         this.drawHeaderButtons(ctx, STYLES);
         
         // Border
-        if (borderColor !== 'transparent') {
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = STYLES.panel.borderWidth;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
-        }
+        ctx.strokeStyle = STYLES.panel.borderColor;
+        ctx.lineWidth = STYLES.panel.borderWidth;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
         
         // Content (with clipping and scroll)
         this.drawContent(ctx, STYLES);

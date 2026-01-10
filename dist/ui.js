@@ -41,13 +41,12 @@ const STYLES = {
     fonts: {
         main: '12px Courier New',
         mainBold: 'bold 12px Courier New',
-        small: '12px Courier New'
+        small: '12px Courier New'  // Used in sections
     },
     colors: {
-        panel: '#00FF88',          // Zielony główny (przyciski, ramki)
-        panelHover: '#00FFAA',
-        text: '#00FF88',           // Zielony zwykły tekst (default)
-        stats: '#00F5FF',          // Cyan dla statystyk
+        panel: '#00FF88',          // Green (buttons, frames, default text)
+        text: '#00FF88',           // Green text (default)
+        stats: '#00F5FF',          // Cyan text (statistics)
         sectionDim: 'rgba(0, 255, 136, 0.5)',
         scrollbarTrack: 'rgba(0, 0, 0, 0.3)',
         sliderTrack: 'rgba(0, 0, 0, 0.3)',
@@ -67,11 +66,6 @@ const STYLES = {
         borderColor: '#00FF88',
         borderWidth: 2,
         headerBgColor: 'rgba(0, 255, 136, 0.2)'
-    },
-    stats: {
-        bgColor: 'transparent',
-        borderColor: 'transparent',
-        textColor: '#00F5FF'
     }
 };
 
@@ -528,14 +522,8 @@ class BaseWindow {
         }
         
         // NORMAL MODE: Full window with header and border
-        const bgColor = this.type === 'stats' ? STYLES.stats.bgColor : STYLES.panel.bgColor;
-        const borderColor = this.type === 'stats' ? 
-            STYLES.stats.borderColor : STYLES.panel.borderColor;
-        
-        if (bgColor !== 'transparent') {
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-        }
+        ctx.fillStyle = STYLES.panel.bgColor;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
         
         // Header
         ctx.fillStyle = STYLES.panel.headerBgColor;
@@ -550,11 +538,9 @@ class BaseWindow {
         this.drawHeaderButtons(ctx, STYLES);
         
         // Border
-        if (borderColor !== 'transparent') {
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = STYLES.panel.borderWidth;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
-        }
+        ctx.strokeStyle = STYLES.panel.borderColor;
+        ctx.lineWidth = STYLES.panel.borderWidth;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
         
         // Content (with clipping and scroll)
         this.drawContent(ctx, STYLES);
