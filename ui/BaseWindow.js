@@ -39,6 +39,9 @@ class BaseWindow {
         this.isDraggingThumb = false;
         this.thumbDragOffset = 0;
         
+        // Slider dragging
+        this.isDraggingSlider = false;
+        
         // Layout
         this.padding = 10;
         this.itemSpacing = 8;
@@ -234,14 +237,38 @@ class BaseWindow {
                 const sliderHeight = 40;
                 const trackY = y + 20;
                 const trackHeight = 6;
+                const thumbSize = 16;
                 const width = this.width - this.padding * 2;
                 
-                // Check if clicked on slider track area
-                if (mouseY >= trackY && mouseY <= trackY + trackHeight &&
+                // Calculate thumb position
+                const value = item.getValue();
+                const range = item.max - item.min;
+                const normalizedValue = (value - item.min) / range;
+                const thumbX = this.x + this.padding + normalizedValue * width;
+                const thumbY = trackY + trackHeight / 2;
+                
+                // Check if clicked on THUMB first (larger hit area)
+                const distX = mouseX - thumbX;
+                const distY = mouseY - thumbY;
+                const distSq = distX * distX + distY * distY;
+                const thumbRadius = thumbSize / 2;
+                
+                if (distSq <= thumbRadius * thumbRadius) {
+                    // Clicked on thumb!
+                    item.dragging = true;
+                    this.isDragging = true; // Tell WindowManager we're dragging
+                    this.isDraggingSlider = true; // Prevent window drag
+                    return true;
+                }
+                
+                // Otherwise check track area (for jump-to-position)
+                if (mouseY >= trackY - 4 && mouseY <= trackY + trackHeight + 4 &&
                     mouseX >= this.x + this.padding && 
                     mouseX <= this.x + this.padding + width) {
-                    // Start dragging this slider
+                    // Start dragging and jump to position
                     item.dragging = true;
+                    this.isDragging = true; // Tell WindowManager we're dragging
+                    this.isDraggingSlider = true; // Prevent window drag
                     // Set value immediately
                     const relativeX = mouseX - (this.x + this.padding);
                     const normalized = Math.max(0, Math.min(1, relativeX / width));
@@ -251,6 +278,7 @@ class BaseWindow {
                     item.setValue(clampedValue);
                     return true;
                 }
+                
                 y += sliderHeight + this.itemSpacing;
             } else if (item.type === 'button') {
                 y += 20 + this.itemSpacing;
@@ -377,11 +405,13 @@ class BaseWindow {
                 const steppedValue = Math.round(newValue / item.step) * item.step;
                 const clampedValue = Math.max(item.min, Math.min(item.max, steppedValue));
                 item.setValue(clampedValue);
+                this.markDirty();
                 return; // Don't drag window while dragging slider
             }
         }
         
-        if (this.isDragging) {
+        // Window dragging (only if NOT dragging slider)
+        if (this.isDragging && !this.isDraggingSlider) {
             this.x = mouseX - this.dragOffsetX;
             this.y = mouseY - this.dragOffsetY;
             this.markDirty();
@@ -409,6 +439,7 @@ class BaseWindow {
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
+        this.isDraggingSlider = false; // Reset slider drag flag
         
         // Stop all slider dragging
         for (let item of this.items) {
