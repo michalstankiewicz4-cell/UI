@@ -2,7 +2,7 @@
 
 **Updated:** 2026-01-10  
 **Version:** v2.1  
-**Status:** FAZA C2 Complete ✅
+**Status:** FAZA C3 Complete ✅
 
 ---
 
@@ -29,6 +29,14 @@
 - ✅ Track click to jump
 - ✅ Auto-hide when content fits
 
+### FAZA C3: Interactive Controls
+- ✅ Horizontal sliders (draggable thumb)
+- ✅ Toggles (checkbox style)
+- ✅ getValue/setValue callback pattern
+- ✅ Step rounding for values
+- ✅ Track click to jump
+- ✅ Bugfix: Slider dragging (WindowManager integration)
+
 ### Polish & Features
 - ✅ Text colors (green default, cyan stats)
 - ✅ Word wrap for long text
@@ -42,38 +50,84 @@
 
 ## 🔜 TODO
 
-### FAZA C3: Interactive Controls (~2-3h)
+### FAZA C3: Interactive Controls ✅ COMPLETE
 
-**Sliders:**
+**Sliders:** ✅
 ```javascript
-window.addSlider('Speed', 0.1, 5.0, 1.0, (value) => {
-    simulation.setSpeed(value);
-});
-// Visual: Speed: [====|------] 2.5
+window.addSlider('Speed', () => speed, (v) => speed = v, 0.1, 5.0, 0.05);
+// Visual: Speed: [====●------] 2.5
 ```
 
-**Toggles:**
+**Toggles:** ✅
 ```javascript
-window.addToggle('Pause', false, (enabled) => {
-    simulation.setPaused(enabled);
-});
-// Visual: Pause: [OFF] or [ON]
+window.addToggle('Grid', () => showGrid, (v) => showGrid = v);
+// Visual: Grid: [☑] or [☐]
 ```
 
-**Priority:** 🔥 HIGH  
-**Files to modify:**
-- `ui/BaseWindow.js` - add drawSlider(), drawToggle()
-- `main.js` - replace text placeholders with real controls
+**Completed:**
+- ✅ Horizontal sliders with draggable thumb
+- ✅ Track click to jump to position
+- ✅ Toggles (checkbox style)
+- ✅ getValue/setValue callback pattern
+- ✅ Step rounding for precise values
+- ✅ Thumb drag detection (circular hit area)
+
+**Files modified:**
+- `ui/BaseWindow.js` - added drawSlider(), drawToggle(), checkSliderClick()
+- `main.js` - demo sliders (Speed, Volume) + toggles (Grid, AutoSave)
 
 ---
 
-### FAZA C4: Polish & Testing (~1-2h)
+### FAZA C4: Advanced Sliders (~2-3h)
 
-- [ ] Move patches to source files
-- [ ] Rebuild clean bundle
-- [ ] Test all features
-- [ ] Update all docs
-- [ ] Add CHANGELOG.md
+**Range Slider (Dual Handle):**
+```javascript
+window.addRangeSlider(
+    'Filter Range',
+    () => [minVal, maxVal],
+    (min, max) => { minVal = min; maxVal = max; },
+    0,      // absoluteMin
+    10,     // absoluteMax  
+    0.1     // step
+);
+// Visual: Filter Range: [██●━━━━━●██] 2.0 - 5.0
+//                          min    max
+```
+
+**Features:**
+- Two draggable thumbs (min/max)
+- Thumbs block each other (min can't pass max)
+- Click track → move nearest thumb
+- Normal mode: select range (2-5)
+- Inverted mode: select outside range (0-2 + 5-10) [future]
+
+**Use cases:**
+- Data filtering (temperature, speed, etc)
+- Range selection
+- Min/max limits
+
+**Vertical Slider:**
+```javascript
+window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
+// Visual: ┃  ┃ 75
+//         ┃●━┃
+//         ┃██┃
+//         ┃██┃
+//         ┗━━┛
+```
+
+**Priority:** 🔶 MEDIUM  
+**Estimated time:** 2-3h (range slider: 1-1.5h, vertical: 1h)
+
+---
+
+### FAZA C5: Polish & Testing (~1-2h)
+
+- [ ] Clean up code comments
+- [ ] Test all features end-to-end
+- [ ] Update all docs (README, CHANGELOG)
+- [ ] Performance profiling
+- [ ] Edge case testing
 
 **Priority:** 🔶 MEDIUM
 
@@ -81,11 +135,15 @@ window.addToggle('Pause', false, (enabled) => {
 
 ### Future Features (Optional)
 
+- [ ] Range slider (dual handle) - see FAZA C4
+- [ ] Vertical slider - see FAZA C4
 - [ ] Import/Export UI layouts (use /data/presets/)
 - [ ] Custom themes system (use /themes/)
 - [ ] Matrix control (for Petri Dish)
 - [ ] Keyboard shortcuts
 - [ ] Window snapping
+- [ ] Color picker control
+- [ ] Dropdown/Select control
 
 **Priority:** 🔷 LOW
 
@@ -102,28 +160,29 @@ window.addToggle('Pause', false, (enabled) => {
 | 2026-01-09 | FAZA C1 Header buttons | ✅ |
 | 2026-01-09 | FAZA C2 Scrollbar | ✅ |
 | 2026-01-10 | Structure cleanup | ✅ |
-| TBD | FAZA C3 Sliders/Toggles | 🔜 |
-| TBD | FAZA C4 Polish | 🔜 |
+| 2026-01-10 | FAZA C3 Sliders/Toggles | ✅ |
+| TBD | FAZA C4 Advanced sliders | 🔜 |
+| TBD | FAZA C5 Polish | 🔜 |
 
 ---
 
 ## 📊 Current Stats
 
-- **Bundle:** 1505 lines (dist/ui.js)
-- **BaseWindow:** 737 lines (largest module)
+- **Bundle:** 1721 lines (dist/ui.js)
+- **BaseWindow:** 962 lines (largest module)
 - **Taskbar:** 342 lines
 - **Core modules:** 776 lines total
-- **Main orchestrator:** 185 lines
-- **Total codebase:** ~7500 lines
-- **Commits:** 90+
+- **Main orchestrator:** 241 lines
+- **Total codebase:** ~8500 lines
+- **Commits:** 95+
 
 ---
 
 ## 🎯 Next Session Goals
 
-1. **FAZA C3:** Implement sliders + toggles
-2. **Replace** text placeholders in Master/Stats windows
-3. **Test** interactive controls
-4. **Update** bundle
+1. **FAZA C4:** Range slider (dual handle) + Vertical slider
+2. **Optional:** Inverted range mode for filtering
+3. **Test** advanced controls
+4. **Update** documentation
 
 **Estimated time:** 2-3 hours
