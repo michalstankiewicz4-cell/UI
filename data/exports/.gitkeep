@@ -1,0 +1,8 @@
+# Placeholder file to keep empty directory in git
+
+This folder is for user-exported data:
+- UI configurations
+- Simulation states
+- Custom presets
+
+Exports are saved here when user clicks "Export" in the UI.

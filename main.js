@@ -1,28 +1,14 @@
-// ═══════════════════════════════════════════════════════════════
-//   MAIN - ORCHESTRATOR (v2.1 - Core Architecture)
-// ═══════════════════════════════════════════════════════════════
-// Entry point for multi-simulation system with centralized management
-// Architecture: main.js → SimulationManager → [Simulations]
-//                              ↓
-//                    EventBus ↔ DataBridge
-//                              ↓
-//                         UI System
+// STANDALONE VERSION - No ES6 modules (works with file://)
+// Uses global variables from included scripts
 
-console.log('=== MULTI-SIMULATION SYSTEM v2.1 ===');
-console.log('Architecture: Core-based (SimulationManager + EventBus)');
+console.log('=== UI SYSTEM v2.1 - STANDALONE ===');
 
-// ═════════════════════════════════════════════════
-//  1. IMPORT CORE MODULES
-// ═════════════════════════════════════════════════
+// Core system (globals from scripts)
+const eventBus = new EventBus();
+const dataBridge = new DataBridge(eventBus);
+const simulationManager = new SimulationManager(eventBus, dataBridge);
 
-import EventBus from './core/EventBus.js';
-import DataBridge from './core/DataBridge.js';
-import SimulationManager from './core/SimulationManager.js';
-
-// ═════════════════════════════════════════════════
-//  2. CANVAS SETUP
-// ═════════════════════════════════════════════════
-
+// Canvas setup
 const canvases = {
     sim1: document.getElementById('canvas-sim1'),
     sim2: document.getElementById('canvas-sim2'),
@@ -31,11 +17,9 @@ const canvases = {
     ui: document.getElementById('canvas-ui')
 };
 
-// Resize all canvases
 const resizeCanvases = () => {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    
     for (let key in canvases) {
         if (canvases[key]) {
             canvases[key].width = w;
@@ -47,367 +31,175 @@ const resizeCanvases = () => {
 resizeCanvases();
 window.addEventListener('resize', resizeCanvases);
 
-// ═════════════════════════════════════════════════
-//  3. CORE SYSTEM INITIALIZATION
-// ═════════════════════════════════════════════════
-
-const eventBus = new EventBus();
-const dataBridge = new DataBridge(eventBus);
-const simulationManager = new SimulationManager(eventBus, dataBridge);
-
-console.log('✅ Core system initialized');
-
-// ═════════════════════════════════════════════════
-//  4. REGISTER SIMULATIONS
-// ═════════════════════════════════════════════════
-
-simulationManager.register('sim1', 
-    () => import('./simulations/sim1/Sim1.js'),
-    {
-        name: '2D Particles',
-        description: 'Bouncing particles with colors',
-        type: '2D'
-    }
-);
-
-simulationManager.register('sim2',
-    () => import('./simulations/sim2/Sim2.js'),
-    {
-        name: '3D Cubes',
-        description: 'Rotating cubes with perspective',
-        type: '3D'
-    }
-);
-
-simulationManager.register('sim3',
-    () => import('./simulations/sim3/Sim3.js'),
-    {
-        name: 'Physics',
-        description: 'Bouncing balls with gravity',
-        type: '2D Physics'
-    }
-);
-
-simulationManager.register('sim4',
-    () => import('./simulations/sim4/Sim4.js'),
-    {
-        name: 'Cellular Automata',
-        description: 'Game of Life style simulation',
-        type: 'Grid'
-    }
-);
-
-console.log('✅ Simulations registered:', simulationManager.getRegisteredSimulations());
-
-// ═════════════════════════════════════════════════
-//  5. UI SYSTEM SETUP
-// ═════════════════════════════════════════════════
-
+// UI system
 const windowManager = new UI.WindowManager();
 const taskbar = new UI.Taskbar();
-taskbar.addSection('simulations');
+taskbar.addSection('symulacje'); // Nowe okna tutaj!
+taskbar.addSection('system');    // System (stałe okna)
 
-const eventRouter = new UI.EventRouter(
-    canvases.ui,
-    null,
-    windowManager,
-    taskbar,
-    null
-);
-
-console.log('✅ UI system initialized');
+const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
 // ═════════════════════════════════════════════════
-//  6. MASTER CONTROL WINDOW
+//  PATCHES - UI Enhancements
 // ═════════════════════════════════════════════════
 
-const masterWindow = new UI.BaseWindow(50, 50, 'Master Controls');
-masterWindow.width = 320;
-masterWindow.height = 450;
-
-masterWindow.addSection('dynamic controls');
-masterWindow.addText('Add simulations at runtime!', '#00F5FF');
-masterWindow.addText('Event-driven architecture.', '#00FF88');
-masterWindow.addText(' ');
-
-// Helper: Create UI window for simulation
-function createSimWindow(simId, x, y) {
-    const metadata = simulationManager.getMetadata(simId);
-    const sim = simulationManager.getSimulation(simId);
+// PATCH: Button borders (green stroke)
+UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
+    const buttonHeight = 20;
     
-    const simWindow = new UI.BaseWindow(x, y, metadata.name);
-    simWindow.width = 280;
-    simWindow.height = 200;
+    // Background
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+    ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
     
-    simWindow.addSection('stats');
-    simWindow.addText(() => `FPS: ${dataBridge.getStat(simId, 'fps') || 0}`);
+    // Border (GREEN!)
+    ctx.strokeStyle = STYLES.colors.panel;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
     
-    // Sim-specific stats
-    if (simId === 'sim1') {
-        simWindow.addText(() => `Particles: ${sim?.activeParticles || 0}`);
-    } else if (simId === 'sim2') {
-        simWindow.addText(() => `Cubes: ${sim?.activeCubes || 0}`);
-    } else if (simId === 'sim3') {
-        simWindow.addText(() => `Balls: ${sim?.activeBalls || 0}`);
-    } else if (simId === 'sim4') {
-        simWindow.addText(() => `Alive: ${sim?.aliveCells || 0}`);
-    }
-    
-    simWindow.addButton('Pause', () => {
-        const currentPaused = dataBridge.getParameter(simId, 'paused') || false;
-        dataBridge.setParameter(simId, 'paused', !currentPaused);
-    });
-    
-    simWindow.addButton('Reset', () => {
-        dataBridge.setParameter(simId, 'reset', true);
-    });
-    
-    simWindow.onClose = () => {
-        windowManager.remove(simWindow);
-        taskbar.removeWindowItem(simWindow);
-        simulationManager.removeSimulation(simId);
-    };
-    
-    windowManager.add(simWindow);
-    taskbar.addWindowItem(metadata.name, simWindow);
-    
-    return simWindow;
-}
-
-// Add Sim1 button
-masterWindow.addButton('Add Sim1 (Particles)', async () => {
-    if (simulationManager.isActive('sim1')) {
-        alert('Sim1 already running!');
-        return;
-    }
-    
-    const success = await simulationManager.addSimulation('sim1', canvases.sim1);
-    if (success) {
-        createSimWindow('sim1', 50, 450);
-        console.log('✅ Sim1 added via SimulationManager');
-    }
-});
-
-// Add Sim2 button
-masterWindow.addButton('Add Sim2 (3D Cubes)', async () => {
-    if (simulationManager.isActive('sim2')) {
-        alert('Sim2 already running!');
-        return;
-    }
-    
-    const success = await simulationManager.addSimulation('sim2', canvases.sim2);
-    if (success) {
-        createSimWindow('sim2', 350, 450);
-        console.log('✅ Sim2 added via SimulationManager');
-    }
-});
-
-// Add Sim3 button
-masterWindow.addButton('Add Sim3 (Physics)', async () => {
-    if (simulationManager.isActive('sim3')) {
-        alert('Sim3 already running!');
-        return;
-    }
-    
-    const success = await simulationManager.addSimulation('sim3', canvases.sim3);
-    if (success) {
-        createSimWindow('sim3', 650, 450);
-        console.log('✅ Sim3 added via SimulationManager');
-    }
-});
-
-// Add Sim4 button
-masterWindow.addButton('Add Sim4 (Automata)', async () => {
-    if (simulationManager.isActive('sim4')) {
-        alert('Sim4 already running!');
-        return;
-    }
-    
-    const success = await simulationManager.addSimulation('sim4', canvases.sim4);
-    if (success) {
-        createSimWindow('sim4', 950, 450);
-        console.log('✅ Sim4 added via SimulationManager');
-    }
-});
-
-masterWindow.addSection('global');
-
-masterWindow.addButton('Pause All', () => {
-    simulationManager.pauseAll();
-    console.log('⏸️ All simulations paused');
-});
-
-masterWindow.addButton('Resume All', () => {
-    simulationManager.resumeAll();
-    console.log('▶️ All simulations resumed');
-});
-
-masterWindow.addButton('Reset All', () => {
-    simulationManager.resetAll();
-    console.log('🔄 All simulations reset');
-});
-
-masterWindow.addButton('Remove All Sims', () => {
-    const windows = [...windowManager.windows];
-    for (let win of windows) {
-        if (win !== masterWindow && win !== statsWindow) {
-            windowManager.remove(win);
-            taskbar.removeWindowItem(win);
-        }
-    }
-    
-    simulationManager.removeAll();
-    console.log('🗑️ All simulations removed!');
-});
-
-windowManager.add(masterWindow);
-taskbar.addWindowItem('Master', masterWindow);
-
-masterWindow.onClose = () => {
-    windowManager.remove(masterWindow);
-    taskbar.removeWindowItem(masterWindow);
+    // Text
+    ctx.fillStyle = STYLES.colors.panel;
+    ctx.font = STYLES.fonts.mainBold;
+    ctx.textAlign = 'center';
+    ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+    ctx.textAlign = 'left';
 };
 
-// ═════════════════════════════════════════════════
-//  7. DEMO WINDOW - Full UI Feature Showcase
-// ═════════════════════════════════════════════════
+console.log('✅ Patches applied');
 
-const demoWindow = new UI.BaseWindow(400, 50, 'UI Demo - All Features');
+// ═════════════════════════════════════════════════
+//  DEMO WINDOW
+// ═════════════════════════════════════════════════
+const demoWindow = new UI.BaseWindow(50, 50, 'UI Demo - All Features');
 demoWindow.width = 380;
 demoWindow.height = 500;
 
+// Counter for dynamic content
+let counter = 0;
+
 demoWindow.addSection('header buttons');
-demoWindow.addText('Test all header buttons:', '#00F5FF');
-demoWindow.addText('• X = Close window', '#00FF88');
-demoWindow.addText('• _ = Minimize to taskbar', '#00FF88');
-demoWindow.addText('• ○ = HUD mode (floating)', '#00FF88');
-demoWindow.addText(' ');
+demoWindow.addText('Test all header buttons:');
+demoWindow.addText('• X = Close');
+demoWindow.addText('• _ = Minimize');
+demoWindow.addText('• ○ = HUD mode');
 
 demoWindow.addSection('scrollbar test');
-demoWindow.addText('Long content for scrollbar:', '#00F5FF');
+demoWindow.addText('Long content for scrollbar:');
 demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit.');
-demoWindow.addText('Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.');
-demoWindow.addText('Ut enim ad minim veniam, quis nostrud exercitation ullamco.');
-demoWindow.addText('Laboris nisi ut aliquip ex ea commodo consequat.');
-demoWindow.addText('Duis aute irure dolor in reprehenderit in voluptate velit.');
-demoWindow.addText('Esse cillum dolore eu fugiat nulla pariatur.');
-demoWindow.addText('Excepteur sint occaecat cupidatat non proident.');
-demoWindow.addText('Sunt in culpa qui officia deserunt mollit anim id est laborum.');
-demoWindow.addText(' ');
+demoWindow.addText('Sed do eiusmod tempor incididunt ut labore.');
+demoWindow.addText('Ut enim ad minim veniam quis nostrud.');
+demoWindow.addText('Duis aute irure dolor in reprehenderit.');
+demoWindow.addText('Esse cillum dolore eu fugiat nulla.');
+demoWindow.addText('Excepteur sint occaecat cupidatat.');
+demoWindow.addText('Sunt in culpa qui officia deserunt.');
 
 demoWindow.addSection('buttons');
-demoWindow.addButton('Test Button 1', () => {
-    alert('Button 1 clicked!');
+demoWindow.addButton('Open New Window', () => {
+    console.log('🔥 Open New Window clicked!');
+    const newWin = new UI.BaseWindow(
+        Math.random() * 400 + 100, 
+        Math.random() * 300 + 100, 
+        'New Window'
+    );
+    newWin.width = 250;
+    newWin.height = 150;
+    newWin.addText('This is a new window!', '#00F5FF');
+    newWin.addText('Created dynamically.');
+    newWin.addButton('Close Me', () => {
+        console.log('Close Me clicked!');
+        windowManager.remove(newWin);
+        taskbar.removeWindowItem(newWin);
+    });
+    newWin.onClose = () => {
+        windowManager.remove(newWin);
+        taskbar.removeWindowItem(newWin);
+    };
+    windowManager.add(newWin);
+    taskbar.addWindowItem(newWin.title, newWin, 'symulacje');  // Symulacje section!
+    console.log('✅ New window created!');
 });
-demoWindow.addButton('Test Button 2', () => {
-    console.log('Button 2 clicked!');
-    alert('Check console!');
+demoWindow.addButton('Test Alert', () => {
+    console.log('🔥 Test Alert clicked!');
+    alert('Button works!');
 });
-demoWindow.addText(' ');
 
 demoWindow.addSection('more content');
-demoWindow.addText('Sed ut perspiciatis unde omnis iste natus error sit.');
-demoWindow.addText('Voluptatem accusantium doloremque laudantium totam rem aperiam.');
-demoWindow.addText('Eaque ipsa quae ab illo inventore veritatis et quasi architecto.');
-demoWindow.addText('Beatae vitae dicta sunt explicabo nemo enim ipsam voluptatem.');
-demoWindow.addText('Quia voluptas sit aspernatur aut odit aut fugit.');
-demoWindow.addText('Sed quia consequuntur magni dolores eos qui ratione voluptatem.');
-demoWindow.addText(' ');
+demoWindow.addText('Sed ut perspiciatis unde omnis.');
+demoWindow.addText('Voluptatem accusantium doloremque.');
+demoWindow.addText('Eaque ipsa quae ab illo.');
+demoWindow.addText('Beatae vitae dicta sunt.');
+demoWindow.addText('Quia voluptas sit aspernatur.');
 
-demoWindow.addSection('dynamic content');
-let counter = 0;
-demoWindow.addText(() => {
-    counter++;
-    return `Dynamic counter: ${counter}`;
-}, '#00F5FF');
-demoWindow.addText(() => {
-    return `Timestamp: ${Date.now()}`;
-}, '#00FF88');
-demoWindow.addText(' ');
-
-demoWindow.addSection('final section');
-demoWindow.addText('At vero eos et accusamus et iusto odio dignissimos.');
-demoWindow.addText('Ducimus qui blanditiis praesentium voluptatum deleniti atque.');
-demoWindow.addText('Corrupti quos dolores et quas molestias excepturi sint.');
-demoWindow.addText('Occaecati cupiditate non provident similique sunt in culpa.');
-demoWindow.addText(' ');
-demoWindow.addText('✅ End of content', '#00FF88');
+demoWindow.addSection('statistics');
+demoWindow.addText(() => `Counter: ${counter++}`, '#00F5FF');
+demoWindow.addText(() => `Timestamp: ${Date.now()}`, '#00F5FF');
+demoWindow.addText('✅ End of content');
 
 windowManager.add(demoWindow);
-taskbar.addWindowItem('Demo', demoWindow);
+taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');  // System section!
 
 demoWindow.onClose = () => {
+    // Demo window nie znika z menu - tylko się chowa
+    demoWindow.visible = false;
     windowManager.remove(demoWindow);
-    taskbar.removeWindowItem(demoWindow);
+    // taskbar.removeWindowItem NIE wywołujemy!
 };
 
-console.log('✅ Demo window created with full content');
+// ═════════════════════════════════════════════════
+//  MASTER CONTROLS WINDOW
+// ═════════════════════════════════════════════════
+const masterWindow = new UI.BaseWindow(800, 50, 'Master Controls');
+masterWindow.width = 280;
+masterWindow.height = 200;
+
+masterWindow.addSection('info');
+masterWindow.addText('UI System v2.1');
+masterWindow.addText('Core Architecture');
+
+masterWindow.addSection('controls');
+masterWindow.addButton('Reset UI', () => {
+    console.log('Reset UI clicked');
+    alert('UI reset functionality not implemented yet');
+});
+
+masterWindow.addButton('Toggle Grid', () => {
+    console.log('Toggle Grid clicked');
+    alert('Grid toggle not implemented yet');
+});
+
+windowManager.add(masterWindow);
+taskbar.addWindowItem(masterWindow.title, masterWindow, 'system');  // System section!
+
+masterWindow.onClose = () => {
+    masterWindow.visible = false;
+    windowManager.remove(masterWindow);
+};
 
 // ═════════════════════════════════════════════════
-//  8. COMBINED STATS WINDOW
+//  STATS WINDOW
 // ═════════════════════════════════════════════════
-
-const statsWindow = new UI.BaseWindow(50, 520, 'System Stats');
-statsWindow.width = 320;
+const statsWindow = new UI.BaseWindow(800, 270, 'System Stats');
+statsWindow.width = 280;
 statsWindow.height = 180;
 
-statsWindow.addSection('global stats');
-statsWindow.addText(() => {
-    const active = simulationManager.getActiveCount();
-    return `Active Sims: ${active}`;
-});
-
-statsWindow.addText(() => {
-    let totalFps = 0;
-    const sims = simulationManager.getActiveSimulations();
-    for (let simId of sims) {
-        totalFps += dataBridge.getStat(simId, 'fps') || 0;
-    }
-    return `Total FPS: ${totalFps}`;
-});
-
-statsWindow.addText(() => {
-    const sims = simulationManager.getActiveSimulations();
-    const fps = sims.map(id => `${id}:${dataBridge.getStat(id, 'fps') || 0}`);
-    return fps.length > 0 ? fps.join(' | ') : 'No sims active';
-});
+statsWindow.addSection('statistics');
+statsWindow.addText(() => `Windows: ${windowManager.windows.length}`, '#00F5FF');
+statsWindow.addText(() => `FPS: ${Math.round(performance.now() / 1000)}`, '#00F5FF');
+statsWindow.addText(() => `Memory: OK`, '#00F5FF');
 
 windowManager.add(statsWindow);
-taskbar.addWindowItem('Stats', statsWindow);
+taskbar.addWindowItem(statsWindow.title, statsWindow, 'system');  // System section!
 
 statsWindow.onClose = () => {
+    statsWindow.visible = false;
     windowManager.remove(statsWindow);
-    taskbar.removeWindowItem(statsWindow);
 };
 
-console.log('✅ Master controls created');
+console.log('✅ All windows created');
 
 // ═════════════════════════════════════════════════
-//  8. EVENT LISTENERS (EventBus examples)
+//  RENDER LOOP
 // ═════════════════════════════════════════════════
-
-eventBus.on('simulation:added', (data) => {
-    console.log(`📢 Event: Simulation added - ${data.simId}`);
-});
-
-eventBus.on('simulation:removed', (data) => {
-    console.log(`📢 Event: Simulation removed - ${data.simId}`);
-});
-
-eventBus.on('parameter:changed', (data) => {
-    console.log(`📢 Event: Parameter changed - ${data.simId}.${data.paramName} = ${data.value}`);
-});
-
-// ═════════════════════════════════════════════════
-//  9. RENDER LOOP
-// ═════════════════════════════════════════════════
-
 function render() {
-    // Update & render all simulations via SimulationManager
-    simulationManager.updateAll();
-    simulationManager.renderAll();
-    
-    // UI overlay
     const ctx = canvases.ui.getContext('2d');
     ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
     
@@ -422,7 +214,4 @@ function render() {
 }
 
 render();
-
-console.log('=== SYSTEM READY! ===');
-console.log('Architecture: Core-based with SimulationManager + EventBus');
-console.log('Click "Add Sim1/2/3/4" to dynamically add simulations!');
+console.log('✅ READY - No server needed!');
