@@ -681,7 +681,7 @@ class BaseWindow {
         ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
         ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
         ctx.lineWidth = 1;
-        ctx.font = STYLES.fonts.main;
+        ctx.font = STYLES.fonts.small;  // Use small font for sections
         
         // Measure title width for centering
         const titleWidth = ctx.measureText(item.title).width;

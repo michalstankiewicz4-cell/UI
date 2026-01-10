@@ -298,7 +298,7 @@ class Taskbar {
                     
                     ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
                     ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-                    ctx.font = STYLES.fonts.main;
+                    ctx.font = STYLES.fonts.small;  // Use small font for sections
                     ctx.lineWidth = 1;
                     
                     // Measure title for centering

@@ -6,9 +6,9 @@
 
 const STYLES = {
     fonts: {
-        main: '12px Courier New',
-        mainBold: 'bold 12px Courier New',
-        small: '12px Courier New'  // Used in sections
+        main: '12px Courier New',           // Normal text
+        mainBold: 'bold 12px Courier New',  // Titles, buttons
+        small: '12px Courier New'           // Sections (lowercase text)
     },
     colors: {
         panel: '#00FF88',          // Green (buttons, frames, default text)

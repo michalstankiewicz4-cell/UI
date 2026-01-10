@@ -39,9 +39,9 @@
 
 const STYLES = {
     fonts: {
-        main: '12px Courier New',
-        mainBold: 'bold 12px Courier New',
-        small: '12px Courier New'  // Used in sections
+        main: '12px Courier New',           // Normal text
+        mainBold: 'bold 12px Courier New',  // Titles, buttons
+        small: '12px Courier New'           // Sections (lowercase text)
     },
     colors: {
         panel: '#00FF88',          // Green (buttons, frames, default text)
@@ -816,7 +816,7 @@ class BaseWindow {
         ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
         ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
         ctx.lineWidth = 1;
-        ctx.font = STYLES.fonts.main;
+        ctx.font = STYLES.fonts.small;  // Use small font for sections
         
         // Measure title width for centering
         const titleWidth = ctx.measureText(item.title).width;
@@ -1255,7 +1255,7 @@ class Taskbar {
                     
                     ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
                     ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-                    ctx.font = STYLES.fonts.main;
+                    ctx.font = STYLES.fonts.small;  // Use small font for sections
                     ctx.lineWidth = 1;
                     
                     // Measure title for centering
