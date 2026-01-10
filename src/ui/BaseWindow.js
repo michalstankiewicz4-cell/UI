@@ -660,20 +660,11 @@ class BaseWindow {
         ctx.fillStyle = STYLES.colors.scrollbarTrack || 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(scrollbarX, scrollbarY, this.scrollbarWidth, scrollbarHeight);
         
-        // Thumb (use calculated bounds)
+        // Thumb (no highlight)
         const thumb = this.getScrollThumbBounds();
         if (thumb) {
-            ctx.fillStyle = this.isDraggingThumb ? 
-                STYLES.colors.accent || '#00FFAA' : 
-                STYLES.colors.panel;
+            ctx.fillStyle = STYLES.colors.panel;
             ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
-            
-            // Thumb border (when dragging)
-            if (this.isDraggingThumb) {
-                ctx.strokeStyle = STYLES.colors.panel;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(thumb.x, thumb.y, thumb.width, thumb.height);
-            }
         }
     }
 }

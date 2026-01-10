@@ -110,7 +110,6 @@ demoWindow.addText('Test all header buttons:', '#00F5FF');
 demoWindow.addText('• X = Close', '#00FF88');
 demoWindow.addText('• _ = Minimize', '#00FF88');
 demoWindow.addText('• ○ = HUD mode', '#00FF88');
-demoWindow.addText(' ');
 
 demoWindow.addSection('scrollbar test');
 demoWindow.addText('Long content for scrollbar:', '#00F5FF');
@@ -121,12 +120,30 @@ demoWindow.addText('Duis aute irure dolor in reprehenderit.');
 demoWindow.addText('Esse cillum dolore eu fugiat nulla.');
 demoWindow.addText('Excepteur sint occaecat cupidatat.');
 demoWindow.addText('Sunt in culpa qui officia deserunt.');
-demoWindow.addText(' ');
 
 demoWindow.addSection('buttons');
-demoWindow.addButton('Test Button 1', () => alert('Works!'));
-demoWindow.addButton('Test Button 2', () => console.log('Clicked!'));
-demoWindow.addText(' ');
+demoWindow.addButton('Open New Window', () => {
+    const newWin = new UI.BaseWindow(
+        Math.random() * 400 + 100, 
+        Math.random() * 300 + 100, 
+        'New Window'
+    );
+    newWin.width = 250;
+    newWin.height = 150;
+    newWin.addText('This is a new window!', '#00F5FF');
+    newWin.addText('Created dynamically.', '#00FF88');
+    newWin.addButton('Close Me', () => {
+        windowManager.remove(newWin);
+        taskbar.removeWindowItem(newWin);
+    });
+    newWin.onClose = () => {
+        windowManager.remove(newWin);
+        taskbar.removeWindowItem(newWin);
+    };
+    windowManager.add(newWin);
+    taskbar.addWindowItem('New', newWin);
+});
+demoWindow.addButton('Test Alert', () => console.log('Clicked!'));
 
 demoWindow.addSection('more content');
 demoWindow.addText('Sed ut perspiciatis unde omnis.');
@@ -134,12 +151,10 @@ demoWindow.addText('Voluptatem accusantium doloremque.');
 demoWindow.addText('Eaque ipsa quae ab illo.');
 demoWindow.addText('Beatae vitae dicta sunt.');
 demoWindow.addText('Quia voluptas sit aspernatur.');
-demoWindow.addText(' ');
 
 demoWindow.addSection('dynamic');
 let counter = 0;
 demoWindow.addText(() => `Counter: ${counter++}`, '#00F5FF');
-demoWindow.addText(' ');
 demoWindow.addText('✅ End of content', '#00FF88');
 
 windowManager.add(demoWindow);
