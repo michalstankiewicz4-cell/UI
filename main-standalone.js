@@ -34,11 +34,73 @@ window.addEventListener('resize', resizeCanvases);
 // UI system
 const windowManager = new UI.WindowManager();
 const taskbar = new UI.Taskbar();
+taskbar.addSection('start'); // Menu Start FIRST!
 taskbar.addSection('simulations');
 
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
-// DEMO WINDOW
+// ═════════════════════════════════════════════════
+//  PATCHES - UI Enhancements
+// ═════════════════════════════════════════════════
+
+// PATCH 1: Button borders (green stroke)
+const originalDrawButton = UI.BaseWindow.prototype.drawButton;
+UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
+    const buttonHeight = 20;
+    
+    // Background
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+    ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
+    
+    // Border (GREEN!)
+    ctx.strokeStyle = STYLES.colors.panel;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
+    
+    // Text
+    ctx.fillStyle = STYLES.colors.panel;
+    ctx.font = STYLES.fonts.mainBold;
+    ctx.textAlign = 'center';
+    ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+    ctx.textAlign = 'left';
+};
+
+// PATCH 2: handleClick (button detection)
+const originalHandleClick = UI.BaseWindow.prototype.handleClick;
+UI.BaseWindow.prototype.handleClick = function(mouseX, mouseY) {
+    if (!this.visible || !this.containsPoint(mouseX, mouseY)) return false;
+    
+    const startY = this.transparent ? 
+        (this.y + this.padding) : 
+        (this.y + this.headerHeight + this.padding - this.scrollOffset);
+    
+    let y = startY;
+    
+    for (let item of this.items) {
+        if (item.type === 'button') {
+            const buttonHeight = 20;
+            if (mouseY >= y && mouseY <= y + buttonHeight &&
+                mouseX >= this.x + this.padding && 
+                mouseX <= this.x + this.width - this.padding) {
+                item.callback();
+                return true;
+            }
+            y += buttonHeight + this.itemSpacing;
+        } else if (item.type === 'text') {
+            y += (item.lines || 1) * 14 + this.itemSpacing;
+        } else if (item.type === 'section') {
+            y += 20 + this.itemSpacing;
+        }
+    }
+    
+    return false;
+};
+
+console.log('✅ Patches applied');
+
+// ═════════════════════════════════════════════════
+//  DEMO WINDOW
+// ═════════════════════════════════════════════════
 const demoWindow = new UI.BaseWindow(50, 50, 'UI Demo - All Features');
 demoWindow.width = 380;
 demoWindow.height = 500;

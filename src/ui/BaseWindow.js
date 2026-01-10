@@ -610,7 +610,9 @@ class BaseWindow {
     }
     
     drawText(ctx, STYLES, item, y) {
-        const lines = item.text.split('\n');
+        // Handle dynamic text (callbacks)
+        const textValue = typeof item.text === 'function' ? item.text() : item.text;
+        const lines = String(textValue).split('\n');
         const maxLines = Math.min(lines.length, item.lines || 1);
         
         ctx.fillStyle = item.color || STYLES.colors.text || '#00F5FF';
