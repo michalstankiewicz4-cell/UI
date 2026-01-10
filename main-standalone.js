@@ -91,6 +91,7 @@ demoWindow.addText('Sunt in culpa qui officia deserunt.');
 
 demoWindow.addSection('buttons');
 demoWindow.addButton('Open New Window', () => {
+    console.log('🔥 Open New Window clicked!');
     const newWin = new UI.BaseWindow(
         Math.random() * 400 + 100, 
         Math.random() * 300 + 100, 
@@ -101,6 +102,7 @@ demoWindow.addButton('Open New Window', () => {
     newWin.addText('This is a new window!', '#00F5FF');
     newWin.addText('Created dynamically.', '#00FF88');
     newWin.addButton('Close Me', () => {
+        console.log('Close Me clicked!');
         windowManager.remove(newWin);
         taskbar.removeWindowItem(newWin);
     });
@@ -110,8 +112,12 @@ demoWindow.addButton('Open New Window', () => {
     };
     windowManager.add(newWin);
     taskbar.addWindowItem('New', newWin);
+    console.log('✅ New window created!');
 });
-demoWindow.addButton('Test Alert', () => console.log('Clicked!'));
+demoWindow.addButton('Test Alert', () => {
+    console.log('🔥 Test Alert clicked!');
+    alert('Button works!');
+});
 
 demoWindow.addSection('more content');
 demoWindow.addText('Sed ut perspiciatis unde omnis.');
