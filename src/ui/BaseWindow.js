@@ -227,7 +227,7 @@ class BaseWindow {
         
         // NORMAL MODE: Header with buttons + scrollbar
         
-        // Check scrollbar thumb FIRST (highest priority)
+        // Check scrollbar thumb FIRST (highest priority - actual dragging)
         if (this.containsScrollThumb(mouseX, mouseY)) {
             const thumb = this.getScrollThumbBounds();
             this.isDraggingThumb = true;
@@ -266,9 +266,8 @@ class BaseWindow {
             return true;
         }
         
-        // Check if clicked on scrollbar track (not thumb)
+        // Check if clicked on scrollbar track (not thumb) - jump scroll but don't block click
         if (this.containsScrollTrack(mouseX, mouseY)) {
-            // Jump scroll to clicked position
             const thumb = this.getScrollThumbBounds();
             if (thumb) {
                 const trackHeight = this.height - this.headerHeight - this.padding * 2;
@@ -279,6 +278,8 @@ class BaseWindow {
             }
             return true;
         }
+        
+        // Content area - return false so handleClick can be called!
         return false;
     }
     
