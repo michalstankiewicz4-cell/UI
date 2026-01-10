@@ -73,6 +73,9 @@ const demoWindow = new UI.BaseWindow(50, 50, 'UI Demo - All Features');
 demoWindow.width = 380;
 demoWindow.height = 500;
 
+// Counter for dynamic content
+let counter = 0;
+
 demoWindow.addSection('header buttons');
 demoWindow.addText('Test all header buttons:');
 demoWindow.addText('• X = Close');
@@ -141,7 +144,61 @@ demoWindow.onClose = () => {
     // taskbar.removeWindowItem NIE wywołujemy!
 };
 
-// RENDER LOOP
+// ═════════════════════════════════════════════════
+//  MASTER CONTROLS WINDOW
+// ═════════════════════════════════════════════════
+const masterWindow = new UI.BaseWindow(800, 50, 'Master Controls');
+masterWindow.width = 280;
+masterWindow.height = 200;
+
+masterWindow.addSection('info');
+masterWindow.addText('UI System v2.1');
+masterWindow.addText('Core Architecture');
+
+masterWindow.addSection('controls');
+masterWindow.addButton('Reset UI', () => {
+    console.log('Reset UI clicked');
+    alert('UI reset functionality not implemented yet');
+});
+
+masterWindow.addButton('Toggle Grid', () => {
+    console.log('Toggle Grid clicked');
+    alert('Grid toggle not implemented yet');
+});
+
+windowManager.add(masterWindow);
+taskbar.addWindowItem('Master', masterWindow);
+
+masterWindow.onClose = () => {
+    masterWindow.visible = false;
+    windowManager.remove(masterWindow);
+};
+
+// ═════════════════════════════════════════════════
+//  STATS WINDOW
+// ═════════════════════════════════════════════════
+const statsWindow = new UI.BaseWindow(800, 270, 'System Stats');
+statsWindow.width = 280;
+statsWindow.height = 180;
+
+statsWindow.addSection('statistics');
+statsWindow.addText(() => `Windows: ${windowManager.windows.length}`, '#00F5FF');
+statsWindow.addText(() => `FPS: ${Math.round(performance.now() / 1000)}`, '#00F5FF');
+statsWindow.addText(() => `Memory: OK`, '#00F5FF');
+
+windowManager.add(statsWindow);
+taskbar.addWindowItem('Stats', statsWindow);
+
+statsWindow.onClose = () => {
+    statsWindow.visible = false;
+    windowManager.remove(statsWindow);
+};
+
+console.log('✅ All windows created');
+
+// ═════════════════════════════════════════════════
+//  RENDER LOOP
+// ═════════════════════════════════════════════════
 function render() {
     const ctx = canvases.ui.getContext('2d');
     ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
