@@ -196,6 +196,91 @@ Output: `dist/ui.js` (1505 lines, ~56KB)
 
 ---
 
+## 📚 File & Folder Reference
+
+### Root Files
+
+| File | Purpose |
+|------|---------|
+| **index.html** | Main entry point - open this to run the app |
+| **main.js** | Orchestrator - creates windows, manages UI/simulations |
+| **README.md** | This file - project documentation |
+| **build.ps1** | Build script (Windows) - creates dist/ui.js bundle |
+| **build.sh** | Build script (Linux/Mac) - same as build.ps1 |
+
+### /core/ - Central Architecture
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **SimulationManager.js** | Manages all simulations - add, remove, pause, update, render | 360 |
+| **EventBus.js** | Pub-sub event system - loose coupling between components | 192 |
+| **DataBridge.js** | Bidirectional data flow - UI parameters ↔ Simulation stats | 224 |
+| **index.js** | Exports core modules | ~10 |
+
+### /ui/ - UI Library Source
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **BaseWindow.js** | Main window class - dragging, scrollbar, buttons, HUD mode | 737 |
+| **WindowManager.js** | Multi-window manager - z-index, focus, rendering | 105 |
+| **Taskbar.js** | Windows-style taskbar - menu, window buttons | 342 |
+| **EventRouter.js** | Routes mouse/keyboard events to correct windows | 144 |
+| **Styles.js** | Style definitions - colors, fonts, spacing | 49 |
+| **index.js** | Exports UI modules | ~10 |
+
+### /utils/ - Utilities
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **TextCache.js** | Caches text measurements for performance (2-5× speedup) | 65 |
+
+### /simulations/ - Placeholder Simulations
+
+| Folder | Description | Lines |
+|--------|-------------|-------|
+| **sim1/** | 2D Particles - example simulation | 114 |
+| **sim2/** | 3D Cubes - example simulation | 123 |
+| **sim3/** | Physics Balls - example simulation | 132 |
+| **sim4/** | Cellular Automata - example simulation | 158 |
+
+Each contains: `Sim*.js` (code), `README.md` (description)
+
+### /ui-config/ - Configuration Layer
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **windows.js** | Creates UI windows (Master Controls, Stats) | 146 |
+| **controls.js** | Dynamic window controls and callbacks | 121 |
+| **sync.js** | Cross-simulation synchronization via EventBus | 200 |
+
+### /dist/ - Built Bundle
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **ui.js** | Complete UI library in single file (all /ui/ modules) | 1505 |
+
+### /data/ - Import/Export (Future)
+
+| Folder | Purpose |
+|--------|---------|
+| **presets/** | Ready-to-use UI configurations and simulations (empty, planned) |
+| **exports/** | User-exported data (empty, planned) |
+| **README.md** | Documentation for import/export system |
+
+### /docs/ - Documentation
+
+| File | Purpose | Lines |
+|------|---------|-------|
+| **TODO.md** | Project roadmap and next steps | 98 |
+| **CACHE_FIX.md** | Instructions for browser cache issues | 49 |
+| **GITHUB_SETUP.md** | GitHub setup instructions | 35 |
+
+### /themes/ - Custom Themes (Future)
+
+Empty folder reserved for custom color schemes and styling (planned feature).
+
+---
+
 ## ⚖️ License
 
 Extracted from Petrie Dish v5.1-C2.  
