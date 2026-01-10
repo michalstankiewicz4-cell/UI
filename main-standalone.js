@@ -34,8 +34,8 @@ window.addEventListener('resize', resizeCanvases);
 // UI system
 const windowManager = new UI.WindowManager();
 const taskbar = new UI.Taskbar();
-taskbar.addSection('start'); // Menu Start FIRST!
-taskbar.addSection('simulations');
+taskbar.addSection('symulacje'); // Nowe okna tutaj!
+taskbar.addSection('system');    // System (stałe okna)
 
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
@@ -114,7 +114,7 @@ demoWindow.addButton('Open New Window', () => {
         taskbar.removeWindowItem(newWin);
     };
     windowManager.add(newWin);
-    taskbar.addWindowItem('New', newWin);
+    taskbar.addWindowItem(newWin.title, newWin, 'symulacje');  // Symulacje section!
     console.log('✅ New window created!');
 });
 demoWindow.addButton('Test Alert', () => {
@@ -135,7 +135,7 @@ demoWindow.addText(() => `Timestamp: ${Date.now()}`, '#00F5FF');
 demoWindow.addText('✅ End of content');
 
 windowManager.add(demoWindow);
-taskbar.addWindowItem(demoWindow.title, demoWindow);  // Pełna nazwa!
+taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');  // System section!
 
 demoWindow.onClose = () => {
     // Demo window nie znika z menu - tylko się chowa
@@ -167,7 +167,7 @@ masterWindow.addButton('Toggle Grid', () => {
 });
 
 windowManager.add(masterWindow);
-taskbar.addWindowItem(masterWindow.title, masterWindow);  // Pełna nazwa!
+taskbar.addWindowItem(masterWindow.title, masterWindow, 'system');  // System section!
 
 masterWindow.onClose = () => {
     masterWindow.visible = false;
@@ -187,7 +187,7 @@ statsWindow.addText(() => `FPS: ${Math.round(performance.now() / 1000)}`, '#00F5
 statsWindow.addText(() => `Memory: OK`, '#00F5FF');
 
 windowManager.add(statsWindow);
-taskbar.addWindowItem(statsWindow.title, statsWindow);  // Pełna nazwa!
+taskbar.addWindowItem(statsWindow.title, statsWindow, 'system');  // System section!
 
 statsWindow.onClose = () => {
     statsWindow.visible = false;

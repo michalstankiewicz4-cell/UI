@@ -55,15 +55,30 @@ class Taskbar {
         });
     }
     
-    addWindowItem(title, window) {
+    addWindowItem(title, window, section = null) {
         // Add window to menu with custom display title
-        this.menuItems.push({
+        const windowItem = {
             type: 'window',
             title: title,
             windowTitle: window.title,
             window: window,
             isOpen: true
-        });
+        };
+        
+        if (section) {
+            // Find section and insert after it
+            const sectionIndex = this.menuItems.findIndex(item => 
+                item.type === 'section' && item.title === section
+            );
+            if (sectionIndex >= 0) {
+                // Insert right after section
+                this.menuItems.splice(sectionIndex + 1, 0, windowItem);
+                return;
+            }
+        }
+        
+        // Default: add at end
+        this.menuItems.push(windowItem);
     }
     
     removeWindowItem(window) {
