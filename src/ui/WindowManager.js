@@ -46,7 +46,13 @@ class WindowManager {
         // Check from top to bottom (reverse order)
         for (let i = this.windows.length - 1; i >= 0; i--) {
             const window = this.windows[i];
-            if (window.startDrag(x, y)) {
+            
+            // Check if click is within window
+            if (window.containsPoint(x, y)) {
+                // Try to start drag (header, scrollbar, etc.)
+                window.startDrag(x, y);
+                
+                // Set as active window regardless (for handleClick in handleMouseUp)
                 this.activeWindow = window;
                 this.bringToFront(window);
                 return true;
