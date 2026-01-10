@@ -222,6 +222,30 @@ class BaseWindow {
         this.markDirty();
     }
     
+    addSlider(label, getValue, setValue, min, max, step = 0.01) {
+        this.items.push({ 
+            type: 'slider', 
+            label, 
+            getValue, 
+            setValue, 
+            min, 
+            max, 
+            step,
+            dragging: false
+        });
+        this.markDirty();
+    }
+    
+    addToggle(label, getValue, setValue) {
+        this.items.push({ 
+            type: 'toggle', 
+            label, 
+            getValue, 
+            setValue 
+        });
+        this.markDirty();
+    }
+    
     markDirty() {
         this.isDirty = true;
     }
@@ -328,6 +352,57 @@ class BaseWindow {
     }
     
     // ═════════════════════════════════════════════════
+    //  SLIDER INTERACTION
+    // ═════════════════════════════════════════════════
+    
+    checkSliderClick(mouseX, mouseY) {
+        if (!this.visible || this.minimized) return false;
+        
+        const startY = this.transparent ? 
+            (this.y + this.padding) : 
+            (this.y + this.headerHeight + this.padding - this.scrollOffset);
+        
+        let y = startY;
+        
+        for (let item of this.items) {
+            if (item.type === 'slider') {
+                const sliderHeight = 40;
+                const trackY = y + 20;
+                const trackHeight = 6;
+                const width = this.width - this.padding * 2;
+                
+                // Check if clicked on slider track area
+                if (mouseY >= trackY && mouseY <= trackY + trackHeight &&
+                    mouseX >= this.x + this.padding && 
+                    mouseX <= this.x + this.padding + width) {
+                    // Start dragging this slider
+                    item.dragging = true;
+                    // Set value immediately
+                    const relativeX = mouseX - (this.x + this.padding);
+                    const normalized = Math.max(0, Math.min(1, relativeX / width));
+                    const newValue = item.min + normalized * (item.max - item.min);
+                    const steppedValue = Math.round(newValue / item.step) * item.step;
+                    const clampedValue = Math.max(item.min, Math.min(item.max, steppedValue));
+                    item.setValue(clampedValue);
+                    return true;
+                }
+                y += sliderHeight + this.itemSpacing;
+            } else if (item.type === 'button') {
+                y += 20 + this.itemSpacing;
+            } else if (item.type === 'toggle') {
+                y += 20 + this.itemSpacing;
+            } else if (item.type === 'text') {
+                const height = item._cachedHeight || 14;
+                y += height + this.itemSpacing;
+            } else if (item.type === 'section') {
+                y += 20 + this.itemSpacing;
+            }
+        }
+        
+        return false;
+    }
+    
+    // ═════════════════════════════════════════════════
     //  DRAGGING
     // ═════════════════════════════════════════════════
     
@@ -364,7 +439,13 @@ class BaseWindow {
         
         // NORMAL MODE: Header with buttons + scrollbar
         
-        // Check scrollbar thumb FIRST (highest priority - actual dragging)
+        // Check if clicked on slider FIRST (before scrollbar)
+        const sliderResult = this.checkSliderClick(mouseX, mouseY);
+        if (sliderResult) {
+            return true; // Slider drag started
+        }
+        
+        // Check scrollbar thumb SECOND
         if (this.containsScrollThumb(mouseX, mouseY)) {
             const thumb = this.getScrollThumbBounds();
             this.isDraggingThumb = true;
@@ -421,6 +502,20 @@ class BaseWindow {
     }
     
     drag(mouseX, mouseY) {
+        // Handle slider dragging FIRST
+        for (let item of this.items) {
+            if (item.type === 'slider' && item.dragging) {
+                const width = this.width - this.padding * 2;
+                const relativeX = mouseX - (this.x + this.padding);
+                const normalized = Math.max(0, Math.min(1, relativeX / width));
+                const newValue = item.min + normalized * (item.max - item.min);
+                const steppedValue = Math.round(newValue / item.step) * item.step;
+                const clampedValue = Math.max(item.min, Math.min(item.max, steppedValue));
+                item.setValue(clampedValue);
+                return; // Don't drag window while dragging slider
+            }
+        }
+        
         if (this.isDragging) {
             this.x = mouseX - this.dragOffsetX;
             this.y = mouseY - this.dragOffsetY;
@@ -449,6 +544,13 @@ class BaseWindow {
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
+        
+        // Stop all slider dragging
+        for (let item of this.items) {
+            if (item.type === 'slider') {
+                item.dragging = false;
+            }
+        }
     }
     
     // ═════════════════════════════════════════════════
@@ -485,6 +587,21 @@ class BaseWindow {
                 y += height + this.itemSpacing;
             } else if (item.type === 'section') {
                 y += 20 + this.itemSpacing;
+            } else if (item.type === 'toggle') {
+                const toggleHeight = 20;
+                // Check if clicked on toggle
+                if (mouseY >= y && mouseY <= y + toggleHeight &&
+                    mouseX >= this.x + this.padding && 
+                    mouseX <= this.x + this.width - this.padding) {
+                    // Toggle value
+                    item.setValue(!item.getValue());
+                    return true;
+                }
+                y += toggleHeight + this.itemSpacing;
+            } else if (item.type === 'slider') {
+                const sliderHeight = 40;
+                // Slider handled by drag() - just skip height
+                y += sliderHeight + this.itemSpacing;
             }
         }
         
@@ -658,6 +775,14 @@ class BaseWindow {
                 this.drawSection(ctx, STYLES, item, y);
                 y += 20 + this.itemSpacing;
                 this.contentHeight += 20 + this.itemSpacing;
+            } else if (item.type === 'slider') {
+                this.drawSlider(ctx, STYLES, item, y);
+                y += 40 + this.itemSpacing;
+                this.contentHeight += 40 + this.itemSpacing;
+            } else if (item.type === 'toggle') {
+                this.drawToggle(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
             }
         }
         
@@ -691,6 +816,14 @@ class BaseWindow {
                 this.contentHeight += height + this.itemSpacing;
             } else if (item.type === 'section') {
                 this.drawSection(ctx, STYLES, item, y);
+                y += 20 + this.itemSpacing;
+                this.contentHeight += 20 + this.itemSpacing;
+            } else if (item.type === 'slider') {
+                this.drawSlider(ctx, STYLES, item, y);
+                y += 40 + this.itemSpacing;
+                this.contentHeight += 40 + this.itemSpacing;
+            } else if (item.type === 'toggle') {
+                this.drawToggle(ctx, STYLES, item, y);
                 y += 20 + this.itemSpacing;
                 this.contentHeight += 20 + this.itemSpacing;
             }
@@ -838,6 +971,72 @@ class BaseWindow {
         ctx.moveTo(titleX + titleWidth + 4, sectionY);
         ctx.lineTo(this.x + this.width - this.padding, sectionY);
         ctx.stroke();
+    }
+    
+    drawSlider(ctx, STYLES, item, y) {
+        const value = item.getValue();
+        const width = this.width - this.padding * 2;
+        const trackHeight = 6;
+        const thumbSize = 16;
+        
+        // Label (left) + Value (right)
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.main;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(item.label, this.x + this.padding, y);
+        
+        // Value display
+        const valueText = value.toFixed(2);
+        ctx.textAlign = 'right';
+        ctx.fillText(valueText, this.x + this.padding + width, y);
+        
+        // Track
+        const trackY = y + 20;
+        ctx.fillStyle = STYLES.colors.sliderTrack || 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(this.x + this.padding, trackY, width, trackHeight);
+        
+        // Fill (green progress bar)
+        const range = item.max - item.min;
+        const normalizedValue = (value - item.min) / range;
+        const fillWidth = normalizedValue * width;
+        ctx.fillStyle = STYLES.colors.sliderFill || STYLES.colors.panel;
+        ctx.fillRect(this.x + this.padding, trackY, fillWidth, trackHeight);
+        
+        // Thumb (circle)
+        const thumbX = this.x + this.padding + normalizedValue * width;
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.beginPath();
+        ctx.arc(thumbX, trackY + trackHeight / 2, thumbSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // RESET alignment and baseline!
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+    }
+    
+    drawToggle(ctx, STYLES, item, y) {
+        const value = item.getValue();
+        const checkboxSize = 16;
+        const checkboxX = this.x + this.padding;
+        const checkboxY = y + 2;
+        
+        // Checkbox border
+        ctx.strokeStyle = STYLES.colors.panel;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
+        
+        // Fill if ON
+        if (value) {
+            ctx.fillStyle = STYLES.colors.panel;
+            ctx.fillRect(checkboxX + 3, checkboxY + 3, checkboxSize - 6, checkboxSize - 6);
+        }
+        
+        // Label
+        ctx.fillStyle = STYLES.colors.panel;
+        ctx.font = STYLES.fonts.main;
+        ctx.textBaseline = 'alphabetic'; // SET baseline explicitly!
+        ctx.fillText(item.label, checkboxX + checkboxSize + 8, checkboxY + 12);
     }
     
     drawScrollbar(ctx, STYLES) {

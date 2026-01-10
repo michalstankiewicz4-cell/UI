@@ -76,11 +76,37 @@ demoWindow.height = 500;
 // Counter for dynamic content
 let counter = 0;
 
+// Demo variables for sliders and toggles
+let speedValue = 1.0;
+let volumeValue = 0.5;
+let gridEnabled = false;
+let autoSave = true;
+
 demoWindow.addSection('header buttons');
 demoWindow.addText('Test all header buttons:');
 demoWindow.addText('• X = Close');
 demoWindow.addText('• _ = Minimize');
 demoWindow.addText('• ○ = HUD mode');
+
+demoWindow.addSection('sliders & toggles');
+demoWindow.addSlider('Speed', 
+    () => speedValue, 
+    (v) => { speedValue = v; console.log('Speed:', v); }, 
+    0.1, 5.0, 0.05  // Changed step from 0.1 to 0.05 for smoother sliding
+);
+demoWindow.addSlider('Volume', 
+    () => volumeValue, 
+    (v) => { volumeValue = v; console.log('Volume:', v); }, 
+    0.0, 1.0, 0.01
+);
+demoWindow.addToggle('Show Grid', 
+    () => gridEnabled, 
+    (v) => { gridEnabled = v; console.log('Grid:', v); }
+);
+demoWindow.addToggle('Auto Save', 
+    () => autoSave, 
+    (v) => { autoSave = v; console.log('Auto Save:', v); }
+);
 
 demoWindow.addSection('scrollbar test');
 demoWindow.addText('Long content for scrollbar:');
