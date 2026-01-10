@@ -124,8 +124,13 @@
     <!-- UI Library (bundled) -->
     <script src="dist/ui.js"></script>
     
-    <!-- Main orchestrator -->
-    <script type="module" src="main.js"></script>
+    <!-- Core modules (inline for file:// support) -->
+    <script src="core/EventBus.js"></script>
+    <script src="core/DataBridge.js"></script>
+    <script src="core/SimulationManager.js"></script>
+    
+    <!-- Main orchestrator (no ES6 modules) -->
+    <script src="main-standalone.js"></script>
     
     <script>
         // Close info panel
