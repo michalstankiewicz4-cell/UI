@@ -1,6 +1,6 @@
-# ═══════════════════════════════════════════════════════════════
+﻿# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #   BUILD SCRIPT - Create dist/ui.js bundle
-# ═══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # PowerShell version for Windows
 # Concatenates all modules into single file
 
@@ -11,9 +11,9 @@ $OUTPUT = "dist/ui.js"
 
 # Create header
 $header = @"
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //   UI LIBRARY - COMPLETE BUNDLE
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Single-file bundle of entire UI system
 // Extracted from Petrie Dish v5.1-C2
 // 
@@ -39,7 +39,7 @@ $header = @"
 //     window.addButton('Click', () => console.log('Clicked!'));
 //     manager.add(window);
 //   </script>
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 (function(global) {
     'use strict';
@@ -65,32 +65,32 @@ function Remove-Exports {
 
 # Add each module
 Write-Host "Adding Styles.js..." -ForegroundColor Cyan
-$content = Get-Content "src/ui/Styles.js" -Raw
+$content = Get-Content "ui/Styles.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
 Write-Host "Adding TextCache.js..." -ForegroundColor Cyan
-$content = Get-Content "src/utils/TextCache.js" -Raw
+$content = Get-Content "utils/TextCache.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
 Write-Host "Adding BaseWindow.js..." -ForegroundColor Cyan
-$content = Get-Content "src/ui/BaseWindow.js" -Raw
+$content = Get-Content "ui/BaseWindow.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
 Write-Host "Adding WindowManager.js..." -ForegroundColor Cyan
-$content = Get-Content "src/ui/WindowManager.js" -Raw
+$content = Get-Content "ui/WindowManager.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
 Write-Host "Adding Taskbar.js..." -ForegroundColor Cyan
-$content = Get-Content "src/ui/Taskbar.js" -Raw
+$content = Get-Content "ui/Taskbar.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
 Write-Host "Adding EventRouter.js..." -ForegroundColor Cyan
-$content = Get-Content "src/ui/EventRouter.js" -Raw
+$content = Get-Content "ui/EventRouter.js" -Raw
 $content = $content -replace "(?ms)// Export for use in modules.*$", ""
 Add-Content -Path $OUTPUT -Value $content
 
@@ -109,9 +109,9 @@ $footer = @"
         getTextCacheStats: getTextCacheStats
     };
     
-    console.log('✅ UI Library v1.0.0 loaded!');
-    console.log('📦 Modules: Styles, TextCache, BaseWindow, WindowManager, Taskbar, EventRouter');
-    console.log('🎯 Ready to use: new UI.BaseWindow(x, y, title)');
+    console.log('âś… UI Library v1.0.0 loaded!');
+    console.log('đź“¦ Modules: Styles, TextCache, BaseWindow, WindowManager, Taskbar, EventRouter');
+    console.log('đźŽŻ Ready to use: new UI.BaseWindow(x, y, title)');
 
 })(typeof window !== 'undefined' ? window : global);
 "@
@@ -121,9 +121,9 @@ Add-Content -Path $OUTPUT -Value $footer
 # Count lines
 $lines = (Get-Content $OUTPUT).Count
 Write-Host ""
-Write-Host "✅ Build complete!" -ForegroundColor Green
-Write-Host "📦 Output: $OUTPUT" -ForegroundColor Yellow
-Write-Host "📏 Lines: $lines" -ForegroundColor Yellow
+Write-Host "âś… Build complete!" -ForegroundColor Green
+Write-Host "đź“¦ Output: $OUTPUT" -ForegroundColor Yellow
+Write-Host "đź“Ź Lines: $lines" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Usage:" -ForegroundColor Cyan
 Write-Host "  <script src='dist/ui.js'></script>" -ForegroundColor White

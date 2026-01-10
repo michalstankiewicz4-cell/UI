@@ -85,7 +85,7 @@ Modularny system okien dla Canvas API z centralnym zarządzaniem symulacjami.
 
 ```
 UI/
-├── core/                            ✅ NEW! (Central systems)
+├── core/                            ✅ (Central systems)
 │   ├── SimulationManager.js        (360 lines - controller)
 │   ├── EventBus.js                 (192 lines - events)
 │   └── DataBridge.js               (224 lines - data flow)
@@ -96,17 +96,27 @@ UI/
 │   ├── sim3/ (Physics Balls)       (132 lines)
 │   └── sim4/ (Cellular Automata)   (158 lines)
 │
-├── ui/                              (UI library - dist/ui.js)
-│   └── [BaseWindow, WindowManager, Taskbar, EventRouter...]
+├── ui/                              (UI library source)
+│   ├── BaseWindow.js               (680 lines - windows)
+│   ├── WindowManager.js            (105 lines - manager)
+│   ├── Taskbar.js                  (326 lines - taskbar)
+│   ├── EventRouter.js              (144 lines - events)
+│   └── Styles.js                   (90 lines - styling)
+│
+├── utils/                           (Utilities)
+│   └── TextCache.js                (65 lines - optimization)
 │
 ├── ui-config/                       (Wiring layer)
 │   ├── windows.js                  (146 lines - creates windows)
 │   ├── controls.js                 (121 lines - dynamic controls)
-│   └── sync.js                     (256 lines - cross-sim sync)
+│   └── sync.js                     (200 lines - cross-sim sync)
 │
-├── main.js                          (357 lines - orchestrator)
-├── index.html                       (141 lines - entry point)
-└── [docs, examples, build scripts...]
+├── dist/
+│   └── ui.js                       (1,406 lines - bundle)
+│
+├── main-standalone.js              (220 lines - orchestrator)
+├── index.html                      (72 lines - entry point)
+└── [examples, docs, build scripts...]
 ```
 
 ## 🎨 **Core Architecture Explained**
