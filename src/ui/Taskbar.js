@@ -155,12 +155,24 @@ class Taskbar {
                         mouseY >= currentY && mouseY <= currentY + itemHeight) {
                         
                         // Toggle window visibility
-                        item.window.visible = true;
-                        item.window.minimized = false;
-                        item.isOpen = true;
-                        if (windowManager) {
-                            windowManager.bringToFront(item.window);
+                        if (!item.window.visible) {
+                            // Window was closed - add it back to manager
+                            item.window.visible = true;
+                            item.window.minimized = false;
+                            if (windowManager) {
+                                // Check if window is in manager
+                                if (!windowManager.windows.includes(item.window)) {
+                                    windowManager.add(item.window);
+                                }
+                                windowManager.bringToFront(item.window);
+                            }
+                        } else {
+                            // Window is open - just bring to front
+                            if (windowManager) {
+                                windowManager.bringToFront(item.window);
+                            }
                         }
+                        item.isOpen = true;
                         
                         this.menuOpen = false;
                         return true;
@@ -186,6 +198,10 @@ class Taskbar {
                 minimizedWindows[i].window.visible = true;
                 minimizedWindows[i].window.minimized = false;
                 if (windowManager) {
+                    // Check if window is in manager
+                    if (!windowManager.windows.includes(minimizedWindows[i].window)) {
+                        windowManager.add(minimizedWindows[i].window);
+                    }
                     windowManager.bringToFront(minimizedWindows[i].window);
                 }
                 return true;
