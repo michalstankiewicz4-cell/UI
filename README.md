@@ -1,360 +1,207 @@
-# UI Repository - Multi-Simulation System with Core Architecture
+# UI System - Canvas-based Windows & Multi-Simulation Architecture
 
-**Status: ✅ PRODUCTION READY v2.1 - Core Architecture (SimulationManager + EventBus + DataBridge)!**
+**Status:** ✅ v2.1 Production Ready (2026-01-10)  
+**GitHub:** https://github.com/michalstankiewicz4-cell/UI
 
-Modularny system okien dla Canvas API z centralnym zarządzaniem symulacjami.
-**NOWA ARCHITEKTURA v2.1:** Core-based system z SimulationManager, EventBus i DataBridge!
+Modular window system for Canvas API with centralized simulation management.
 
-## 🎯 **Quick Start**
+---
 
-### **Option A: Single Bundle (Standalone UI Library)**
+## 🚀 Quick Start
+
+### Standalone (single file)
 ```html
 <script src="dist/ui.js"></script>
 <script>
-    const windowManager = new UI.WindowManager();
-    const window = new UI.BaseWindow(50, 50, 'My Window');
-    window.addText('Hello World!', '#00FF88');
-    window.addButton('Click Me!', () => alert('Works!'));
-    windowManager.add(window);
+    const manager = new UI.WindowManager();
+    const window = new UI.BaseWindow(50, 50, 'Hello');
+    window.addText('Hello World!');
+    window.addButton('Click', () => alert('Works!'));
+    manager.add(window);
     
     function render() {
-        windowManager.draw(ctx, UI.STYLES);
+        manager.draw(ctx, UI.STYLES);
         requestAnimationFrame(render);
     }
 </script>
 ```
 
-### **Option B: Multi-Simulation System (v2.1 - Core Architecture)**
+### Full System
 ```bash
-# Open index.html
-# Architecture: main.js → SimulationManager → EventBus ↔ DataBridge → UI
-# Click "Add Sim1/2/3/4" to dynamically add simulations
+# Just open index.html
+# No server needed - works with file:// protocol
 ```
 
-## 🚀 **NEW in v2.1: Core Architecture**
+---
 
-### **Diagram (Your Architecture):**
-```
-                +-------------------+
-                |   index.html      |
-                +---------+---------+
-                          |
-                          v
-                +-------------------+
-                |     main.js       |
-                +---------+---------+
-                          |
-        +-----------------+------------------+
-        |                                    |
-        v                                    v
-+-------------------+              +-------------------+
-| /core/            |              | /ui/              |
-| ├─ SimulationMgr  |   events/    | ├─ WindowManager  |
-| ├─ EventBus       | ←─────────→  | ├─ Taskbar        |
-| └─ DataBridge     |   data       | └─ BaseWindow     |
-+-------------------+              +-------------------+
-        |                                    |
-        v                                    v
-+-------------------+              +-------------------+
-| /simulations/     | parameters   | UI components     |
-| ├─ sim1 (2D)      | ←─────────→  | (windows, buttons)|
-| ├─ sim2 (3D)      |              |                   |
-| ├─ sim3 (Physics) |              |                   |
-| └─ sim4 (Grid)    |              |                   |
-+-------------------+              +-------------------+
-```
-
-### **Core Modules:**
-
-| Module | Purpose | Lines |
-|--------|---------|-------|
-| **SimulationManager** | Central controller for all simulations | 360 |
-| **EventBus** | Pub-sub event system for communication | 192 |
-| **DataBridge** | Bidirectional data flow (UI ↔ Sims) | 224 |
-
-### **Key Features:**
-
-- ✅ **Centralized management** via SimulationManager
-- ✅ **Event-driven** communication (pub-sub pattern)
-- ✅ **Data binding** (parameters from UI → Sim, stats from Sim → UI)
-- ✅ **Dynamic add/remove** at runtime
-- ✅ **Cross-simulation linking** via EventBus
-- ✅ **Loose coupling** between components
-
-## 📦 **Project Structure (v2.1)**
+## 📦 Project Structure
 
 ```
 UI/
-├── core/                            ✅ (Central systems)
-│   ├── SimulationManager.js        (360 lines - controller)
-│   ├── EventBus.js                 (192 lines - events)
-│   └── DataBridge.js               (224 lines - data flow)
+├── core/                   # Central architecture
+│   ├── SimulationManager.js    # Controller (360 lines)
+│   ├── EventBus.js             # Pub-sub events (192 lines)
+│   └── DataBridge.js           # Data flow (224 lines)
 │
-├── simulations/                     (4 placeholder sims)
-│   ├── sim1/ (2D Particles)        (114 lines)
-│   ├── sim2/ (3D Cubes)            (123 lines)
-│   ├── sim3/ (Physics Balls)       (132 lines)
-│   └── sim4/ (Cellular Automata)   (158 lines)
+├── ui/                     # UI library source
+│   ├── BaseWindow.js           # Windows (737 lines)
+│   ├── WindowManager.js        # Manager (105 lines)
+│   ├── Taskbar.js              # Taskbar (342 lines)
+│   ├── EventRouter.js          # Events (144 lines)
+│   └── Styles.js               # Styling (49 lines)
 │
-├── ui/                              (UI library source)
-│   ├── BaseWindow.js               (680 lines - windows)
-│   ├── WindowManager.js            (105 lines - manager)
-│   ├── Taskbar.js                  (326 lines - taskbar)
-│   ├── EventRouter.js              (144 lines - events)
-│   └── Styles.js                   (90 lines - styling)
+├── simulations/            # 4 placeholder sims
+│   ├── sim1/                   # 2D Particles
+│   ├── sim2/                   # 3D Cubes
+│   ├── sim3/                   # Physics
+│   └── sim4/                   # Automata
 │
-├── utils/                           (Utilities)
-│   └── TextCache.js                (65 lines - optimization)
+├── ui-config/              # Configuration layer
+│   ├── windows.js              # Window setup
+│   ├── controls.js             # Dynamic controls
+│   └── sync.js                 # Cross-sim sync
 │
-├── ui-config/                       (Wiring layer)
-│   ├── windows.js                  (146 lines - creates windows)
-│   ├── controls.js                 (121 lines - dynamic controls)
-│   └── sync.js                     (200 lines - cross-sim sync)
+├── data/                   # Import/Export (future)
+│   ├── presets/                # Ready configs
+│   └── exports/                # User data
 │
-├── dist/
-│   └── ui.js                       (1,406 lines - bundle)
-│
-├── main-standalone.js              (220 lines - orchestrator)
-├── index.html                      (72 lines - entry point)
-└── [examples, docs, build scripts...]
+├── docs/                   # Documentation
+├── themes/                 # Custom themes (future)
+├── utils/                  # TextCache optimization
+├── dist/ui.js              # Built bundle (1505 lines)
+├── main.js                 # Main orchestrator (185 lines)
+├── index.html              # Entry point
+└── build.ps1/sh            # Build scripts
 ```
 
-## 🎨 **Core Architecture Explained**
+---
 
-### **1. SimulationManager**
+## 🏗️ Core Architecture
 
-Central controller that manages all simulations:
-
+### SimulationManager
+Central controller for all simulations:
 ```javascript
-// Register simulation types
-simulationManager.register('sim1', 
-    () => import('./simulations/sim1/Sim1.js'),
-    { name: 'Particles', type: '2D' }
-);
-
-// Add simulation dynamically
+// Register & add simulations
+simulationManager.register('sim1', () => import('./sim1.js'));
 await simulationManager.addSimulation('sim1', canvas);
 
 // Global controls
 simulationManager.pauseAll();
-simulationManager.resumeAll();
-simulationManager.resetAll();
-
-// Update & render all
 simulationManager.updateAll();
 simulationManager.renderAll();
 ```
 
-### **2. EventBus**
-
-Pub-sub pattern for loose coupling:
-
+### EventBus
+Pub-sub communication:
 ```javascript
-// Subscribe to events
+// Subscribe
 eventBus.on('simulation:added', (data) => {
-    console.log('New simulation:', data.simId);
+    console.log('New sim:', data.simId);
 });
 
-// Emit events
+// Emit
 eventBus.emit('simulation:added', { simId: 'sim1' });
-
-// Wildcard subscriptions
-eventBus.on('simulation:*', (data) => {
-    console.log('Any simulation event:', data);
-});
 ```
 
-### **3. DataBridge**
-
-Bidirectional data flow:
-
+### DataBridge
+UI ↔ Simulation data flow:
 ```javascript
-// Bind parameter (UI → Simulation)
-dataBridge.bindParameter('sim1', 'speed', (value) => {
-    simulation.setSpeed(value);
-});
-
-// Set parameter from UI
+// Parameter: UI → Sim
+dataBridge.bindParameter('sim1', 'speed', (v) => sim.setSpeed(v));
 dataBridge.setParameter('sim1', 'speed', 2.5);
 
-// Bind stat (Simulation → UI)
-dataBridge.bindStat('sim1', 'fps', () => simulation.fps);
-
-// Get stat for UI display
+// Stat: Sim → UI
+dataBridge.bindStat('sim1', 'fps', () => sim.fps);
 const fps = dataBridge.getStat('sim1', 'fps');
 ```
 
-## 🔧 **Development**
+---
 
-### **Build Bundle:**
-```bash
-# Windows
-powershell -ExecutionPolicy Bypass -File build.ps1
+## 🎨 UI Features
 
-# Unix/Mac
-chmod +x build.sh
-./build.sh
-```
+### Windows
+- ✅ Draggable with mouse
+- ✅ Header buttons (Close, Minimize, HUD mode)
+- ✅ Scrollbar with thumb dragging
+- ✅ Z-index management
+- ✅ Content: buttons, text, sections
 
-Output: `dist/ui.js` (1291 lines, ~50KB)
+### Taskbar
+- ✅ Windows-style menu (Start → Simulations, System)
+- ✅ Window buttons (minimize/restore)
+- ✅ Dynamic width calculation
 
-### **Add New Simulation:**
-1. Create folder: `simulations/mysim/`
-2. Create `MySim.js` with standard API:
-   ```javascript
-   class MySim {
-       constructor(canvas) { ... }
-       update() { ... }
-       render() { ... }
-       setPaused(paused) { ... }
-       reset() { ... }
-       get fps() { ... }
-   }
-   ```
-3. Register in `main.js`:
-   ```javascript
-   simulationManager.register('mysim',
-       () => import('./simulations/mysim/MySim.js'),
-       { name: 'My Sim', type: 'Custom' }
-   );
-   ```
-4. Add UI button in master controls
-5. Done!
-
-### **Cross-Simulation Linking:**
-
-Use EventBus for communication:
-
-```javascript
-// Example: Sim1 affects Sim3
-eventBus.on('parameter:changed', (data) => {
-    if (data.simId === 'sim1' && data.paramName === 'speed') {
-        const sim3 = simulationManager.getSimulation('sim3');
-        if (sim3) {
-            sim3.setGravity(data.value * 0.5);
-        }
-    }
-});
-```
-
-## 📊 **Performance**
-
-**Core overhead:**
-- SimulationManager: ~0.5% CPU
-- EventBus: ~0.1% per event
-- DataBridge: ~0.1% per binding
-- **Total Core overhead: ~1%**
-
-**Multi-simulation:**
-| Sims | Sim1 | Sim2 | Sim3 | Sim4 | Core | UI | Total |
-|------|------|------|------|------|------|-----|-------|
-| 1 | 97% | - | - | - | 1% | 1% | ~99% used |
-| 2 | 48% | 48% | - | - | 1% | 1% | ~98% used |
-| 4 | 23% | 23% | 23% | 23% | 1% | 1% | ~94% used |
-
-**Optimizations:**
-- isDirty flags in UI
-- Event batching in EventBus
-- Lazy stat evaluation in DataBridge
-- Efficient update loop in SimulationManager
-
-## 🎮 **Usage Examples**
-
-### **1. Basic Multi-Sim Setup**
-
-```javascript
-// Initialize core
-const eventBus = new EventBus();
-const dataBridge = new DataBridge(eventBus);
-const simManager = new SimulationManager(eventBus, dataBridge);
-
-// Register sims
-simManager.register('sim1', () => import('./sim1.js'));
-
-// Add sim
-await simManager.addSimulation('sim1', canvas);
-
-// Render loop
-function render() {
-    simManager.updateAll();
-    simManager.renderAll();
-    requestAnimationFrame(render);
-}
-```
-
-### **2. Event-Driven Communication**
-
-```javascript
-// React to simulation events
-eventBus.on('simulation:added', (data) => {
-    ui.createWindow(data.simId);
-});
-
-// Cross-sim communication
-eventBus.on('parameter:changed', (data) => {
-    console.log(`${data.simId}.${data.paramName} = ${data.value}`);
-});
-```
-
-### **3. Data Binding**
-
-```javascript
-// UI slider → Simulation
-dataBridge.bindParameter('sim1', 'speed', (v) => sim.setSpeed(v));
-slider.onChange = (v) => dataBridge.setParameter('sim1', 'speed', v);
-
-// Simulation → UI display
-dataBridge.bindStat('sim1', 'fps', () => sim.fps);
-textElement.update = () => dataBridge.getStat('sim1', 'fps');
-```
-
-## 🎯 **Use Cases**
-
-1. **Educational Demos**
-   - Compare algorithms side-by-side
-   - Show parameter effects in real-time
-   - Event-driven state changes
-
-2. **Game Development**
-   - HUD overlays for 3D games
-   - Multi-screen setups
-   - Debug windows with stats
-
-3. **Research & Visualization**
-   - Multi-scale modeling
-   - Coupled simulations
-   - Data flow visualization
-
-4. **Interactive Art**
-   - Generative art with multiple layers
-   - Audio-visual sync
-   - User-driven parameters
-
-## 📖 **Examples**
-
-- **index.html** - Full system with core architecture
-- **examples/bundle-demo.html** - HUD mode demo
-- **examples/optimized-example.html** - Performance features
-
-## ⚖️ **License**
-
-Projekt wyekstrahowany z Petrie Dish v5.1-C2.
-Użyj zgodnie z licencją oryginalnego projektu.
-
-## 🎉 **Status**
-
-✅ **v2.1 PRODUCTION READY** - 2025-01-09
-- Core architecture (SimulationManager, EventBus, DataBridge)
-- Event-driven communication
-- Centralized management
-- Data binding (UI ↔ Sims)
-- Cross-simulation linking
-- Dynamic add/remove
-- HUD mode for floating stats
-- All features working
+### Styling
+- ✅ Colors: #00FF88 (green), #00F5FF (cyan stats)
+- ✅ Font: Courier New 12px
+- ✅ Sections: centered dividers
+- ✅ Word wrap for long text
 
 ---
 
-**Ostatnia aktualizacja:** 2025-01-09 (v2.1 - Core Architecture!)
+## 🔧 Development
 
-**GitHub:** https://github.com/michalstankiewicz4-cell/UI
+### Build Bundle
+```bash
+# Windows
+.\build.ps1
+
+# Linux/Mac
+./build.sh
+```
+Output: `dist/ui.js` (1505 lines, ~56KB)
+
+### Add New Simulation
+1. Create `simulations/mysim/MySim.js`
+2. Register in `main.js`:
+   ```javascript
+   simulationManager.register('mysim',
+       () => import('./simulations/mysim/MySim.js'),
+       { name: 'My Sim' }
+   );
+   ```
+3. Add UI button
+4. Done!
+
+---
+
+## 📊 Current Status
+
+### Completed (v2.1)
+- ✅ Core architecture (SimulationManager, EventBus, DataBridge)
+- ✅ FAZA C1: Header buttons (X, _, ○)
+- ✅ FAZA C2: Scrollbar with thumb dragging
+- ✅ Event-driven communication
+- ✅ Data binding UI ↔ Sims
+- ✅ HUD mode (transparent overlay)
+- ✅ Text styling (green/cyan, word wrap, centered sections)
+- ✅ Menu sections (symulacje/system)
+- ✅ File structure simplified (no /src/)
+
+### Next Steps
+- 🔜 FAZA C3: Sliders + Toggles (~2-3h)
+- 🔜 Import/Export presets
+- 🔜 Custom themes
+
+---
+
+## 📈 Statistics
+
+- **Bundle:** 1505 lines (56KB)
+- **Core:** 776 lines
+- **UI Library:** 1377 lines (source)
+- **Total codebase:** ~7500 lines
+- **Commits:** 90+
+- **Performance:** ~1% core overhead
+
+---
+
+## ⚖️ License
+
+Extracted from Petrie Dish v5.1-C2.  
+Use according to original project license.
+
+---
+
+**Last Updated:** 2026-01-10  
+**Version:** v2.1
