@@ -86,32 +86,6 @@
     </style>
 </head>
 <body>
-    <!-- Info panel -->
-    <div id="info">
-        <button id="close-info">&times;</button>
-        <h1>🎨 UI System v2.1 - FAZA C2: SCROLLBAR</h1>
-        <p><span class="key">Architecture:</span> Core-based (SimulationManager + EventBus)</p>
-        <p><span class="key">Focus:</span> UI System Development & Testing</p>
-        <p> </p>
-        <p><span class="key">NOWE w FAZA C2:</span></p>
-        <p>• <strong>Scrollbar</strong> - thumb dragging, mouse wheel</p>
-        <p>• <strong>Demo Window</strong> - wszystkie funkcje UI</p>
-        <p>• Lorem ipsum + długi content</p>
-        <p>• Auto-scroll gdy content > height</p>
-        <p> </p>
-        <p><span class="key">Funkcje okien:</span></p>
-        <p>• <strong>X</strong> - Close (usuwa okno)</p>
-        <p>• <strong>_</strong> - Minimize (na taskbar)</p>
-        <p>• <strong>○</strong> - HUD mode (floating stats)</p>
-        <p>• <strong>Drag</strong> - Przeciągnij header</p>
-        <p>• <strong>Scroll</strong> - Mouse wheel + scrollbar thumb</p>
-        <p> </p>
-        <p><span class="key">Windows:</span></p>
-        <p>• Master Controls - dodaj symulacje</p>
-        <p>• Demo Window - testuj wszystkie funkcje UI</p>
-        <p>• System Stats - statystyki</p>
-    </div>
-    
     <!-- Multi-canvas setup (simulations hidden for now) -->
     <div id="canvas-container">
         <canvas id="canvas-sim1"></canvas>
@@ -131,16 +105,5 @@
     
     <!-- Main orchestrator (no ES6 modules) -->
     <script src="main-standalone.js"></script>
-    
-    <script>
-        // Close info panel
-        document.getElementById('close-info').addEventListener('click', () => {
-            document.getElementById('info').style.display = 'none';
-        });
-        
-        console.log('%c=== UI SYSTEM v2.1 - FAZA C2: SCROLLBAR ===', 'color: #00FF88; font-size: 16px; font-weight: bold;');
-        console.log('%cFocus: UI development & testing', 'color: #00F5FF;');
-        console.log('%cScrollbar + Demo Window implementation', 'color: #00FF88;');
-    </script>
 </body>
 </html>

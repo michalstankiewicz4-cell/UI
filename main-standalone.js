@@ -74,13 +74,13 @@ demoWindow.width = 380;
 demoWindow.height = 500;
 
 demoWindow.addSection('header buttons');
-demoWindow.addText('Test all header buttons:', '#00F5FF');
-demoWindow.addText('• X = Close', '#00FF88');
-demoWindow.addText('• _ = Minimize', '#00FF88');
-demoWindow.addText('• ○ = HUD mode', '#00FF88');
+demoWindow.addText('Test all header buttons:');
+demoWindow.addText('• X = Close');
+demoWindow.addText('• _ = Minimize');
+demoWindow.addText('• ○ = HUD mode');
 
 demoWindow.addSection('scrollbar test');
-demoWindow.addText('Long content for scrollbar:', '#00F5FF');
+demoWindow.addText('Long content for scrollbar:');
 demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit.');
 demoWindow.addText('Sed do eiusmod tempor incididunt ut labore.');
 demoWindow.addText('Ut enim ad minim veniam quis nostrud.');
@@ -100,7 +100,7 @@ demoWindow.addButton('Open New Window', () => {
     newWin.width = 250;
     newWin.height = 150;
     newWin.addText('This is a new window!', '#00F5FF');
-    newWin.addText('Created dynamically.', '#00FF88');
+    newWin.addText('Created dynamically.');
     newWin.addButton('Close Me', () => {
         console.log('Close Me clicked!');
         windowManager.remove(newWin);
@@ -126,16 +126,19 @@ demoWindow.addText('Eaque ipsa quae ab illo.');
 demoWindow.addText('Beatae vitae dicta sunt.');
 demoWindow.addText('Quia voluptas sit aspernatur.');
 
-demoWindow.addSection('dynamic');
-let counter = 0;
+demoWindow.addSection('statistics');
 demoWindow.addText(() => `Counter: ${counter++}`, '#00F5FF');
-demoWindow.addText('✅ End of content', '#00FF88');
+demoWindow.addText(() => `Timestamp: ${Date.now()}`, '#00F5FF');
+demoWindow.addText('✅ End of content');
 
 windowManager.add(demoWindow);
 taskbar.addWindowItem('Demo', demoWindow);
+
 demoWindow.onClose = () => {
+    // Demo window nie znika z menu - tylko się chowa
+    demoWindow.visible = false;
     windowManager.remove(demoWindow);
-    taskbar.removeWindowItem(demoWindow);
+    // taskbar.removeWindowItem NIE wywołujemy!
 };
 
 // RENDER LOOP
