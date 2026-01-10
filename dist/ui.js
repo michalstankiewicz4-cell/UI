@@ -337,10 +337,10 @@ class BaseWindow {
     startDrag(mouseX, mouseY) {
         // TRANSPARENT MODE: No header, but can drag by content and toggle via eye button
         if (this.transparent) {
-            // Check if clicked on floating eye button (top-right of content area)
+            // Check if clicked on floating eye button - same X position as normal mode!
             const eyeBtn = {
-                x: this.x + this.width - this.buttonSize - this.buttonPadding,
-                y: this.y + this.buttonPadding,
+                x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 3,
+                y: this.y + this.padding,
                 width: this.buttonSize,
                 height: this.buttonSize
             };
@@ -473,7 +473,10 @@ class BaseWindow {
         for (let item of this.items) {
             if (item.type === 'button') {
                 const buttonHeight = 20;
-                if (mouseY >= y && mouseY <= y + buttonHeight) {
+                // Check both X and Y!
+                if (mouseY >= y && mouseY <= y + buttonHeight &&
+                    mouseX >= this.x + this.padding && 
+                    mouseX <= this.x + this.width - this.padding) {
                     item.callback();
                     return true;
                 }
@@ -699,10 +702,10 @@ class BaseWindow {
             }
         }
         
-        // Draw floating eye button (to restore header)
+        // Draw floating eye button (to restore header) - same X position as normal mode!
         const eyeBtn = {
-            x: this.x + this.width - this.buttonSize - this.buttonPadding,
-            y: this.y + this.buttonPadding,
+            x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 3, // Same as getEyeButtonBounds()
+            y: this.y + this.padding,
             width: this.buttonSize,
             height: this.buttonSize
         };

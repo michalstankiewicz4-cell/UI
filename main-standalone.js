@@ -43,8 +43,7 @@ const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar
 //  PATCHES - UI Enhancements
 // ═════════════════════════════════════════════════
 
-// PATCH 1: Button borders (green stroke)
-const originalDrawButton = UI.BaseWindow.prototype.drawButton;
+// PATCH: Button borders (green stroke)
 UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
     const buttonHeight = 20;
     
@@ -63,37 +62,6 @@ UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
     ctx.textAlign = 'center';
     ctx.fillText(item.label, this.x + this.width / 2, y + 14);
     ctx.textAlign = 'left';
-};
-
-// PATCH 2: handleClick (button detection)
-const originalHandleClick = UI.BaseWindow.prototype.handleClick;
-UI.BaseWindow.prototype.handleClick = function(mouseX, mouseY) {
-    if (!this.visible || !this.containsPoint(mouseX, mouseY)) return false;
-    
-    const startY = this.transparent ? 
-        (this.y + this.padding) : 
-        (this.y + this.headerHeight + this.padding - this.scrollOffset);
-    
-    let y = startY;
-    
-    for (let item of this.items) {
-        if (item.type === 'button') {
-            const buttonHeight = 20;
-            if (mouseY >= y && mouseY <= y + buttonHeight &&
-                mouseX >= this.x + this.padding && 
-                mouseX <= this.x + this.width - this.padding) {
-                item.callback();
-                return true;
-            }
-            y += buttonHeight + this.itemSpacing;
-        } else if (item.type === 'text') {
-            y += (item.lines || 1) * 14 + this.itemSpacing;
-        } else if (item.type === 'section') {
-            y += 20 + this.itemSpacing;
-        }
-    }
-    
-    return false;
 };
 
 console.log('✅ Patches applied');
