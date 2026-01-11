@@ -67,7 +67,6 @@ UI/
 │
 ├── docs/                   # Documentation
 ├── themes/                 # Custom themes (future)
-├── utils/                  # TextCache optimization
 ├── dist/ui.js              # Built bundle (1505 lines)
 ├── main.js                 # Main orchestrator (185 lines)
 ├── index.html              # Entry point
@@ -226,13 +225,6 @@ Output: `dist/ui.js` (1505 lines, ~56KB)
 | **Taskbar.js** | Windows-style taskbar - menu, window buttons | 342 |
 | **EventRouter.js** | Routes mouse/keyboard events to correct windows | 144 |
 | **Styles.js** | Style definitions - colors, fonts, spacing | 49 |
-| **index.js** | Exports UI modules | ~10 |
-
-### /utils/ - Utilities
-
-| File | Purpose | Lines |
-|------|---------|-------|
-| **TextCache.js** | Caches text measurements for performance (2-5× speedup) | 65 |
 
 ### /simulations/ - Placeholder Simulations
 
