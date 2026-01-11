@@ -60,10 +60,6 @@ class BaseWindow {
         this.isDraggingThumb = false;
         this.thumbDragOffset = 0;
         
-        // Slider
-        this.isDraggingSlider = false;
-        this.draggingSliderItem = null;
-        
         // Layout (use constants)
         this.padding = CONST.SPACING_PADDING;
         this.itemSpacing = CONST.SPACING_ITEM;
@@ -252,17 +248,12 @@ class BaseWindow {
                 this.x = mouseX - this.dragOffsetX;
                 this.y = mouseY - this.dragOffsetY;
             }
-        } else if (this.isDraggingSlider && this.draggingSliderItem) {
-            const newValue = normalizeSliderValue(this.draggingSliderItem, this, mouseX);
-            this.draggingSliderItem.setValue(newValue);
         }
     }
     
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
-        this.isDraggingSlider = false;
-        this.draggingSliderItem = null;
     }
     
     // ═══════════════════════════════════════════════════════════════

@@ -86,8 +86,8 @@ class WindowManager {
     
     handleMouseMove(x, y) {
         if (this.activeWindow) {
-            // Call drag() if ANY dragging is active (window, scrollbar, slider)
-            if (this.activeWindow.isDragging || this.activeWindow.isDraggingThumb || this.activeWindow.isDraggingSlider) {
+            // Call drag() if ANY dragging is active (window, scrollbar)
+            if (this.activeWindow.isDragging || this.activeWindow.isDraggingThumb) {
                 this.activeWindow.drag(x, y);
             }
         }

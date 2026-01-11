@@ -83,7 +83,7 @@ function unlerp(a, b, value) {
 // LRU cache for measureText - 2-5× faster UI rendering
 
 const textWidthCache = new Map();
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = 5000; // OPT-6: Increased from 1000 for better cache hits
 
 /**
  * Measure text width with caching
@@ -159,29 +159,6 @@ const RADIUS_SLIDER_THUMB = 8;
 
 // Toggle
 const SIZE_TOGGLE_CHECKBOX = 16;
-
-// ═══════════════════════════════════════════════════════════════
-//   CONST OBJECT (for module compatibility)
-// ═══════════════════════════════════════════════════════════════
-// Group all constants into CONST object for code that uses "CONST.X"
-
-const CONST = {
-    HEIGHT_BUTTON,
-    HEIGHT_SLIDER,
-    HEIGHT_TOGGLE,
-    HEIGHT_SECTION,
-    HEIGHT_TEXT_LINE,
-    SPACING_ITEM,
-    SPACING_PADDING,
-    HEIGHT_HEADER,
-    SIZE_BUTTON,
-    SPACING_BUTTON,
-    WIDTH_SCROLLBAR,
-    MIN_THUMB_HEIGHT,
-    HEIGHT_SLIDER_TRACK,
-    RADIUS_SLIDER_THUMB,
-    SIZE_TOGGLE_CHECKBOX
-};
 
 
 // â•â•â• ui/core/layout.js â•â•â•
@@ -921,8 +898,8 @@ class WindowManager {
     
     handleMouseMove(x, y) {
         if (this.activeWindow) {
-            // Call drag() if ANY dragging is active (window, scrollbar, slider)
-            if (this.activeWindow.isDragging || this.activeWindow.isDraggingThumb || this.activeWindow.isDraggingSlider) {
+            // Call drag() if ANY dragging is active (window, scrollbar)
+            if (this.activeWindow.isDragging || this.activeWindow.isDraggingThumb) {
                 this.activeWindow.drag(x, y);
             }
         }
@@ -1541,10 +1518,6 @@ class BaseWindow {
         this.isDraggingThumb = false;
         this.thumbDragOffset = 0;
         
-        // Slider
-        this.isDraggingSlider = false;
-        this.draggingSliderItem = null;
-        
         // Layout (use constants)
         this.padding = CONST.SPACING_PADDING;
         this.itemSpacing = CONST.SPACING_ITEM;
@@ -1733,17 +1706,12 @@ class BaseWindow {
                 this.x = mouseX - this.dragOffsetX;
                 this.y = mouseY - this.dragOffsetY;
             }
-        } else if (this.isDraggingSlider && this.draggingSliderItem) {
-            const newValue = normalizeSliderValue(this.draggingSliderItem, this, mouseX);
-            this.draggingSliderItem.setValue(newValue);
         }
     }
     
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
-        this.isDraggingSlider = false;
-        this.draggingSliderItem = null;
     }
     
     // ═══════════════════════════════════════════════════════════════

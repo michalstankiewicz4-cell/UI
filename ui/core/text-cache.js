@@ -4,7 +4,7 @@
 // LRU cache for measureText - 2-5× faster UI rendering
 
 const textWidthCache = new Map();
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = 5000; // OPT-6: Increased from 1000 for better cache hits
 
 /**
  * Measure text width with caching
