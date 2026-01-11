@@ -160,7 +160,7 @@ class BaseWindow {
         this.height = 200;
         
         // State
-        this.visible = true;
+        this.visible = false; // Default: closed
         this.minimized = false;
         this.transparent = false;
         this.zIndex = 0;
@@ -677,10 +677,10 @@ class BaseWindow {
         ctx.fillStyle = STYLES.panel.headerBgColor;
         ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
         
-        // Title
+        // Title (uppercase)
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
         
         // Header buttons
         this.drawHeaderButtons(ctx, STYLES);
@@ -711,7 +711,7 @@ class BaseWindow {
         
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
         
         // Header buttons
         this.drawHeaderButtons(ctx, STYLES);
@@ -1193,12 +1193,13 @@ class WindowManager {
 
 class Taskbar {
     constructor() {
-        this.height = 48;
+        this.buttonHeight = 32;
+        this.verticalPadding = 4; // Small padding above/below button
+        this.height = this.buttonHeight + this.verticalPadding * 2; // 32 + 8 = 40
         this.menuOpen = false;
         this.menuWidth = 200;
         this.menuItemHeight = 36;
         this.buttonWidth = 100;
-        this.buttonHeight = 32;
         this.buttonSpacing = 4;
         this.startButtonWidth = 80;
         this.buttonPadding = 16; // Horizontal padding for buttons
@@ -1281,8 +1282,8 @@ class Taskbar {
 
     getStartButtonBounds(canvasHeight) {
         return {
-            x: 0,
-            y: canvasHeight - this.height + (this.height - this.buttonHeight) / 2,
+            x: this.verticalPadding,
+            y: canvasHeight - this.height + this.verticalPadding,
             width: this.startButtonWidth,
             height: this.buttonHeight
         };
@@ -1291,7 +1292,7 @@ class Taskbar {
     getMenuBounds(canvasHeight) {
         const menuHeight = this.getMenuHeight();
         return {
-            x: 0,
+            x: this.verticalPadding,
             y: canvasHeight - this.height - menuHeight,
             width: this.menuWidth,
             height: menuHeight
@@ -1304,7 +1305,7 @@ class Taskbar {
             this.cachedPositions = [];
             let x = this.startButtonWidth + 8;
             const canvasHeight = ctx.canvas.height;
-            const y = canvasHeight - this.height + (this.height - this.buttonHeight) / 2;
+            const y = canvasHeight - this.height + this.verticalPadding;
             
             for (let i = 0; i < minimizedWindows.length; i++) {
                 const item = minimizedWindows[i];
@@ -1503,7 +1504,7 @@ class Taskbar {
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
                     const titleX = menu.x + 8 + lineLength + 4;
-                    ctx.fillText(item.title, titleX, sectionY);
+                    ctx.fillText(item.title.toUpperCase(), titleX, sectionY);
                     
                     // Right line
                     ctx.beginPath();
@@ -1525,7 +1526,7 @@ class Taskbar {
                     ctx.font = STYLES.fonts.mainBold;
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(item.title, menu.x + 12, currentY + itemHeight / 2);
+                    ctx.fillText(item.title.toUpperCase(), menu.x + 12, currentY + itemHeight / 2);
                     
                     currentY += itemHeight;
                 }
@@ -1555,7 +1556,7 @@ class Taskbar {
             ctx.font = STYLES.fonts.mainBold;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(item.title, btn.x + btn.width / 2, btn.y + btn.height / 2);
+            ctx.fillText(item.title.toUpperCase(), btn.x + btn.width / 2, btn.y + btn.height / 2);
         }
     }
 }

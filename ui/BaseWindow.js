@@ -25,7 +25,7 @@ class BaseWindow {
         this.height = 200;
         
         // State
-        this.visible = true;
+        this.visible = false; // Default: closed
         this.minimized = false;
         this.transparent = false;
         this.zIndex = 0;
@@ -542,10 +542,10 @@ class BaseWindow {
         ctx.fillStyle = STYLES.panel.headerBgColor;
         ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
         
-        // Title
+        // Title (uppercase)
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
         
         // Header buttons
         this.drawHeaderButtons(ctx, STYLES);
@@ -576,7 +576,7 @@ class BaseWindow {
         
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title, this.x + this.padding, this.y + this.headerHeight - 8);
+        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
         
         // Header buttons
         this.drawHeaderButtons(ctx, STYLES);
