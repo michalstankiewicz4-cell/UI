@@ -229,6 +229,14 @@ function render() {
     const ctx = canvases.ui.getContext('2d');
     ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
     
+    // Update window interactions
+    windowManager.update(eventRouter.mouseX, eventRouter.mouseY, eventRouter.mouseDown, eventRouter.mouseClicked);
+    
+    // Reset click flag
+    if (eventRouter.mouseClicked) {
+        eventRouter.mouseClicked = false;
+    }
+    
     windowManager.windows.forEach(w => w.isDirty = true);
     windowManager.draw(ctx, UI.STYLES);
     

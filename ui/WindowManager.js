@@ -42,6 +42,29 @@ class WindowManager {
         }
     }
     
+    update(mouseX, mouseY, mouseDown, mouseClicked) {
+        // Find top window under mouse
+        let topWindow = null;
+        for (let i = this.windows.length - 1; i >= 0; i--) {
+            const window = this.windows[i];
+            if (window.containsPoint(mouseX, mouseY) && window.visible && !window.minimized) {
+                topWindow = window;
+                break;
+            }
+        }
+        
+        // Update all windows
+        for (let window of this.windows) {
+            if (window === topWindow) {
+                // Top window gets real mouse coordinates
+                window.update(mouseX, mouseY, mouseDown, mouseClicked);
+            } else {
+                // Other windows get dummy coordinates (no interaction)
+                window.update(-1, -1, mouseDown, false);
+            }
+        }
+    }
+    
     handleMouseDown(x, y) {
         // Check from top to bottom (reverse order)
         for (let i = this.windows.length - 1; i >= 0; i--) {
@@ -62,17 +85,16 @@ class WindowManager {
     }
     
     handleMouseMove(x, y) {
-        if (this.activeWindow && this.activeWindow.isDragging) {
-            this.activeWindow.drag(x, y);
+        if (this.activeWindow) {
+            // Call drag() if ANY dragging is active (window, scrollbar, slider)
+            if (this.activeWindow.isDragging || this.activeWindow.isDraggingThumb || this.activeWindow.isDraggingSlider) {
+                this.activeWindow.drag(x, y);
+            }
         }
     }
     
     handleMouseUp(x, y) {
         if (this.activeWindow) {
-            if (!this.activeWindow.isDragging) {
-                // It was a click, not a drag
-                this.activeWindow.handleClick(x, y);
-            }
             this.activeWindow.stopDrag();
             this.activeWindow = null;
         }

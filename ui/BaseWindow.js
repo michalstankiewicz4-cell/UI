@@ -1,15 +1,31 @@
 // ═══════════════════════════════════════════════════════════════
-//   BASE WINDOW
+//   BASE WINDOW (REFACTORED)
 // ═══════════════════════════════════════════════════════════════
-// Extracted from Petrie Dish v5.1-C2
-// Draggable window with UI controls and header buttons
+// Modular architecture with ui/core/ and ui/components/
+
+// Core imports
+import { rectHit, clamp } from './core/geometry.js';
+import { measureTextCached } from './core/text-cache.js';
+import { computeLayout, getItemHeight } from './core/layout.js';
+import * as CONST from './core/constants.js';
+
+// Item classes (separate files)
+import { ToggleItem } from './components/ToggleItem.js';
+import { ButtonItem } from './components/ButtonItem.js';
+import { SliderItem } from './components/SliderItem.js';
+import { SectionItem } from './components/SectionItem.js';
+import { TextItem } from './components/TextItem.js';
+
+// Component imports (for header/scrollbar only)
+import { drawHeader, drawHeaderButtons, drawMinimizedHeader, getHeaderButtonBounds } from './components/header.js';
+import { computeScrollbar, drawScrollbar, hitScrollbarThumb, hitScrollbarTrack } from './components/scrollbar.js';
 
 /**
  * BaseWindow - Draggable window with UI controls
  * 
  * Features:
  * - Header buttons: Close (X), Minimize (_), Eye (👁)
- * - Buttons, Text, Sections
+ * - Buttons, Toggles, Sliders, Text, Sections
  * - Dragging
  * - Scrolling with scrollbar
  * - Minimize/maximize
@@ -25,7 +41,7 @@ class BaseWindow {
         this.height = 200;
         
         // State
-        this.visible = false; // Default: closed
+        this.visible = false;
         this.minimized = false;
         this.transparent = false;
         this.zIndex = 0;
@@ -34,928 +50,391 @@ class BaseWindow {
         this.isDragging = false;
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.dragThreshold = 5;
+        this.dragMoved = false;
         
-        // Scrollbar dragging
+        // Scrollbar
+        this.scrollOffset = 0;
         this.isDraggingThumb = false;
         this.thumbDragOffset = 0;
         
-        // Slider dragging
+        // Slider
         this.isDraggingSlider = false;
+        this.draggingSliderItem = null;
         
-        // Layout
-        this.padding = 10;
-        this.itemSpacing = 8;
-        this.headerHeight = 26;
+        // Layout (use constants)
+        this.padding = CONST.SPACING_PADDING;
+        this.itemSpacing = CONST.SPACING_ITEM;
+        this.headerHeight = CONST.HEIGHT_HEADER;
         
-        // Header buttons
-        this.buttonSize = 16;
-        this.buttonPadding = 5;
-        
-        // Items (controls)
+        // Content
         this.items = [];
-        
-        // Scrolling
-        this.scrollOffset = 0;
-        this.maxScroll = 0;
         this.contentHeight = 0;
-        this.scrollbarWidth = 8;
-        
-        // Optimization
-        this.isDirty = true;
-        
-        // Callbacks
-        this.onClose = null;
-        this.onMinimize = null;
-        this.onToggleTransparent = null;
+        this.layoutDirty = true;
     }
     
-    // ═════════════════════════════════════════════════
-    //  CONTROL METHODS
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   ADD ITEMS
+    // ═══════════════════════════════════════════════════════════════
     
     addButton(label, callback) {
-        this.items.push({ type: 'button', label, callback });
-        this.markDirty();
-    }
-    
-    addText(text, color = null, lines = 1) {
-        // color = null means use STYLES.colors.text (green)
-        // color = '#00F5FF' for cyan stats
-        this.items.push({ type: 'text', text, color, lines });
-        this.markDirty();
-    }
-    
-    addSection(title) {
-        this.items.push({ type: 'section', title });
-        this.markDirty();
-    }
-    
-    addSlider(label, getValue, setValue, min, max, step = 0.01) {
-        this.items.push({ 
-            type: 'slider', 
-            label, 
-            getValue, 
-            setValue, 
-            min, 
-            max, 
-            step,
-            dragging: false
-        });
-        this.markDirty();
+        this.items.push(new ButtonItem(label, callback));
+        this.layoutDirty = true;
     }
     
     addToggle(label, getValue, setValue) {
-        this.items.push({ 
-            type: 'toggle', 
-            label, 
-            getValue, 
-            setValue 
+        this.items.push(new ToggleItem(label, getValue, setValue));
+        this.layoutDirty = true;
+    }
+    
+    addSlider(label, getValue, setValue, min, max, step = 0.01) {
+        this.items.push(new SliderItem(label, getValue, setValue, min, max, step));
+        this.layoutDirty = true;
+    }
+    
+    addText(text, color = '#00ff88', lines = null) {
+        this.items.push(new TextItem(text, color));
+        this.layoutDirty = true;
+    }
+    
+    addSection(title) {
+        this.items.push(new SectionItem(title));
+        this.layoutDirty = true;
+    }
+    
+    addMatrix(getMatrix, setMatrix, colorNames) {
+        this.items.push({
+            type: 'matrix',
+            getMatrix: getMatrix,
+            setMatrix: setMatrix,
+            colorNames: colorNames,
+            cellSize: 18,
+            labelWidth: 30
         });
-        this.markDirty();
+        this.layoutDirty = true;
     }
     
-    markDirty() {
-        this.isDirty = true;
-    }
-    
-    // ═════════════════════════════════════════════════
-    //  HIT TESTING
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   HIT TESTING
+    // ═══════════════════════════════════════════════════════════════
     
     containsPoint(x, y) {
-        return x >= this.x && x <= this.x + this.width &&
-               y >= this.y && y <= this.y + this.height;
+        return rectHit(x, y, this.x, this.y, this.width, this.height);
     }
     
     containsHeader(x, y) {
-        return x >= this.x && x <= this.x + this.width &&
-               y >= this.y && y <= this.y + this.headerHeight;
+        return rectHit(x, y, this.x, this.y, this.width, this.headerHeight);
     }
     
-    // ═════════════════════════════════════════════════
-    //  HEADER BUTTONS HIT TESTING
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   LAYOUT & SIZE
+    // ═══════════════════════════════════════════════════════════════
     
-    getCloseButtonBounds() {
-        return {
-            x: this.x + this.width - this.buttonSize - this.buttonPadding,
-            y: this.y + (this.headerHeight - this.buttonSize) / 2,
-            width: this.buttonSize,
-            height: this.buttonSize
-        };
-    }
-    
-    getMinimizeButtonBounds() {
-        return {
-            x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 2,
-            y: this.y + (this.headerHeight - this.buttonSize) / 2,
-            width: this.buttonSize,
-            height: this.buttonSize
-        };
-    }
-    
-    getEyeButtonBounds() {
-        return {
-            x: this.x + this.width - (this.buttonSize + this.buttonPadding) * 3,
-            y: this.y + (this.headerHeight - this.buttonSize) / 2,
-            width: this.buttonSize,
-            height: this.buttonSize
-        };
-    }
-    
-    containsCloseButton(x, y) {
-        const btn = this.getCloseButtonBounds();
-        return x >= btn.x && x <= btn.x + btn.width &&
-               y >= btn.y && y <= btn.y + btn.height;
-    }
-    
-    containsMinimizeButton(x, y) {
-        const btn = this.getMinimizeButtonBounds();
-        return x >= btn.x && x <= btn.x + btn.width &&
-               y >= btn.y && y <= btn.y + btn.height;
-    }
-    
-    containsEyeButton(x, y) {
-        const btn = this.getEyeButtonBounds();
-        return x >= btn.x && x <= btn.x + btn.width &&
-               y >= btn.y && y <= btn.y + btn.height;
-    }
-    
-    // ═════════════════════════════════════════════════
-    //  SCROLLBAR HIT TESTING
-    // ═════════════════════════════════════════════════
-    
-    getScrollThumbBounds() {
-        if (this.maxScroll === 0) return null; // No scrolling needed
+    calculateSize(ctx) {
+        if (!this.layoutDirty) return;
         
-        const trackHeight = this.height - this.headerHeight - this.padding * 2;
-        const thumbHeight = Math.max(30, trackHeight * (trackHeight / (trackHeight + this.maxScroll)));
-        const thumbY = this.y + this.headerHeight + this.padding + 
-                      (this.scrollOffset / this.maxScroll) * (trackHeight - thumbHeight);
+        // Title width
+        ctx.font = '12px Courier New'; // STYLES.fonts.main equivalent
+        const titleWidth = measureTextCached(ctx, this.title, ctx.font);
+        let maxWidth = titleWidth + this.headerHeight + CONST.SIZE_BUTTON * 3 + CONST.SPACING_BUTTON * 4;
         
-        return {
-            x: this.x + this.width - this.scrollbarWidth - 2,
-            y: thumbY,
-            width: this.scrollbarWidth,
-            height: thumbHeight
-        };
-    }
-    
-    containsScrollThumb(x, y) {
-        const thumb = this.getScrollThumbBounds();
-        if (!thumb) return false;
-        
-        return x >= thumb.x && x <= thumb.x + thumb.width &&
-               y >= thumb.y && y <= thumb.y + thumb.height;
-    }
-    
-    containsScrollTrack(x, y) {
-        // Check if in scrollbar area
-        const trackX = this.x + this.width - this.scrollbarWidth - 2;
-        const trackY = this.y + this.headerHeight;
-        const trackHeight = this.height - this.headerHeight;
-        
-        return x >= trackX && x <= trackX + this.scrollbarWidth &&
-               y >= trackY && y <= trackY + trackHeight;
-    }
-    
-    // ═════════════════════════════════════════════════
-    //  SLIDER INTERACTION
-    // ═════════════════════════════════════════════════
-    
-    checkSliderClick(mouseX, mouseY) {
-        if (!this.visible || this.minimized) return false;
-        
-        const startY = this.transparent ? 
-            (this.y + this.padding) : 
-            (this.y + this.headerHeight + this.padding - this.scrollOffset);
-        
-        let y = startY;
-        
-        for (let item of this.items) {
-            if (item.type === 'slider') {
-                const sliderHeight = 40;
-                const trackY = y + 20;
-                const trackHeight = 6;
-                const thumbSize = 16;
-                const width = this.width - this.padding * 2;
-                
-                // Calculate thumb position
-                const value = item.getValue();
-                const range = item.max - item.min;
-                const normalizedValue = (value - item.min) / range;
-                const thumbX = this.x + this.padding + normalizedValue * width;
-                const thumbY = trackY + trackHeight / 2;
-                
-                // Check if clicked on THUMB first (larger hit area)
-                const distX = mouseX - thumbX;
-                const distY = mouseY - thumbY;
-                const distSq = distX * distX + distY * distY;
-                const thumbRadius = thumbSize / 2;
-                
-                if (distSq <= thumbRadius * thumbRadius) {
-                    // Clicked on thumb!
-                    item.dragging = true;
-                    this.isDragging = true; // Tell WindowManager we're dragging
-                    this.isDraggingSlider = true; // Prevent window drag
-                    return true;
-                }
-                
-                // Otherwise check track area (for jump-to-position)
-                if (mouseY >= trackY - 4 && mouseY <= trackY + trackHeight + 4 &&
-                    mouseX >= this.x + this.padding && 
-                    mouseX <= this.x + this.padding + width) {
-                    // Start dragging and jump to position
-                    item.dragging = true;
-                    this.isDragging = true; // Tell WindowManager we're dragging
-                    this.isDraggingSlider = true; // Prevent window drag
-                    // Set value immediately
-                    const relativeX = mouseX - (this.x + this.padding);
-                    const normalized = Math.max(0, Math.min(1, relativeX / width));
-                    const newValue = item.min + normalized * (item.max - item.min);
-                    const steppedValue = Math.round(newValue / item.step) * item.step;
-                    const clampedValue = Math.max(item.min, Math.min(item.max, steppedValue));
-                    item.setValue(clampedValue);
-                    return true;
-                }
-                
-                y += sliderHeight + this.itemSpacing;
+        // Calculate width from items
+        for (const item of this.items) {
+            if (item.type === 'toggle') {
+                const textWidth = measureTextCached(ctx, item.label, ctx.font);
+                maxWidth = Math.max(maxWidth, textWidth + 30 + this.padding * 2);
             } else if (item.type === 'button') {
-                y += 20 + this.itemSpacing;
-            } else if (item.type === 'toggle') {
-                y += 20 + this.itemSpacing;
-            } else if (item.type === 'text') {
-                const height = item._cachedHeight || 14;
-                y += height + this.itemSpacing;
-            } else if (item.type === 'section') {
-                y += 20 + this.itemSpacing;
+                ctx.font = 'bold 12px Courier New';
+                const buttonTextWidth = measureTextCached(ctx, item.label, ctx.font);
+                maxWidth = Math.max(maxWidth, buttonTextWidth + 32 + this.padding * 2);
+                ctx.font = '12px Courier New';
             }
         }
         
-        return false;
+        // Calculate content height using layout engine
+        const layout = computeLayout(this.items, this);
+        this.contentHeight = this.headerHeight + this.padding;
+        if (layout.length > 0) {
+            const lastItem = layout[layout.length - 1];
+            this.contentHeight = lastItem.y + lastItem.height + this.padding;
+        }
+        
+        // Set final size
+        if (this.minimized) {
+            this.width = maxWidth;
+            this.height = this.headerHeight;
+        } else {
+            this.width = maxWidth;
+            const maxHeight = Math.floor(window.innerHeight * 0.5);
+            this.height = Math.min(this.contentHeight, maxHeight);
+            
+            // Add scrollbar width if needed
+            if (this.contentHeight > this.height) {
+                this.width += CONST.WIDTH_SCROLLBAR + 4;
+            }
+            
+            // Clamp scroll offset
+            const maxScroll = Math.max(0, this.contentHeight - this.height);
+            this.scrollOffset = clamp(this.scrollOffset, 0, maxScroll);
+        }
+        
+        this.layoutDirty = false;
     }
     
-    // ═════════════════════════════════════════════════
-    //  DRAGGING
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   DRAGGING
+    // ═══════════════════════════════════════════════════════════════
     
     startDrag(mouseX, mouseY) {
-        // TRANSPARENT MODE: No header, but can drag by content and toggle via eye button
-        if (this.transparent) {
-            // Check if clicked on floating eye button (top-right of content area)
-            const eyeBtn = {
-                x: this.x + this.width - this.buttonSize - this.buttonPadding,
-                y: this.y + this.buttonPadding,
-                width: this.buttonSize,
-                height: this.buttonSize
-            };
-            
-            if (mouseX >= eyeBtn.x && mouseX <= eyeBtn.x + eyeBtn.width &&
-                mouseY >= eyeBtn.y && mouseY <= eyeBtn.y + eyeBtn.height) {
-                // Toggle back to normal mode
-                this.transparent = false;
-                if (this.onToggleTransparent) this.onToggleTransparent(this.transparent);
-                this.markDirty();
-                return true;
-            }
-            
-            // Allow dragging by clicking anywhere in content area
-            if (this.containsPoint(mouseX, mouseY)) {
-                this.isDragging = true;
-                this.dragOffsetX = mouseX - this.x;
-                this.dragOffsetY = mouseY - this.y;
-                return true;
-            }
-            
-            return false;
-        }
-        
-        // NORMAL MODE: Header with buttons + scrollbar
-        
-        // Check if clicked on slider FIRST (before scrollbar)
-        const sliderResult = this.checkSliderClick(mouseX, mouseY);
-        if (sliderResult) {
-            return true; // Slider drag started
-        }
-        
-        // Check scrollbar thumb SECOND
-        if (this.containsScrollThumb(mouseX, mouseY)) {
-            const thumb = this.getScrollThumbBounds();
+        // Check scrollbar first
+        if (hitScrollbarThumb(this, mouseX, mouseY)) {
             this.isDraggingThumb = true;
-            this.thumbDragOffset = mouseY - thumb.y;
-            return true;
+            const scroll = computeScrollbar(this);
+            if (scroll) {
+                this.thumbDragOffset = mouseY - scroll.thumb.y;
+            }
+            return;
+        }
+        
+        if (hitScrollbarTrack(this, mouseX, mouseY)) {
+            // Click on track - jump to position
+            const scroll = computeScrollbar(this);
+            if (scroll) {
+                const clickRatio = (mouseY - scroll.track.y) / scroll.track.height;
+                const maxScroll = this.contentHeight - this.height;
+                this.scrollOffset = clamp(clickRatio * maxScroll, 0, maxScroll);
+            }
+            return;
         }
         
         // Check header buttons
         if (this.containsHeader(mouseX, mouseY)) {
-            // Check header buttons FIRST (before starting drag)
-            if (this.containsCloseButton(mouseX, mouseY)) {
-                if (this.onClose) this.onClose();
-                return true; // Handled
+            for (let i = 0; i < 3; i++) {
+                const btn = getHeaderButtonBounds(this, i);
+                if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
+                    if (i === 0) this.transparent = !this.transparent;
+                    if (i === 1) this.minimized = !this.minimized; this.layoutDirty = true;
+                    if (i === 2) this.visible = false;
+                    return;
+                }
             }
             
-            if (this.containsMinimizeButton(mouseX, mouseY)) {
-                // Minimize = hide window completely, show on taskbar
-                this.visible = false;
-                this.minimized = true;
-                if (this.onMinimize) this.onMinimize(this.minimized);
-                this.markDirty();
-                return true; // Handled
-            }
-            
-            if (this.containsEyeButton(mouseX, mouseY)) {
-                this.transparent = !this.transparent;
-                if (this.onToggleTransparent) this.onToggleTransparent(this.transparent);
-                this.markDirty();
-                return true; // Handled
-            }
-            
-            // No button clicked - start dragging
+            // Start window drag
             this.isDragging = true;
             this.dragOffsetX = mouseX - this.x;
             this.dragOffsetY = mouseY - this.y;
-            return true;
+            this.dragStartX = mouseX;
+            this.dragStartY = mouseY;
+            this.dragMoved = false;
         }
-        
-        // Check if clicked on scrollbar track (not thumb) - jump scroll but don't block click
-        if (this.containsScrollTrack(mouseX, mouseY)) {
-            const thumb = this.getScrollThumbBounds();
-            if (thumb) {
-                const trackHeight = this.height - this.headerHeight - this.padding * 2;
-                const clickY = mouseY - (this.y + this.headerHeight + this.padding);
-                const newScrollOffset = (clickY / trackHeight) * this.maxScroll;
-                this.scrollOffset = Math.max(0, Math.min(this.maxScroll, newScrollOffset));
-                this.markDirty();
-            }
-            return true;
-        }
-        
-        // Content area - return false so handleClick can be called!
-        return false;
     }
     
     drag(mouseX, mouseY) {
-        // Handle slider dragging FIRST
-        for (let item of this.items) {
-            if (item.type === 'slider' && item.dragging) {
-                const width = this.width - this.padding * 2;
-                const relativeX = mouseX - (this.x + this.padding);
-                const normalized = Math.max(0, Math.min(1, relativeX / width));
-                const newValue = item.min + normalized * (item.max - item.min);
-                const steppedValue = Math.round(newValue / item.step) * item.step;
-                const clampedValue = Math.max(item.min, Math.min(item.max, steppedValue));
-                item.setValue(clampedValue);
-                this.markDirty();
-                return; // Don't drag window while dragging slider
-            }
-        }
-        
-        // Window dragging (only if NOT dragging slider)
-        if (this.isDragging && !this.isDraggingSlider) {
-            this.x = mouseX - this.dragOffsetX;
-            this.y = mouseY - this.dragOffsetY;
-            this.markDirty();
-        }
-        
         if (this.isDraggingThumb) {
-            const trackHeight = this.height - this.headerHeight - this.padding * 2;
-            const thumb = this.getScrollThumbBounds();
-            if (thumb) {
-                const thumbHeight = thumb.height;
+            const scroll = computeScrollbar(this);
+            if (scroll) {
                 const newThumbY = mouseY - this.thumbDragOffset;
-                const trackStartY = this.y + this.headerHeight + this.padding;
-                const thumbRelativeY = newThumbY - trackStartY;
-                
-                // Calculate new scroll offset
-                const scrollRatio = thumbRelativeY / (trackHeight - thumbHeight);
-                const newScrollOffset = scrollRatio * this.maxScroll;
-                
-                this.scrollOffset = Math.max(0, Math.min(this.maxScroll, newScrollOffset));
-                this.markDirty();
+                const maxThumbY = scroll.track.y + scroll.track.height - scroll.thumb.height;
+                const clampedThumbY = clamp(newThumbY, scroll.track.y, maxThumbY);
+                const scrollRatio = (clampedThumbY - scroll.track.y) / (scroll.track.height - scroll.thumb.height);
+                const maxScroll = this.contentHeight - this.height;
+                this.scrollOffset = clamp(scrollRatio * maxScroll, 0, maxScroll);
             }
+        } else if (this.isDragging) {
+            const dx = mouseX - this.dragStartX;
+            const dy = mouseY - this.dragStartY;
+            if (dx * dx + dy * dy > this.dragThreshold * this.dragThreshold) {
+                this.dragMoved = true;
+            }
+            if (this.dragMoved) {
+                this.x = mouseX - this.dragOffsetX;
+                this.y = mouseY - this.dragOffsetY;
+            }
+        } else if (this.isDraggingSlider && this.draggingSliderItem) {
+            const newValue = normalizeSliderValue(this.draggingSliderItem, this, mouseX);
+            this.draggingSliderItem.setValue(newValue);
         }
     }
     
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
-        this.isDraggingSlider = false; // Reset slider drag flag
-        
-        // Stop all slider dragging
-        for (let item of this.items) {
-            if (item.type === 'slider') {
-                item.dragging = false;
-            }
-        }
+        this.isDraggingSlider = false;
+        this.draggingSliderItem = null;
     }
     
-    // ═════════════════════════════════════════════════
-    //  CLICK HANDLING
-    // ═════════════════════════════════════════════════
-    
-    handleClick(mouseX, mouseY) {
-        if (!this.visible || !this.containsPoint(mouseX, mouseY)) {
-            return false;
-        }
-        
-        // In transparent mode, content starts at this.y + padding (no header)
-        // In normal mode, content starts at this.y + headerHeight + padding
-        const startY = this.transparent ? 
-            (this.y + this.padding) : 
-            (this.y + this.headerHeight + this.padding - this.scrollOffset);
-        
-        let y = startY;
-        
-        for (let item of this.items) {
-            if (item.type === 'button') {
-                const buttonHeight = 20;
-                // Check both X and Y!
-                if (mouseY >= y && mouseY <= y + buttonHeight &&
-                    mouseX >= this.x + this.padding && 
-                    mouseX <= this.x + this.width - this.padding) {
-                    item.callback();
-                    return true;
-                }
-                y += buttonHeight + this.itemSpacing;
-            } else if (item.type === 'text') {
-                // Use cached height from last draw (or estimate)
-                const height = item._cachedHeight || 14;
-                y += height + this.itemSpacing;
-            } else if (item.type === 'section') {
-                y += 20 + this.itemSpacing;
-            } else if (item.type === 'toggle') {
-                const toggleHeight = 20;
-                // Check if clicked on toggle
-                if (mouseY >= y && mouseY <= y + toggleHeight &&
-                    mouseX >= this.x + this.padding && 
-                    mouseX <= this.x + this.width - this.padding) {
-                    // Toggle value
-                    item.setValue(!item.getValue());
-                    return true;
-                }
-                y += toggleHeight + this.itemSpacing;
-            } else if (item.type === 'slider') {
-                const sliderHeight = 40;
-                // Slider handled by drag() - just skip height
-                y += sliderHeight + this.itemSpacing;
-            }
-        }
-        
-        return false;
-    }
-    
-    // ═════════════════════════════════════════════════
-    //  SCROLLING
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   MOUSE INTERACTION
+    // ═══════════════════════════════════════════════════════════════
     
     handleScroll(deltaY) {
-        const oldScroll = this.scrollOffset;
-        this.scrollOffset = Math.max(0, Math.min(this.maxScroll, this.scrollOffset + deltaY));
+        if (this.contentHeight <= this.height) return false;
         
-        if (oldScroll !== this.scrollOffset) {
-            this.markDirty();
-        }
+        const scrollSpeed = 30;
+        this.scrollOffset += deltaY > 0 ? scrollSpeed : -scrollSpeed;
+        const maxScroll = Math.max(0, this.contentHeight - this.height);
+        this.scrollOffset = clamp(this.scrollOffset, 0, maxScroll);
+        return true;
     }
     
-    // ═════════════════════════════════════════════════
-    //  DRAWING (requires STYLES from Styles.js)
-    // ═════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    //   DRAWING
+    // ═══════════════════════════════════════════════════════════════
     
     draw(ctx, STYLES) {
         if (!this.visible) return;
+        
+        this.calculateSize(ctx);
+        
         if (this.minimized) {
-            this.drawMinimized(ctx, STYLES);
+            drawMinimizedHeader(ctx, this, STYLES);
             return;
         }
         
-        if (this.transparent) {
-            // TRANSPARENT MODE: Only draw content, no header/border/buttons
-            this.drawContentOnly(ctx, STYLES);
-            return;
+        // Window background
+        if (!this.transparent) {
+            ctx.fillStyle = STYLES.panel.bgColor;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = this.isDragging ? STYLES.colors.panelHover : STYLES.panel.borderColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
-        
-        // NORMAL MODE: Full window with header and border
-        ctx.fillStyle = STYLES.panel.bgColor;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
         
         // Header
-        ctx.fillStyle = STYLES.panel.headerBgColor;
-        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
+        drawHeader(ctx, this, STYLES);
         
-        // Title (uppercase)
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
+        // Content (with clipping)
+        const contentX = this.x;
+        const contentY = this.y + this.headerHeight;
+        const contentWidth = this.width;
+        const contentHeight = this.height - this.headerHeight;
         
-        // Header buttons
-        this.drawHeaderButtons(ctx, STYLES);
-        
-        // Border
-        ctx.strokeStyle = STYLES.panel.borderColor;
-        ctx.lineWidth = STYLES.panel.borderWidth;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
-        
-        // Content (with clipping and scroll)
-        this.drawContent(ctx, STYLES);
-        
-        // Scrollbar (if needed)
-        if (this.contentHeight > this.height - this.headerHeight) {
-            this.drawScrollbar(ctx, STYLES);
-        }
-        
-        this.isDirty = false;
-    }
-    
-    drawMinimized(ctx, STYLES) {
-        // Just draw header when minimized
-        ctx.fillStyle = STYLES.panel.bgColor;
-        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
-        
-        ctx.fillStyle = STYLES.panel.headerBgColor;
-        ctx.fillRect(this.x, this.y, this.width, this.headerHeight);
-        
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = STYLES.fonts.mainBold;
-        ctx.fillText(this.title.toUpperCase(), this.x + this.padding, this.y + this.headerHeight - 8);
-        
-        // Header buttons
-        this.drawHeaderButtons(ctx, STYLES);
-        
-        ctx.strokeStyle = STYLES.panel.borderColor;
-        ctx.lineWidth = STYLES.panel.borderWidth;
-        ctx.strokeRect(this.x, this.y, this.width, this.headerHeight);
-    }
-    
-    // ═════════════════════════════════════════════════
-    //  HEADER BUTTONS DRAWING
-    // ═════════════════════════════════════════════════
-    
-    drawHeaderButtons(ctx, STYLES) {
-        const color = STYLES.colors.panel;
-        
-        // Close button (X)
-        const closeBtn = this.getCloseButtonBounds();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(closeBtn.x, closeBtn.y, closeBtn.width, closeBtn.height);
-        
-        // X symbol
-        const padding = 4;
-        ctx.beginPath();
-        ctx.moveTo(closeBtn.x + padding, closeBtn.y + padding);
-        ctx.lineTo(closeBtn.x + closeBtn.width - padding, closeBtn.y + closeBtn.height - padding);
-        ctx.moveTo(closeBtn.x + closeBtn.width - padding, closeBtn.y + padding);
-        ctx.lineTo(closeBtn.x + padding, closeBtn.y + closeBtn.height - padding);
-        ctx.stroke();
-        
-        // Minimize button (_)
-        const minBtn = this.getMinimizeButtonBounds();
-        ctx.strokeRect(minBtn.x, minBtn.y, minBtn.width, minBtn.height);
-        
-        // _ symbol
-        ctx.beginPath();
-        ctx.moveTo(minBtn.x + padding, minBtn.y + minBtn.height - padding);
-        ctx.lineTo(minBtn.x + minBtn.width - padding, minBtn.y + minBtn.height - padding);
-        ctx.stroke();
-        
-        // Eye button (○ or ●)
-        const eyeBtn = this.getEyeButtonBounds();
-        ctx.strokeRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
-        
-        // Circle (filled if transparent)
-        ctx.beginPath();
-        ctx.arc(
-            eyeBtn.x + eyeBtn.width / 2,
-            eyeBtn.y + eyeBtn.height / 2,
-            4,
-            0,
-            Math.PI * 2
-        );
-        if (this.transparent) {
-            ctx.fillStyle = color;
-            ctx.fill();
-        } else {
-            ctx.stroke();
-        }
-    }
-    
-    drawContent(ctx, STYLES) {
-        // Setup clipping region
         ctx.save();
         ctx.beginPath();
-        ctx.rect(this.x, this.y + this.headerHeight, 
-                 this.width, this.height - this.headerHeight);
+        ctx.rect(contentX, contentY, contentWidth, contentHeight);
         ctx.clip();
         
-        // Apply scroll transform
-        ctx.translate(0, -this.scrollOffset);
-        
-        // Draw items
-        let y = this.y + this.headerHeight + this.padding;
-        this.contentHeight = 0;
-        
-        ctx.font = STYLES.fonts.main;
-        
-        for (let item of this.items) {
-            if (item.type === 'button') {
-                this.drawButton(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            } else if (item.type === 'text') {
-                this.drawText(ctx, STYLES, item, y);
-                const height = this.getTextHeight(ctx, item);
-                item._cachedHeight = height; // Cache for handleClick
-                y += height + this.itemSpacing;
-                this.contentHeight += height + this.itemSpacing;
-            } else if (item.type === 'section') {
-                this.drawSection(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            } else if (item.type === 'slider') {
-                this.drawSlider(ctx, STYLES, item, y);
-                y += 40 + this.itemSpacing;
-                this.contentHeight += 40 + this.itemSpacing;
-            } else if (item.type === 'toggle') {
-                this.drawToggle(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            }
+        const layout = computeLayout(this.items, this);
+        for (const entry of layout) {
+            const { item, y } = entry;
+            const adjustedY = y - this.scrollOffset;
+            
+            // CRITICAL: Convert to absolute screen position for culling
+            const absoluteY = this.y + adjustedY;
+            
+            // Cull items outside view (using absolute coordinates)
+            if (absoluteY + entry.height < contentY || absoluteY > contentY + contentHeight) continue;
+            
+            // Pass STYLES to item and call its draw method
+            item.STYLES = STYLES;
+            // Use absolute position for drawing
+            item.draw(ctx, this, this.x + this.padding, absoluteY);
         }
         
         ctx.restore();
         
-        // Update max scroll
-        this.maxScroll = Math.max(0, this.contentHeight - (this.height - this.headerHeight));
+        // Scrollbar
+        drawScrollbar(ctx, this, STYLES);
     }
     
-    // Draw ONLY content (no header, border, buttons) - for transparent mode (HUD style)
-    drawContentOnly(ctx, STYLES) {
-        // No clipping, no background - just floating content
-        ctx.save();
+    // Matrix drawing (kept inline - too complex for component)
+    drawMatrix(ctx, item, y, STYLES) {
+        const matrix = item.getMatrix();
         
-        // Draw items starting from window position
-        let y = this.y + this.padding;
-        this.contentHeight = 0;
-        
-        ctx.font = STYLES.fonts.main;
-        
-        for (let item of this.items) {
-            if (item.type === 'button') {
-                this.drawButton(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            } else if (item.type === 'text') {
-                this.drawText(ctx, STYLES, item, y);
-                const height = this.getTextHeight(ctx, item);
-                item._cachedHeight = height; // Cache for handleClick
-                y += height + this.itemSpacing;
-                this.contentHeight += height + this.itemSpacing;
-            } else if (item.type === 'section') {
-                this.drawSection(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            } else if (item.type === 'slider') {
-                this.drawSlider(ctx, STYLES, item, y);
-                y += 40 + this.itemSpacing;
-                this.contentHeight += 40 + this.itemSpacing;
-            } else if (item.type === 'toggle') {
-                this.drawToggle(ctx, STYLES, item, y);
-                y += 20 + this.itemSpacing;
-                this.contentHeight += 20 + this.itemSpacing;
-            }
-        }
-        
-        // Draw floating eye button (to restore header)
-        const eyeBtn = {
-            x: this.x + this.width - this.buttonSize - this.buttonPadding,
-            y: this.y + this.buttonPadding,
-            width: this.buttonSize,
-            height: this.buttonSize
-        };
-        
-        const color = STYLES.colors.panel;
-        
-        // Button background (slightly visible)
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
-        ctx.fillRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
-        
-        // Button border
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(eyeBtn.x, eyeBtn.y, eyeBtn.width, eyeBtn.height);
-        
-        // Filled circle (indicating transparent mode is ON)
-        ctx.beginPath();
-        ctx.arc(
-            eyeBtn.x + eyeBtn.width / 2,
-            eyeBtn.y + eyeBtn.height / 2,
-            4,
-            0,
-            Math.PI * 2
-        );
-        ctx.fillStyle = color;
-        ctx.fill();
-        
-        ctx.restore();
-    }
-    
-    drawButton(ctx, STYLES, item, y) {
-        const buttonHeight = 20;
-        
-        // Button background
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
-        ctx.fillRect(this.x + this.padding, y, 
-                   this.width - this.padding * 2, buttonHeight);
-        
-        // Button text
         ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = STYLES.fonts.mainBold;
-        ctx.textAlign = 'center';
-        ctx.fillText(item.label, this.x + this.width / 2, y + 14);
+        ctx.font = 'bold 12px Courier New';
         ctx.textAlign = 'left';
-    }
-    
-    drawText(ctx, STYLES, item, y) {
-        // Handle dynamic text (callbacks)
-        const textValue = typeof item.text === 'function' ? item.text() : item.text;
+        ctx.fillText('INTERACTION MATRIX', this.x + this.padding, y + 12);
         
-        // Default green, cyan for stats
-        ctx.fillStyle = item.color || STYLES.colors.text;
-        ctx.font = STYLES.fonts.main;
+        const matrixStartY = y + 25;
+        const matrixX = this.x + item.labelWidth;
+        const matrixY = matrixStartY + 15;
         
-        // Get wrapped lines
-        const wrappedLines = this.wrapText(ctx, textValue, this.width - this.padding * 2);
+        ctx.font = '9px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         
-        // Limit lines if specified
-        const maxLines = Math.min(wrappedLines.length, item.lines || wrappedLines.length);
+        // Column labels
+        for (let col = 0; col < 16; col++) {
+            const labelX = matrixX + col * item.cellSize + item.cellSize / 2;
+            const labelY = matrixY - 10;
+            ctx.fillStyle = STYLES.colors.panel;
+            ctx.fillText(item.colorNames[col].substring(0, 2), labelX, labelY);
+        }
         
-        // Draw lines
-        for (let i = 0; i < maxLines; i++) {
-            ctx.fillText(wrappedLines[i], this.x + this.padding, y + 12 + i * 14);
+        // Rows
+        for (let row = 0; row < 16; row++) {
+            const labelX = this.x + item.labelWidth - 5;
+            const labelY = matrixY + row * item.cellSize + item.cellSize / 2;
+            ctx.fillStyle = STYLES.colors.panel;
+            ctx.textAlign = 'right';
+            ctx.fillText(item.colorNames[row].substring(0, 2), labelX, labelY);
+            ctx.textAlign = 'center';
+            
+            for (let col = 0; col < 16; col++) {
+                const cellX = matrixX + col * item.cellSize;
+                const cellY = matrixY + row * item.cellSize;
+                const value = matrix[row][col];
+                
+                const normalized = (value + 2) / 4;
+                let r, g, b;
+                if (normalized < 0.5) {
+                    r = 255; g = Math.floor(normalized * 2 * 255); b = 0;
+                } else {
+                    r = Math.floor((1 - (normalized - 0.5) * 2) * 255); g = 255; b = 0;
+                }
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                ctx.fillRect(cellX, cellY, item.cellSize, item.cellSize);
+                
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cellX, cellY, item.cellSize, item.cellSize);
+            }
         }
     }
     
-    wrapText(ctx, text, maxWidth) {
-        // Split by newlines first
-        const paragraphs = String(text).split('\n');
-        const allLines = [];
+    update(mouseX, mouseY, mouseDown, mouseClicked) {
+        if (!this.visible || this.minimized) return;
+
+        // Check if mouse is in content area
+        const contentTop = this.y + this.headerHeight;
+        const contentBottom = this.y + this.height;
+        const mouseInContentArea = mouseY >= contentTop && mouseY <= contentBottom &&
+                                  mouseX >= this.x && mouseX <= this.x + this.width;
+
+        const layout = computeLayout(this.items, this);
         
-        // Word wrap each paragraph
-        for (let para of paragraphs) {
-            if (para.trim() === '') {
-                allLines.push(''); // Empty line
-                continue;
-            }
+        // Update each item using their own update() methods
+        for (const entry of layout) {
+            const { item, y } = entry;
+            const adjustedY = y - this.scrollOffset;
+            const itemX = this.x + this.padding;
             
-            const words = para.split(' ');
-            let currentLine = '';
+            // CRITICAL: Convert to absolute screen position
+            const absoluteY = this.y + adjustedY;
             
-            for (let word of words) {
-                const testLine = currentLine ? currentLine + ' ' + word : word;
-                const metrics = ctx.measureText(testLine);
-                
-                if (metrics.width > maxWidth && currentLine) {
-                    // Line too long, push current line and start new
-                    allLines.push(currentLine);
-                    currentLine = word;
-                } else {
-                    currentLine = testLine;
+            // Check if item is in visible area (using absolute coordinates)
+            const itemHeight = item.getHeight ? item.getHeight(this) : 20;
+            const itemTop = absoluteY;
+            const itemBottom = absoluteY + itemHeight;
+            const isInVisibleArea = itemBottom > contentTop && itemTop < contentBottom;
+            
+            // Only update if visible and mouse in content area
+            if (isInVisibleArea && mouseInContentArea) {
+                // Pass STYLES to item for drawing
+                item.STYLES = this.STYLES;
+                // Use absolute position
+                item.update(mouseX, mouseY, mouseDown, mouseClicked, this, itemX, absoluteY);
+            } else {
+                // Reset hover if not visible
+                if (item.hovered !== undefined) {
+                    item.hovered = false;
                 }
             }
-            
-            if (currentLine) {
-                allLines.push(currentLine);
-            }
-        }
-        
-        return allLines;
-    }
-    
-    getTextHeight(ctx, item) {
-        const textValue = typeof item.text === 'function' ? item.text() : item.text;
-        const wrappedLines = this.wrapText(ctx, textValue, this.width - this.padding * 2);
-        const actualLines = Math.min(wrappedLines.length, item.lines || wrappedLines.length);
-        return actualLines * 14;
-    }
-    
-    drawSection(ctx, STYLES, item, y) {
-        const sectionY = y + 10;
-        
-        // Section styling
-        ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-        ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.font = STYLES.fonts.small;  // Use small font for sections
-        
-        // Measure title width for centering
-        const titleWidth = ctx.measureText(item.title).width;
-        const totalWidth = this.width - this.padding * 2;
-        const lineLength = (totalWidth - titleWidth - 8) / 2; // 8px spacing around title
-        
-        // Left line (centered)
-        ctx.beginPath();
-        ctx.moveTo(this.x + this.padding, sectionY);
-        ctx.lineTo(this.x + this.padding + lineLength, sectionY);
-        ctx.stroke();
-        
-        // Title (centered)
-        const titleX = this.x + this.padding + lineLength + 4;
-        ctx.fillText(item.title, titleX, sectionY + 4);
-        
-        // Right line (centered)
-        ctx.beginPath();
-        ctx.moveTo(titleX + titleWidth + 4, sectionY);
-        ctx.lineTo(this.x + this.width - this.padding, sectionY);
-        ctx.stroke();
-    }
-    
-    drawSlider(ctx, STYLES, item, y) {
-        const value = item.getValue();
-        const width = this.width - this.padding * 2;
-        const trackHeight = 6;
-        const thumbSize = 16;
-        
-        // Label (left) + Value (right)
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = STYLES.fonts.main;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(item.label, this.x + this.padding, y);
-        
-        // Value display
-        const valueText = value.toFixed(2);
-        ctx.textAlign = 'right';
-        ctx.fillText(valueText, this.x + this.padding + width, y);
-        
-        // Track
-        const trackY = y + 20;
-        ctx.fillStyle = STYLES.colors.sliderTrack || 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(this.x + this.padding, trackY, width, trackHeight);
-        
-        // Fill (green progress bar)
-        const range = item.max - item.min;
-        const normalizedValue = (value - item.min) / range;
-        const fillWidth = normalizedValue * width;
-        ctx.fillStyle = STYLES.colors.sliderFill || STYLES.colors.panel;
-        ctx.fillRect(this.x + this.padding, trackY, fillWidth, trackHeight);
-        
-        // Thumb (circle)
-        const thumbX = this.x + this.padding + normalizedValue * width;
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.beginPath();
-        ctx.arc(thumbX, trackY + trackHeight / 2, thumbSize / 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // RESET alignment and baseline!
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
-    }
-    
-    drawToggle(ctx, STYLES, item, y) {
-        const value = item.getValue();
-        const checkboxSize = 16;
-        const checkboxX = this.x + this.padding;
-        const checkboxY = y + 2;
-        
-        // Checkbox border
-        ctx.strokeStyle = STYLES.colors.panel;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
-        
-        // Fill if ON
-        if (value) {
-            ctx.fillStyle = STYLES.colors.panel;
-            ctx.fillRect(checkboxX + 3, checkboxY + 3, checkboxSize - 6, checkboxSize - 6);
-        }
-        
-        // Label
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = STYLES.fonts.main;
-        ctx.textBaseline = 'alphabetic'; // SET baseline explicitly!
-        ctx.fillText(item.label, checkboxX + checkboxSize + 8, checkboxY + 12);
-    }
-    
-    drawScrollbar(ctx, STYLES) {
-        if (this.maxScroll === 0) return; // No scrolling needed
-        
-        const scrollbarX = this.x + this.width - this.scrollbarWidth - 2;
-        const scrollbarY = this.y + this.headerHeight + this.padding;
-        const scrollbarHeight = this.height - this.headerHeight - this.padding * 2;
-        
-        // Track
-        ctx.fillStyle = STYLES.colors.scrollbarTrack || 'rgba(0, 0, 0, 0.3)';
-        ctx.fillRect(scrollbarX, scrollbarY, this.scrollbarWidth, scrollbarHeight);
-        
-        // Thumb (no highlight)
-        const thumb = this.getScrollThumbBounds();
-        if (thumb) {
-            ctx.fillStyle = STYLES.colors.panel;
-            ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
         }
     }
 }
 
-// Export for use in modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = BaseWindow;
-}
+export default BaseWindow;
