@@ -199,14 +199,9 @@ class BaseWindow {
                 const valueWidth = measureTextCached(ctx, '00.00', ctx.font); // Max value width
                 maxWidth = Math.max(maxWidth, labelWidth + valueWidth + 40 + this.padding * 2);
             } else if (item.type === 'text') {
-                // Text: measure all lines (capped at 400px for wrapping)
-                const textContent = typeof item.text === 'function' ? item.text() : item.text;
-                const lines = textContent.split('\n');
-                for (const line of lines) {
-                    const lineWidth = measureTextCached(ctx, line, ctx.font);
-                    // Cap text width at 400px (will wrap naturally in UI)
-                    maxWidth = Math.max(maxWidth, Math.min(lineWidth, 400) + this.padding * 2);
-                }
+                // Text: skip width calculation (word wrap handles this)
+                // Minimum width based on average line length
+                maxWidth = Math.max(maxWidth, 300 + this.padding * 2);
             } else if (item.type === 'section') {
                 // Section: title + decorative lines
                 const sectionWidth = measureTextCached(ctx, item.title, ctx.font);
