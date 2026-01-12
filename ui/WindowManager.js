@@ -47,7 +47,9 @@ class WindowManager {
         let topWindow = null;
         for (let i = this.windows.length - 1; i >= 0; i--) {
             const window = this.windows[i];
-            if (window.containsPoint(mouseX, mouseY) && window.visible && !window.minimized) {
+            // Check if visible (or transparent) and not minimized
+            const isInteractive = (window.visible || window.transparent) && !window.minimized;
+            if (window.containsPoint(mouseX, mouseY) && isInteractive) {
                 topWindow = window;
                 break;
             }
@@ -71,15 +73,20 @@ class WindowManager {
         for (let i = this.windows.length - 1; i >= 0; i--) {
             const window = this.windows[i];
             
-            // Skip invisible or minimized windows
-            if (!window.visible || window.minimized) {
+            // Skip invisible (unless transparent) or minimized windows
+            if ((!window.visible && !window.transparent) || window.minimized) {
                 continue;
             }
             
             // Check if click is within window
             if (window.containsPoint(x, y)) {
                 // Try to start drag (header, scrollbar, etc.)
-                window.startDrag(x, y);
+                const handled = window.startDrag(x, y);
+                
+                // If not handled (e.g., clicked outside header/scrollbar), don't block
+                if (!handled) {
+                    continue; // Try next window
+                }
                 
                 // Set as active window regardless (for handleClick in handleMouseUp)
                 this.activeWindow = window;

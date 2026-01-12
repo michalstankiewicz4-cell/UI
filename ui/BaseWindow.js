@@ -251,7 +251,7 @@ class BaseWindow {
             if (scroll) {
                 this.thumbDragOffset = mouseY - scroll.thumb.y;
             }
-            return;
+            return true; // Handled
         }
         
         if (hitScrollbarTrack(this, mouseX, mouseY)) {
@@ -262,7 +262,7 @@ class BaseWindow {
                 const maxScroll = this.contentHeight - this.height;
                 this.scrollOffset = clamp(clickRatio * maxScroll, 0, maxScroll);
             }
-            return;
+            return true; // Handled
         }
         
         // Check header buttons
@@ -293,7 +293,7 @@ class BaseWindow {
                             this.onClose();
                         }
                     }
-                    return;
+                    return true; // Button clicked - handled
                 }
             }
             
@@ -304,7 +304,10 @@ class BaseWindow {
             this.dragStartX = mouseX;
             this.dragStartY = mouseY;
             this.dragMoved = false;
+            return true; // Drag started
         }
+        
+        return false; // Not in header, not handled
     }
     
     drag(mouseX, mouseY) {
@@ -470,14 +473,11 @@ class BaseWindow {
     }
     
     update(mouseX, mouseY, mouseDown, mouseClicked) {
-        // Skip update if invisible (unless transparent - then skip interaction)
-        if (!this.visible || this.minimized) return;
-        
-        // Transparent windows are HUD-only (no interaction)
-        if (this.transparent) return;
+        // Skip update if invisible (unless transparent mode) or minimized
+        if ((!this.visible && !this.transparent) || this.minimized) return;
 
         // Check if mouse is in content area
-        const contentTop = this.y + this.headerHeight;
+        const contentTop = this.transparent ? this.y : (this.y + this.headerHeight);
         const contentBottom = this.y + this.height;
         const mouseInContentArea = mouseY >= contentTop && mouseY <= contentBottom &&
                                   mouseX >= this.x && mouseX <= this.x + this.width;

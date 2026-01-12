@@ -24,8 +24,8 @@ export function drawHeader(ctx, window, STYLES) {
     ctx.fillStyle = STYLES.panel.headerBgColor;
     ctx.fillRect(window.x, window.y, window.width, HEIGHT_HEADER);
     
-    // Title
-    ctx.fillStyle = window.isDragging ? STYLES.colors.panelHover : STYLES.colors.panel;
+    // Title (always same color, no drag highlight)
+    ctx.fillStyle = STYLES.colors.panel;
     ctx.font = STYLES.fonts.mainBold;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';

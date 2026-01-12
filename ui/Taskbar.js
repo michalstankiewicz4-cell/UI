@@ -20,9 +20,10 @@ class Taskbar {
         // Menu items - names from windows
         this.menuItems = [];
         
-        // OPT-11: Button position cache + canvas size tracking
+        // OPT-11: Button position cache + canvas size tracking + window tracking
         this.cachedPositions = [];
         this.cachedCount = 0;
+        this.cachedWindowKey = ''; // Track which windows are in taskbar
         this.cachedCanvasWidth = 0;
         this.cachedCanvasHeight = 0;
     }
@@ -114,13 +115,16 @@ class Taskbar {
         };
     }
 
-    getTaskbarButtonBounds(index, ctx, minimizedWindows, measureTextCached) {
-        // OPT-11: Cache positions + invalidate on canvas resize
+    getTaskbarButtonBounds(index, ctx, taskbarWindows, measureTextCached) {
+        // OPT-11: Cache positions + invalidate on canvas resize OR window change
         const canvasWidth = ctx.canvas.width;
         const canvasHeight = ctx.canvas.height;
         
-        // Invalidate cache if window count OR canvas size changed
-        if (this.cachedCount !== minimizedWindows.length ||
+        // Create cache key from window titles (detects window changes)
+        const windowKey = taskbarWindows.map(item => item.title).join('|');
+        
+        // Invalidate cache if window list OR canvas size changed
+        if (this.cachedWindowKey !== windowKey ||
             this.cachedCanvasWidth !== canvasWidth ||
             this.cachedCanvasHeight !== canvasHeight) {
             
@@ -128,8 +132,8 @@ class Taskbar {
             let x = this.startButtonWidth + 8;
             const y = canvasHeight - this.height + this.verticalPadding;
             
-            for (let i = 0; i < minimizedWindows.length; i++) {
-                const item = minimizedWindows[i];
+            for (let i = 0; i < taskbarWindows.length; i++) {
+                const item = taskbarWindows[i];
                 const width = this.getButtonWidth(item.title, ctx, measureTextCached);
                 
                 this.cachedPositions.push({
@@ -143,7 +147,8 @@ class Taskbar {
             }
             
             // Update cache state
-            this.cachedCount = minimizedWindows.length;
+            this.cachedWindowKey = windowKey;
+            this.cachedCount = taskbarWindows.length;
             this.cachedCanvasWidth = canvasWidth;
             this.cachedCanvasHeight = canvasHeight;
         }
@@ -183,9 +188,10 @@ class Taskbar {
                         
                         // Toggle window visibility
                         if (!item.window.visible) {
-                            // Window was closed - add it back to manager
+                            // Window was closed/minimized/transparent - restore fully
                             item.window.visible = true;
                             item.window.minimized = false;
+                            item.window.transparent = false; // Exit HUD mode
                             if (windowManager) {
                                 // Check if window is in manager
                                 if (!windowManager.windows.includes(item.window)) {
@@ -326,11 +332,11 @@ class Taskbar {
                     ctx.lineTo(menu.x + 8 + lineLength, sectionY);
                     ctx.stroke();
                     
-                    // Title (centered)
+                    // Title (centered, lowercase like in windows)
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'middle';
                     const titleX = menu.x + 8 + lineLength + 4;
-                    ctx.fillText(item.title.toUpperCase(), titleX, sectionY);
+                    ctx.fillText(item.title, titleX, sectionY); // No toUpperCase()
                     
                     // Right line
                     ctx.beginPath();
@@ -343,9 +349,21 @@ class Taskbar {
                     // Window item
                     const itemHeight = this.menuItemHeight;
                     
-                    // Item background
-                    ctx.fillStyle = 'rgba(0, 255, 136, 0.05)';
-                    ctx.fillRect(menu.x + 4, currentY + 2, menu.width - 8, itemHeight - 4);
+                    // Item background - cyan for transparent/HUD, green for minimized, light for normal
+                    const isTransparent = item.window.transparent && !item.window.visible;
+                    const isMinimized = item.window.minimized && !item.window.visible;
+                    
+                    let bgColor;
+                    if (isTransparent) {
+                        bgColor = 'rgba(0, 245, 255, 0.15)'; // Cyan for HUD
+                    } else if (isMinimized) {
+                        bgColor = 'rgba(0, 255, 136, 0.15)'; // Green for minimized
+                    } else {
+                        bgColor = 'rgba(0, 255, 136, 0.05)'; // Light for normal
+                    }
+                    
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(menu.x + 4, currentY + 1, menu.width - 8, itemHeight - 2); // 1px spacing
                     
                     // Item text
                     ctx.fillStyle = STYLES.colors.panel;
