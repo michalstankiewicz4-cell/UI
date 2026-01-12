@@ -17,7 +17,23 @@ const STYLES = {
         sectionDim: 'rgba(0, 255, 136, 0.5)',
         scrollbarTrack: 'rgba(0, 0, 0, 0.3)',
         sliderTrack: 'rgba(0, 0, 0, 0.3)',
-        sliderFill: '#00FF88'
+        sliderFill: '#00FF88',
+        
+        // Buttons & Controls
+        buttonBg: 'rgba(0, 255, 136, 0.15)',         // Button background
+        sliderBorder: 'rgba(0, 255, 136, 0.3)',      // Slider track border
+        
+        // Matrix
+        matrixCell: 'rgba(0, 255, 136, 0.2)',        // Matrix cell border
+        
+        // Taskbar & Menu
+        taskbarBg: 'rgba(0, 0, 0, 0.9)',             // Taskbar background
+        menuBg: 'rgba(0, 0, 0, 0.95)',               // Menu background
+        menuItemHud: 'rgba(0, 245, 255, 0.15)',      // HUD window in menu (cyan)
+        menuItemMin: 'rgba(0, 255, 136, 0.15)',      // Minimized window in menu (green)
+        menuItemNormal: 'rgba(0, 255, 136, 0.05)',   // Normal window in menu
+        taskbarButtonBg: 'rgba(0, 255, 136, 0.2)',   // Taskbar button background
+        startButtonBg: 'rgba(0, 255, 136, 0.1)'      // Start button background
     },
     spacing: {
         padding: 10,

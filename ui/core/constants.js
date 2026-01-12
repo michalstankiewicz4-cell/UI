@@ -30,6 +30,18 @@ export const RADIUS_SLIDER_THUMB = 8;
 // Toggle
 export const SIZE_TOGGLE_CHECKBOX = 16;
 
+// Header buttons
+export const RADIUS_EYE = 4;           // Eye icon radius
+
+// Menu
+export const PADDING_MENU = 8;         // Menu padding (top/bottom/sides)
+export const SPACING_MENU_ITEM = 1;    // Space between menu items
+export const HEIGHT_MENU_SECTION = 24; // Section header height
+
+// Taskbar
+export const PADDING_TASKBAR_VERTICAL = 4;      // Vertical padding for taskbar buttons
+export const PADDING_BUTTON_HORIZONTAL = 16;    // Horizontal padding for buttons (text spacing)
+
 // Export all constants as object for bundle compatibility
 export const CONST = {
     HEIGHT_BUTTON,
@@ -46,5 +58,11 @@ export const CONST = {
     MIN_THUMB_HEIGHT,
     HEIGHT_SLIDER_TRACK,
     RADIUS_SLIDER_THUMB,
-    SIZE_TOGGLE_CHECKBOX
+    SIZE_TOGGLE_CHECKBOX,
+    RADIUS_EYE,
+    PADDING_MENU,
+    SPACING_MENU_ITEM,
+    HEIGHT_MENU_SECTION,
+    PADDING_TASKBAR_VERTICAL,
+    PADDING_BUTTON_HORIZONTAL
 };

@@ -52,7 +52,7 @@ class SliderItem extends UIItem {
         ctx.fillRect(x, trackY, trackWidth, trackHeight);
         
         // Track border (shows full range)
-        ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+        ctx.strokeStyle = STYLES.colors.sliderBorder;
         ctx.lineWidth = 1;
         ctx.strokeRect(x, trackY, trackWidth, trackHeight);
         

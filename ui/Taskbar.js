@@ -4,18 +4,20 @@
 // Extracted from Petrie Dish v5.1-C2
 // Windows-style taskbar with menu and window management
 
+import { PADDING_MENU, SPACING_MENU_ITEM, HEIGHT_MENU_SECTION, PADDING_TASKBAR_VERTICAL, PADDING_BUTTON_HORIZONTAL } from './core/constants.js';
+
 class Taskbar {
     constructor() {
         this.buttonHeight = 32;
-        this.verticalPadding = 4; // Small padding above/below button
-        this.height = this.buttonHeight + this.verticalPadding * 2; // 32 + 8 = 40
+        this.verticalPadding = PADDING_TASKBAR_VERTICAL;
+        this.height = this.buttonHeight + this.verticalPadding * 2;
         this.menuOpen = false;
         this.menuWidth = 200;
         this.menuItemHeight = 36;
         this.buttonWidth = 100;
         this.buttonSpacing = 4;
         this.startButtonWidth = 80;
-        this.buttonPadding = 16; // Horizontal padding for buttons
+        this.buttonPadding = PADDING_BUTTON_HORIZONTAL;
         
         // Menu items - names from windows
         this.menuItems = [];
@@ -39,11 +41,11 @@ class Taskbar {
     
     getMenuHeight() {
         // Dynamic menu height based on items
-        let totalHeight = 16; // padding (8px top + 8px bottom)
+        let totalHeight = PADDING_MENU * 2;
         for (let i = 0; i < this.menuItems.length; i++) {
             const item = this.menuItems[i];
             if (item.type === 'section') {
-                totalHeight += 24; // Section height
+                totalHeight += HEIGHT_MENU_SECTION;
             } else if (item.type === 'window') {
                 totalHeight += this.menuItemHeight;
             }
@@ -264,11 +266,11 @@ class Taskbar {
         const canvasHeight = ctx.canvas.height;
         
         // Taskbar background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillStyle = STYLES.colors.taskbarBg;
         ctx.fillRect(0, canvasHeight - this.height, canvasWidth, this.height);
         
         // Taskbar border
-        ctx.strokeStyle = '#00ff88';
+        ctx.strokeStyle = STYLES.colors.panel;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, canvasHeight - this.height);
@@ -278,7 +280,7 @@ class Taskbar {
         // Start button
         const startBtn = this.getStartButtonBounds(canvasHeight);
         
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+        ctx.fillStyle = STYLES.colors.startButtonBg;
         ctx.fillRect(startBtn.x, startBtn.y, startBtn.width, startBtn.height);
         
         ctx.strokeStyle = STYLES.colors.panel;
@@ -296,29 +298,28 @@ class Taskbar {
             const menu = this.getMenuBounds(canvasHeight);
             
             // Menu background
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+            ctx.fillStyle = STYLES.colors.menuBg;
             ctx.fillRect(menu.x, menu.y, menu.width, menu.height);
             
             // Menu border
-            ctx.strokeStyle = '#00ff88';
+            ctx.strokeStyle = STYLES.colors.panel;
             ctx.lineWidth = 2;
             ctx.strokeRect(menu.x, menu.y, menu.width, menu.height);
             
             // Menu items
-            const padding = 8;
-            let currentY = menu.y + padding;
+            let currentY = menu.y + PADDING_MENU;
             
             for (let i = 0; i < this.menuItems.length; i++) {
                 const item = this.menuItems[i];
                 
                 if (item.type === 'section') {
                     // Section header (centered like in windows)
-                    const sectionHeight = 24;
+                    const sectionHeight = HEIGHT_MENU_SECTION;
                     const sectionY = currentY + sectionHeight / 2;
                     
-                    ctx.strokeStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-                    ctx.fillStyle = STYLES.colors.sectionDim || 'rgba(0, 255, 136, 0.5)';
-                    ctx.font = STYLES.fonts.small;  // Use small font for sections
+                    ctx.strokeStyle = STYLES.colors.sectionDim;
+                    ctx.fillStyle = STYLES.colors.sectionDim;
+                    ctx.font = STYLES.fonts.small;
                     ctx.lineWidth = 1;
                     
                     // Measure title for centering
@@ -355,15 +356,15 @@ class Taskbar {
                     
                     let bgColor;
                     if (isTransparent) {
-                        bgColor = 'rgba(0, 245, 255, 0.15)'; // Cyan for HUD
+                        bgColor = STYLES.colors.menuItemHud;
                     } else if (isMinimized) {
-                        bgColor = 'rgba(0, 255, 136, 0.15)'; // Green for minimized
+                        bgColor = STYLES.colors.menuItemMin;
                     } else {
-                        bgColor = 'rgba(0, 255, 136, 0.05)'; // Light for normal
+                        bgColor = STYLES.colors.menuItemNormal;
                     }
                     
                     ctx.fillStyle = bgColor;
-                    ctx.fillRect(menu.x + 4, currentY + 1, menu.width - 8, itemHeight - 2); // 1px spacing
+                    ctx.fillRect(menu.x + 4, currentY + SPACING_MENU_ITEM, menu.width - 8, itemHeight - SPACING_MENU_ITEM * 2);
                     
                     // Item text
                     ctx.fillStyle = STYLES.colors.panel;
@@ -389,21 +390,18 @@ class Taskbar {
             
             // Button colors - cyan for transparent, green for minimized
             const isTransparent = item.window.transparent;
-            const bgColor = isTransparent ? 'rgba(0, 245, 255, 0.2)' : 'rgba(0, 255, 136, 0.2)'; // Cyan vs Green
-            const borderColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
-            const textColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
             
             // Button background
-            ctx.fillStyle = bgColor;
+            ctx.fillStyle = STYLES.colors.taskbarButtonBg;
             ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
-            // Button border
-            ctx.strokeStyle = borderColor;
+            // Button border (cyan for HUD, green for minimized)
+            ctx.strokeStyle = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
             ctx.lineWidth = 2;
             ctx.strokeRect(btn.x, btn.y, btn.width, btn.height);
             
-            // Button text
-            ctx.fillStyle = textColor;
+            // Button text (same color as border)
+            ctx.fillStyle = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
             ctx.font = STYLES.fonts.mainBold;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';

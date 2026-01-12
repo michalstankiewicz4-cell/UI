@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { rectHit } from '../core/geometry.js';
-import { SIZE_BUTTON, SPACING_BUTTON, HEIGHT_HEADER } from '../core/constants.js';
+import { SIZE_BUTTON, SPACING_BUTTON, HEIGHT_HEADER, RADIUS_EYE } from '../core/constants.js';
 
 /**
  * Get header button bounds (close, minimize, eye)
@@ -47,18 +47,17 @@ export function drawHeaderButtons(ctx, window, STYLES) {
     
     const eyeX = eyeBtn.x + eyeBtn.width / 2;
     const eyeY = eyeBtn.y + eyeBtn.height / 2;
-    const eyeRadius = 4;
     
     if (window.transparent) {
         // Closed eye (line)
         ctx.beginPath();
-        ctx.moveTo(eyeX - eyeRadius, eyeY);
-        ctx.lineTo(eyeX + eyeRadius, eyeY);
+        ctx.moveTo(eyeX - RADIUS_EYE, eyeY);
+        ctx.lineTo(eyeX + RADIUS_EYE, eyeY);
         ctx.stroke();
     } else {
         // Open eye (ellipse + dot)
         ctx.beginPath();
-        ctx.ellipse(eyeX, eyeY, eyeRadius, eyeRadius * 0.7, 0, 0, Math.PI * 2);
+        ctx.ellipse(eyeX, eyeY, RADIUS_EYE, RADIUS_EYE * 0.7, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.fillStyle = STYLES.colors.panel;
         ctx.beginPath();

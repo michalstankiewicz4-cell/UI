@@ -28,7 +28,7 @@ class ButtonItem extends UIItem {
         const STYLES = this.STYLES || window.STYLES;
         
         // Button background
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.15)';
+        ctx.fillStyle = STYLES.colors.buttonBg;
         ctx.fillRect(x, y, width, height);
         ctx.strokeStyle = STYLES.colors.panel;
         ctx.lineWidth = 2;

@@ -265,8 +265,8 @@ class BaseWindow {
             return true; // Handled
         }
         
-        // Check header buttons
-        if (this.containsHeader(mouseX, mouseY)) {
+        // Check header buttons (skip in transparent mode - header not visible)
+        if (!this.transparent && this.containsHeader(mouseX, mouseY)) {
             for (let i = 0; i < 3; i++) {
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
@@ -465,7 +465,7 @@ class BaseWindow {
                 ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
                 ctx.fillRect(cellX, cellY, item.cellSize, item.cellSize);
                 
-                ctx.strokeStyle = 'rgba(0, 255, 136, 0.2)';
+                ctx.strokeStyle = STYLES.colors.matrixCell;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(cellX, cellY, item.cellSize, item.cellSize);
             }
