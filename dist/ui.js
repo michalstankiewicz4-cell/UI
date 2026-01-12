@@ -687,11 +687,16 @@ if (typeof module !== 'undefined' && module.exports) {
 
 /**
  * SectionItem - Visual divider with title
+ * 
+ * Types:
+ * - 'standard' (default) - Green dimmed color for normal sections
+ * - 'statistics' - Cyan dimmed color for statistics sections
  */
 class SectionItem extends UIItem {
-    constructor(title) {
+    constructor(title, type = 'standard') {
         super('section');
         this.title = title;
+        this.sectionType = type; // 'standard' or 'statistics'
     }
 
     getHeight(window) {
@@ -702,13 +707,18 @@ class SectionItem extends UIItem {
         const width = window.width - window.padding * 2;
         const STYLES = this.STYLES || window.STYLES;
         
+        // Choose color based on section type
+        const color = this.sectionType === 'statistics' 
+            ? 'rgba(0, 245, 255, 0.5)'  // Cyan dimmed (statistics)
+            : STYLES.colors.sectionDim;  // Green dimmed (standard)
+        
         ctx.font = STYLES.fonts.main;
         const textWidth = ctx.measureText(this.title).width;
         const lineY = y + 10;
         const lineWidth = (width - textWidth - 16) / 2;
         
         // Left line
-        ctx.strokeStyle = STYLES.colors.sectionDim;
+        ctx.strokeStyle = color;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, lineY);
@@ -716,7 +726,7 @@ class SectionItem extends UIItem {
         ctx.stroke();
         
         // Title text
-        ctx.fillStyle = STYLES.colors.sectionDim;
+        ctx.fillStyle = color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.title, x + width / 2, lineY);
@@ -1588,14 +1598,46 @@ class BaseWindow {
         this.layoutDirty = true;
     }
     
-    addText(text, color = '#00ff88', lines = null) {
+    /**
+     * Add text with automatic color based on last section type
+     * @param {string|function} text - Text or function returning text
+     * @param {string|null} color - Color (null = auto from section)
+     */
+    addText(text, color = null) {
+        // Auto color: if null, use last section's type
+        if (color === null) {
+            const lastSection = this.getLastSection();
+            if (lastSection && lastSection.sectionType === 'statistics') {
+                color = '#00F5FF'; // Auto cyan for statistics sections
+            } else {
+                color = '#00ff88'; // Default green
+            }
+        }
         this.items.push(new TextItem(text, color));
         this.layoutDirty = true;
     }
     
-    addSection(title) {
-        this.items.push(new SectionItem(title));
+    /**
+     * Add section separator (unified API)
+     * @param {string} title - Section title
+     * @param {string} type - 'standard' (green) or 'statistics' (cyan)
+     */
+    addSection(title, type = 'standard') {
+        this.items.push(new SectionItem(title, type));
         this.layoutDirty = true;
+    }
+    
+    /**
+     * Get last section item (for auto color detection)
+     * @returns {SectionItem|null}
+     */
+    getLastSection() {
+        for (let i = this.items.length - 1; i >= 0; i--) {
+            if (this.items[i].type === 'section') {
+                return this.items[i];
+            }
+        }
+        return null;
     }
     
     addMatrix(getMatrix, setMatrix, colorNames) {

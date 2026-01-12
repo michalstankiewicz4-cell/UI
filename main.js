@@ -71,9 +71,9 @@ demoWindow.addButton('NEW WINDOW', () => {
     );
     newWin.width = 300;
     newWin.height = 220;
-    newWin.addSection('info');
-    newWin.addText('Dynamically created window!', '#00F5FF');
-    newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`, '#00F5FF');
+    newWin.addSection('info', 'statistics');
+    newWin.addText('Dynamically created window!');
+    newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`);
     newWin.addSection('controls');
     newWin.addButton('CLOSE ME', () => {
         windowManager.remove(newWin);
@@ -133,19 +133,19 @@ demoWindow.addSection('standard text content');
 demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
 
 // Section: STATIST. TEXT CONTENT (cyjan) - Data i czas
-demoWindow.addSection('statist. text content');
+demoWindow.addSection('statist. text content', 'statistics');
 demoWindow.addText(() => {
     const now = new Date();
     return `Aktualna data: ${now.toLocaleDateString('pl-PL')}`;
-}, '#00F5FF');
+});
 
 demoWindow.addText(() => {
     const now = new Date();
     return `Aktualny czas: ${now.toLocaleTimeString('pl-PL')}`;
-}, '#00F5FF');
+});
 
 // Section: STATIST. TEXT CONTENT (cyjan) - Blok statystyk
-demoWindow.addSection('statist. text content');
+demoWindow.addSection('statist. text content', 'statistics');
 demoWindow.addText(() => {
     const fps = Math.round(performance.now() / 1000) % 60 + 30;
     const memory = (Math.random() * 50 + 50).toFixed(1);
@@ -157,7 +157,7 @@ Active Windows: ${windows}
 Taskbar Items: ${items}
 Speed Setting: ${speedValue.toFixed(2)}x
 Volume: ${(volumeValue * 100).toFixed(0)}%`;
-}, '#00F5FF');
+});
 
 demoWindow.addText('─── Koniec Demo ───', '#00ff88');
 

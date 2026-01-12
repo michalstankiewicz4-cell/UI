@@ -93,14 +93,46 @@ class BaseWindow {
         this.layoutDirty = true;
     }
     
-    addText(text, color = '#00ff88', lines = null) {
+    /**
+     * Add text with automatic color based on last section type
+     * @param {string|function} text - Text or function returning text
+     * @param {string|null} color - Color (null = auto from section)
+     */
+    addText(text, color = null) {
+        // Auto color: if null, use last section's type
+        if (color === null) {
+            const lastSection = this.getLastSection();
+            if (lastSection && lastSection.sectionType === 'statistics') {
+                color = '#00F5FF'; // Auto cyan for statistics sections
+            } else {
+                color = '#00ff88'; // Default green
+            }
+        }
         this.items.push(new TextItem(text, color));
         this.layoutDirty = true;
     }
     
-    addSection(title) {
-        this.items.push(new SectionItem(title));
+    /**
+     * Add section separator (unified API)
+     * @param {string} title - Section title
+     * @param {string} type - 'standard' (green) or 'statistics' (cyan)
+     */
+    addSection(title, type = 'standard') {
+        this.items.push(new SectionItem(title, type));
         this.layoutDirty = true;
+    }
+    
+    /**
+     * Get last section item (for auto color detection)
+     * @returns {SectionItem|null}
+     */
+    getLastSection() {
+        for (let i = this.items.length - 1; i >= 0; i--) {
+            if (this.items[i].type === 'section') {
+                return this.items[i];
+            }
+        }
+        return null;
     }
     
     addMatrix(getMatrix, setMatrix, colorNames) {
