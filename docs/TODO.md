@@ -1,14 +1,34 @@
 # UI System - TODO & Roadmap
 
 **Updated:** 2026-01-12  
-**Version:** v2.2  
-**Status:** Performance Optimization Complete + Factory Planned ✅
+**Version:** v2.3  
+**Status:** Interactive HUD + Performance Complete ✅
 
 **See also:** [ROADMAP.md](ROADMAP.md) for complete optimization details
 
 ---
 
 ## ✅ COMPLETED
+
+### v2.3 Interactive HUD + Polish (2026-01-12)
+- ✅ **Interactive HUD Mode** - Transparent windows with full functionality
+  - Buttons, sliders, toggles work in HUD mode
+  - WindowManager + BaseWindow support for transparent interactivity
+  - Content positioning fix (no header offset in HUD)
+- ✅ **Component Width Fixes** - Proper hitboxes for all controls
+  - ButtonItem: Fixed 100px width
+  - SliderItem: Fixed 200px track with visible border
+  - ToggleItem: Dynamic width (checkbox + text)
+  - UIItem.getWidth() method for accurate hit detection
+- ✅ **Click-Through Prevention** - startDrag() returns true/false
+  - WindowManager checks return value
+  - Prevents phantom clicks when closing windows
+- ✅ **UI Polish**
+  - Menu: 1px spacing (was 2px), section titles lowercase
+  - Menu: Cyan background for HUD windows, green for minimized
+  - Header: Title always same color (no drag highlight)
+  - Taskbar: Cache bugfix using window titles as key
+- **Result:** 3 commits (870adb4, 2ab9720, 567a563), full interactivity
 
 ### v2.2 Performance Optimization (2026-01-12)
 - ✅ OPT-1: Layout cache (+20-40% FPS!) 🔥
@@ -170,6 +190,7 @@ window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
 | 2026-01-10 | Structure cleanup | ✅ |
 | 2026-01-10 | FAZA C3 Sliders/Toggles | ✅ |
 | 2026-01-12 | v2.2 Performance Optimization | ✅ |
+| 2026-01-12 | v2.3 Interactive HUD + Polish | ✅ |
 | TBD | FAZA D1 Simulation Factory | 🔜 ⭐ |
 | TBD | Package A+B Optimizations | 🔜 |
 | TBD | FAZA C4 Advanced sliders | 🔜 |
@@ -178,13 +199,13 @@ window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
 
 ## 📊 Current Stats
 
-- **Bundle:** 1972 lines (dist/ui.js)
+- **Bundle:** 2248 lines (dist/ui.js)
 - **Performance:** +25-50% FPS vs v2.1
-- **BaseWindow:** ~445 lines
-- **Taskbar:** ~126 lines
-- **WindowManager:** ~126 lines
-- **Total codebase:** ~9000 lines
-- **Commits:** 101+
+- **BaseWindow:** ~475 lines
+- **Taskbar:** ~400 lines
+- **WindowManager:** ~133 lines
+- **Total codebase:** ~9200 lines
+- **Commits:** 111+
 
 ---
 

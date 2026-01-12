@@ -1,14 +1,14 @@
 # UI System - Complete Roadmap
 
 **Updated:** 2026-01-12  
-**Session:** Performance Optimization + Features  
-**Status:** In Progress 🚀
+**Session:** Performance + Interactive HUD + Polish  
+**Status:** Complete ✅
 
 ---
 
-## ✅ COMPLETED - Performance Optimizations
+## ✅ COMPLETED - All Optimizations & Features
 
-### Session: 2026-01-12 (2 hours)
+### Session 1: Performance (2026-01-12, 2h)
 
 | Commit | Optimization | Status | Impact |
 |--------|--------------|--------|--------|
@@ -25,6 +25,65 @@
 - **CPU:** -15-25% reduction  
 - **Cache:** +5-10% hit rate
 - **Bundle:** 1917 → 1972 lines (+2.9%)
+
+**Rejected:**
+- ❌ **OPT-8:** WindowManager.update early exit (conflicted with drag state)
+
+---
+
+### Session 2: Interactive HUD + Polish (2026-01-12, 1.5h)
+
+| Commit | Feature | Status | Impact |
+|--------|---------|--------|--------|
+| `870adb4` | **Minimize button fix** | ✅ Done | Windows appear in taskbar |
+| `2ab9720` | **Transparent/HUD mode + Component widths** | ✅ Done | Interactive overlay + fixed hitboxes |
+| `567a563` | **Polish + Interactive HUD finalization** | ✅ Done | Full interactivity |
+
+**Features Implemented:**
+
+**Interactive HUD Mode (👁️ Eye Button):**
+- Transparent windows render content only (no border/header)
+- Appear in taskbar with cyan color (#00f5ff)
+- **Fully interactive** - buttons, sliders, toggles work
+- BaseWindow.update() allows transparent windows
+- WindowManager.handleMouseDown() processes transparent
+- WindowManager.update() recognizes transparent as interactive
+- Content positioned from window.y (no header offset)
+
+**Component Width Fixes:**
+- ButtonItem: Fixed 100px width + getWidth() method
+- SliderItem: Fixed 200px track + visible border + getWidth()
+- ToggleItem: Dynamic width (checkbox + spacing + text) + getWidth()
+- UIItem: Base getWidth() returns full width (default)
+- Hitboxes now match visual size accurately
+
+**Click-Through Prevention:**
+- BaseWindow.startDrag() returns true/false (handled indicator)
+- WindowManager checks return value before blocking clicks
+- Prevents phantom clicks when closing/minimizing windows
+
+**UI Polish:**
+- Menu spacing: 2px → 1px (1px top + 1px bottom)
+- Menu sections: Lowercase titles (consistent with windows)
+- Menu backgrounds: Cyan (0.15 alpha) for HUD, green for minimized
+- Header title: No color change on drag (always panel color)
+- Taskbar cache: Uses window titles as key (not just count)
+
+**Total Session 2 Gain:**
+- **Features:** Interactive HUD, component width fixes, polish
+- **Bugfixes:** 4 critical fixes
+- **Commits:** 3 (870adb4, 2ab9720, 567a563)
+- **Time:** ~1.5 hours
+
+---
+
+**Combined Performance (v2.3):**
+- **FPS:** +25-50% improvement (Session 1)
+- **CPU:** -15-25% reduction (Session 1)
+- **Features:** Interactive HUD mode (Session 2)
+- **UI:** Component width fixes + polish (Session 2)
+- **Bundle:** 1917 → 2248 lines (+17%)
+- **Total commits:** 9 (6 Session 1 + 3 Session 2)
 
 **Rejected:**
 - ❌ **OPT-8:** WindowManager.update early exit (conflicted with drag state)
@@ -232,4 +291,4 @@ const sim1Window = SimulationWindowFactory.create({
 
 ---
 
-**Last Updated:** 2026-01-12 (Performance Session Complete)
+**Last Updated:** 2026-01-12 (Both Sessions Complete - v2.3)

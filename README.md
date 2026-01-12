@@ -1,9 +1,9 @@
 # UI System - Canvas-based Windows & Multi-Simulation Architecture
 
-**Status:** ✅ v2.2 Production Ready + Optimized (2026-01-12)  
+**Status:** ✅ v2.3 Production Ready + Interactive HUD (2026-01-12)  
 **GitHub:** https://github.com/michalstankiewicz4-cell/UI
 
-Modular window system for Canvas API with centralized simulation management and high-performance optimizations.
+Modular window system for Canvas API with centralized simulation management, high-performance optimizations, and interactive HUD mode.
 
 ---
 
@@ -34,13 +34,14 @@ Modular window system for Canvas API with centralized simulation management and 
 
 ---
 
-## ⚡ Performance (v2.2 NEW!)
+## ⚡ Performance (v2.3 NEW!)
 
-**Major optimizations implemented (2026-01-12):**
+**Major optimizations + features (2026-01-12):**
+- **Interactive HUD Mode** - Transparent windows with full interactivity
 - **+25-50% FPS improvement** (layout cache)
 - **-15-25% CPU usage** (early exits, cache hits)
-- Slider drag bugfix (critical)
-- 6 commits, all tests passing
+- Component width fixes + click-through fixes
+- All tests passing
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for full optimization details.
 
@@ -150,12 +151,14 @@ const fps = dataBridge.getStat('sim1', 'fps');
 
 ### Windows
 - ✅ Draggable with mouse
-- ✅ Header buttons (Close, Minimize, HUD mode)
+- ✅ Header buttons (Close, Minimize, **HUD mode** 👁️)
+- ✅ **Interactive transparent overlay** (HUD mode)
 - ✅ Scrollbar with thumb dragging
 - ✅ Z-index management
 - ✅ Interactive controls: Buttons, Sliders, Toggles
 - ✅ Content: Text, Sections
 - ✅ Layout cache (performance optimized)
+- ✅ Component width fixes + proper hitboxes
 
 ### Controls (FAZA C3)
 ```javascript
@@ -217,7 +220,11 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
 
 ## 📊 Current Status
 
-### Completed (v2.2 - 2026-01-12)
+### Completed (v2.3 - 2026-01-12)
+- ✅ **Interactive HUD Mode** - Transparent windows with full button/slider functionality
+- ✅ **Component Width Fixes** - Proper hitboxes (Button 100px, Slider 200px, Toggle dynamic)
+- ✅ **Click-Through Prevention** - Buttons no longer pass clicks to windows behind
+- ✅ **UI Polish** - Menu spacing, taskbar colors (cyan=HUD, green=minimized), header improvements
 - ✅ **Performance Optimization** (+25-50% FPS, -15-25% CPU)
   - Layout cache (OPT-1)
   - Text measurement cache (OPT-6)
@@ -225,12 +232,12 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
   - Taskbar resize bugfix (OPT-11)
   - Slider drag state fix (critical)
 - ✅ Core architecture (SimulationManager, EventBus, DataBridge)
-- ✅ FAZA C1: Header buttons (X, _, ○)
+- ✅ FAZA C1: Header buttons (X, _, 👁️)
 - ✅ FAZA C2: Scrollbar with thumb dragging
 - ✅ FAZA C3: Sliders, Toggles, Buttons
 - ✅ Event-driven communication
 - ✅ Data binding UI ↔ Sims
-- ✅ HUD mode (transparent overlay)
+- ✅ **HUD mode (interactive transparent overlay)**
 - ✅ Text styling (green/cyan, word wrap, sections)
 - ✅ Menu sections (symulacje/system)
 - ✅ Modular component architecture
@@ -246,13 +253,13 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
 
 ## 📈 Statistics
 
-- **Bundle:** 1972 lines (~71KB)
+- **Bundle:** 1972 lines (~82.65 KB)
 - **Performance:** +25-50% FPS vs v2.1
 - **Core:** 776 lines
-- **UI Library:** ~1400 lines (source)
+- **UI Library:** ~1500 lines (source)
 - **Components:** 8 modular files
-- **Total codebase:** ~9000 lines
-- **Commits:** 101+
+- **Total codebase:** ~9200 lines
+- **Commits:** 111+
 
 ---
 
@@ -260,8 +267,8 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
 
 - **[docs/TODO.md](docs/TODO.md)** - Project roadmap and priorities
 - **[docs/ROADMAP.md](docs/ROADMAP.md)** - Performance optimization details
+- **[docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md)** - Complete file reference
 - **[docs/CACHE_FIX.md](docs/CACHE_FIX.md)** - Browser cache troubleshooting
-- **[docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md)** - GitHub setup guide
 
 ---
 
@@ -271,10 +278,10 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
 |------|---------|-------|
 | **index.html** | Entry point | - |
 | **main.js** | Orchestrator | ~241 |
-| **dist/ui.js** | Complete bundle | 1972 |
-| **ui/BaseWindow.js** | Main window class | ~445 |
-| **ui/WindowManager.js** | Window manager | ~126 |
-| **ui/Taskbar.js** | Taskbar | ~126 |
+| **dist/ui.js** | Complete bundle | 2248 |
+| **ui/BaseWindow.js** | Main window class | ~475 |
+| **ui/WindowManager.js** | Window manager | ~133 |
+| **ui/Taskbar.js** | Taskbar | ~400 |
 | **core/SimulationManager.js** | Sim controller | 360 |
 
 ---
@@ -287,4 +294,4 @@ Use according to original project license.
 ---
 
 **Last Updated:** 2026-01-12  
-**Version:** v2.2 (Performance Optimized)
+**Version:** v2.3 (Interactive HUD + Polish)
