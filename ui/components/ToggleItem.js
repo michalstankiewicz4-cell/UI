@@ -37,10 +37,13 @@ class ToggleItem extends UIItem {
             ctx.fillRect(checkboxX + 3, checkboxY + 3, checkboxSize - 6, checkboxSize - 6);
         }
         
-        // Label
+        // Label - vertically centered, left-aligned horizontally
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.main;
-        ctx.fillText(this.label, checkboxX + checkboxSize + 8, checkboxY + 12);
+        ctx.textAlign = 'left'; // Explicit left alignment (default but be sure)
+        ctx.textBaseline = 'middle'; // Vertical centering
+        ctx.fillText(this.label, checkboxX + checkboxSize + 12, y + this.getHeight(window) / 2);
+        ctx.textBaseline = 'top'; // Reset to default
     }
 
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {

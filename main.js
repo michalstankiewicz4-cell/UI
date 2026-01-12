@@ -42,7 +42,7 @@ const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar
 //  DEMO WINDOW - COMPLETE FEATURE SHOWCASE
 // ═════════════════════════════════════════════════
 const demoWindow = new UI.BaseWindow(50, 50, 'UI DEMO - ALL FEATURES');
-demoWindow.width = 400;
+// Width auto-calculated from content (calculateSize)
 demoWindow.height = 550;
 
 // Demo variables
@@ -153,6 +153,13 @@ Taskbar Items: ${items}
 Speed Setting: ${speedValue.toFixed(2)}x
 Volume: ${(volumeValue * 100).toFixed(0)}%`;
 });
+
+// Force width recalculation after adding all items
+demoWindow.layoutDirty = true;
+// Calculate size immediately (needs canvas context)
+const tempCtx = canvases.ui.getContext('2d');
+demoWindow.calculateSize(tempCtx);
+console.log('📏 Demo window width after calculateSize:', demoWindow.width);
 
 windowManager.add(demoWindow);
 taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');

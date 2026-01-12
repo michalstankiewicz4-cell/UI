@@ -186,12 +186,31 @@ class BaseWindow {
         for (const item of this.items) {
             if (item.type === 'toggle') {
                 const textWidth = measureTextCached(ctx, item.label, ctx.font);
-                maxWidth = Math.max(maxWidth, textWidth + 30 + this.padding * 2);
+                // Checkbox (16px) + spacing (12px) + text + window padding
+                maxWidth = Math.max(maxWidth, 16 + 12 + textWidth + this.padding * 2);
             } else if (item.type === 'button') {
                 ctx.font = 'bold 12px Courier New';
                 const buttonTextWidth = measureTextCached(ctx, item.label, ctx.font);
                 maxWidth = Math.max(maxWidth, buttonTextWidth + 32 + this.padding * 2);
                 ctx.font = '12px Courier New';
+            } else if (item.type === 'slider') {
+                // Slider: label + value display (both left and right aligned)
+                const labelWidth = measureTextCached(ctx, item.label, ctx.font);
+                const valueWidth = measureTextCached(ctx, '00.00', ctx.font); // Max value width
+                maxWidth = Math.max(maxWidth, labelWidth + valueWidth + 40 + this.padding * 2);
+            } else if (item.type === 'text') {
+                // Text: measure all lines (capped at 400px for wrapping)
+                const textContent = typeof item.text === 'function' ? item.text() : item.text;
+                const lines = textContent.split('\n');
+                for (const line of lines) {
+                    const lineWidth = measureTextCached(ctx, line, ctx.font);
+                    // Cap text width at 400px (will wrap naturally in UI)
+                    maxWidth = Math.max(maxWidth, Math.min(lineWidth, 400) + this.padding * 2);
+                }
+            } else if (item.type === 'section') {
+                // Section: title + decorative lines
+                const sectionWidth = measureTextCached(ctx, item.title, ctx.font);
+                maxWidth = Math.max(maxWidth, sectionWidth + 80 + this.padding * 2);
             }
         }
         
