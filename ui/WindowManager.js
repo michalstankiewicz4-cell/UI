@@ -71,6 +71,11 @@ class WindowManager {
         for (let i = this.windows.length - 1; i >= 0; i--) {
             const window = this.windows[i];
             
+            // Skip invisible or minimized windows
+            if (!window.visible || window.minimized) {
+                continue;
+            }
+            
             // Check if click is within window
             if (window.containsPoint(x, y)) {
                 // Try to start drag (header, scrollbar, etc.)
@@ -79,6 +84,8 @@ class WindowManager {
                 // Set as active window regardless (for handleClick in handleMouseUp)
                 this.activeWindow = window;
                 this.bringToFront(window);
+                
+                console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
                 return true;
             }
         }

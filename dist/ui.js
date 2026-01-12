@@ -1022,6 +1022,11 @@ class WindowManager {
         for (let i = this.windows.length - 1; i >= 0; i--) {
             const window = this.windows[i];
             
+            // Skip invisible or minimized windows
+            if (!window.visible || window.minimized) {
+                continue;
+            }
+            
             // Check if click is within window
             if (window.containsPoint(x, y)) {
                 // Try to start drag (header, scrollbar, etc.)
@@ -1030,6 +1035,8 @@ class WindowManager {
                 // Set as active window regardless (for handleClick in handleMouseUp)
                 this.activeWindow = window;
                 this.bringToFront(window);
+                
+                console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
                 return true;
             }
         }
@@ -1886,8 +1893,14 @@ class BaseWindow {
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                     if (i === 0) this.transparent = !this.transparent;
-                    if (i === 1) this.minimized = !this.minimized; this.layoutDirty = true;
-                    if (i === 2) this.visible = false;
+                    if (i === 1) { this.minimized = !this.minimized; this.layoutDirty = true; }
+                    if (i === 2) {
+                        // Close button - call callback if exists
+                        this.visible = false;
+                        if (this.onClose && typeof this.onClose === 'function') {
+                            this.onClose();
+                        }
+                    }
                     return;
                 }
             }

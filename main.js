@@ -68,19 +68,26 @@ demoWindow.addButton('NEW WINDOW', () => {
         Math.random() * 300 + 100, 
         `Window ${Date.now() % 1000}`
     );
-    newWin.width = 300;
-    newWin.height = 220;
+    newWin.visible = true; // Make it visible!
     newWin.addSection('info', 'statistics');
     newWin.addText('Dynamically created window!');
     newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`);
     newWin.addSection('controls');
     newWin.addButton('CLOSE ME', () => {
+        // Hard close - usuń całkowicie
         windowManager.remove(newWin);
         taskbar.removeWindowItem(newWin);
     });
     windowManager.add(newWin);
+    windowManager.bringToFront(newWin); // Explicitly bring to front!
     taskbar.addWindowItem(newWin.title, newWin, 'symulacje');
-    console.log('✅ New window created!');
+    
+    // Setup close callback - [X] = soft close
+    newWin.onClose = () => {
+        newWin.visible = false; // Tylko ukryj, zostaw w menu
+    };
+    
+    console.log('✅ New window created at z-index:', newWin.zIndex);
 });
 
 demoWindow.addButton('TEST ALERT', () => {
@@ -165,8 +172,8 @@ windowManager.add(demoWindow);
 taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');
 
 demoWindow.onClose = () => {
+    // [X] = soft close - tylko ukryj, zostaw w taskbar menu
     demoWindow.visible = false;
-    windowManager.remove(demoWindow);
 };
 
 console.log('✅ Demo window created');
