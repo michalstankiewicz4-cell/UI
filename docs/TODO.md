@@ -1,12 +1,24 @@
 # UI System - TODO & Roadmap
 
-**Updated:** 2026-01-10  
-**Version:** v2.1  
-**Status:** FAZA C3 Complete ✅
+**Updated:** 2026-01-12  
+**Version:** v2.2  
+**Status:** Performance Optimization Complete + Factory Planned ✅
+
+**See also:** [ROADMAP.md](ROADMAP.md) for complete optimization details
 
 ---
 
 ## ✅ COMPLETED
+
+### v2.2 Performance Optimization (2026-01-12)
+- ✅ OPT-1: Layout cache (+20-40% FPS!) 🔥
+- ✅ OPT-3: Zombie code removal
+- ✅ OPT-6: Cache size increase (5000)
+- ✅ OPT-7: EventRouter mousemove early exit
+- ✅ OPT-11: Taskbar resize bugfix
+- ✅ Slider drag state bugfix (critical)
+- ✅ CONST export fix
+- **Result:** +25-50% FPS, -15-25% CPU, 6 commits pushed to GitHub
 
 ### v2.1 Core Architecture
 - ✅ SimulationManager (360 lines) - central controller
@@ -48,33 +60,67 @@
 
 ---
 
-## 🔜 TODO
+## 🔜 TODO - Priority Order
 
-### FAZA C3: Interactive Controls ✅ COMPLETE
+### 🆕 FAZA D1: Simulation Window Factory (2-4h) 🎯
 
-**Sliders:** ✅
+**Goal:** Automatic window creation from declarative config
+
+**Current (manual):**
 ```javascript
-window.addSlider('Speed', () => speed, (v) => speed = v, 0.1, 5.0, 0.05);
-// Visual: Speed: [====●------] 2.5
+const sim1Window = new BaseWindow(20, 20, 'SIM1');
+sim1Window.addButton('SPAWN', () => spawn());
+sim1Window.addSlider('Force', () => F, (v) => F = v, 0.5, 10);
+windowManager.add(sim1Window);
+taskbar.addWindowItem('SIM1', sim1Window, 'simulations');
 ```
 
-**Toggles:** ✅
+**Proposed (factory):**
 ```javascript
-window.addToggle('Grid', () => showGrid, (v) => showGrid = v);
-// Visual: Grid: [☑] or [☐]
+const sim1Window = SimulationWindowFactory.create({
+    id: 'sim1',
+    title: 'SIM1 SIMULATION',
+    position: { x: 20, y: 20 },
+    controls: [
+        { type: 'button', label: 'SPAWN', action: () => spawn() },
+        { type: 'slider', label: 'Force', bind: 'F', min: 0.5, max: 10 }
+    ],
+    taskbarSection: 'simulations'
+});
 ```
 
-**Completed:**
-- ✅ Horizontal sliders with draggable thumb
-- ✅ Track click to jump to position
-- ✅ Toggles (checkbox style)
-- ✅ getValue/setValue callback pattern
-- ✅ Step rounding for precise values
-- ✅ Thumb drag detection (circular hit area)
+**Features:**
+- ✅ Config-based window creation
+- ✅ Auto-register with WindowManager + Taskbar
+- ✅ Control templates
+- 🔜 Data binding helpers
+- 🔜 Preset saving/loading (/data/presets/)
+- 🔜 State persistence
 
-**Files modified:**
-- `ui/BaseWindow.js` - added drawSlider(), drawToggle(), checkSliderClick()
-- `main.js` - demo sliders (Speed, Volume) + toggles (Grid, AutoSave)
+**Priority:** 🟡 HIGH (reduces boilerplate, improves maintainability)  
+**Estimated time:** 2-4 hours  
+**Risk:** Low (new code, no refactoring)
+
+---
+
+### 🔧 Remaining Performance Optimizations
+
+**See [ROADMAP.md](ROADMAP.md) for full details**
+
+**Package A: Easy Wins (45 min)** - Safe, +7-15%
+- OPT-2: Remove `transparent` property (10 min)
+- OPT-4: Pre-render color strings (15 min)
+- OPT-5: Color LUT for matrix (20 min)
+
+**Package B: Medium (65 min)** - Moderate, +5-9%
+- OPT-9: Skip slider calcs when not hovered (30 min)
+- OPT-10: Throttle stats cache (20 min)
+- OPT-12: Cache slider range (15 min)
+
+**Package C: Architecture (10-13h)** - High risk, +60-110%
+- OPT-13: Event bubbling (3-4h)
+- OPT-14: Dirty region rendering (4-6h)
+- OPT-15: Virtual scrolling (2-3h)
 
 ---
 
@@ -86,57 +132,21 @@ window.addRangeSlider(
     'Filter Range',
     () => [minVal, maxVal],
     (min, max) => { minVal = min; maxVal = max; },
-    0,      // absoluteMin
-    10,     // absoluteMax  
-    0.1     // step
+    0, 10, 0.1
 );
-// Visual: Filter Range: [██●━━━━━●██] 2.0 - 5.0
-//                          min    max
 ```
-
-**Features:**
-- Two draggable thumbs (min/max)
-- Thumbs block each other (min can't pass max)
-- Click track → move nearest thumb
-- Normal mode: select range (2-5)
-- Inverted mode: select outside range (0-2 + 5-10) [future]
-
-**Use cases:**
-- Data filtering (temperature, speed, etc)
-- Range selection
-- Min/max limits
 
 **Vertical Slider:**
 ```javascript
 window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
-// Visual: ┃  ┃ 75
-//         ┃●━┃
-//         ┃██┃
-//         ┃██┃
-//         ┗━━┛
 ```
 
-**Priority:** 🔶 MEDIUM  
-**Estimated time:** 2-3h (range slider: 1-1.5h, vertical: 1h)
+**Priority:** 🔶 MEDIUM (nice to have)
 
 ---
 
-### FAZA C5: Polish & Testing (~1-2h)
+### Future Features (Low Priority)
 
-- [ ] Clean up code comments
-- [ ] Test all features end-to-end
-- [ ] Update all docs (README, CHANGELOG)
-- [ ] Performance profiling
-- [ ] Edge case testing
-
-**Priority:** 🔶 MEDIUM
-
----
-
-### Future Features (Optional)
-
-- [ ] Range slider (dual handle) - see FAZA C4
-- [ ] Vertical slider - see FAZA C4
 - [ ] Import/Export UI layouts (use /data/presets/)
 - [ ] Custom themes system (use /themes/)
 - [ ] Matrix control (for Petri Dish)
@@ -144,8 +154,6 @@ window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
 - [ ] Window snapping
 - [ ] Color picker control
 - [ ] Dropdown/Select control
-
-**Priority:** 🔷 LOW
 
 ---
 
@@ -161,28 +169,38 @@ window.addVerticalSlider('Volume', () => vol, (v) => vol = v, 0, 100);
 | 2026-01-09 | FAZA C2 Scrollbar | ✅ |
 | 2026-01-10 | Structure cleanup | ✅ |
 | 2026-01-10 | FAZA C3 Sliders/Toggles | ✅ |
+| 2026-01-12 | v2.2 Performance Optimization | ✅ |
+| TBD | FAZA D1 Simulation Factory | 🔜 ⭐ |
+| TBD | Package A+B Optimizations | 🔜 |
 | TBD | FAZA C4 Advanced sliders | 🔜 |
-| TBD | FAZA C5 Polish | 🔜 |
 
 ---
 
 ## 📊 Current Stats
 
-- **Bundle:** 1721 lines (dist/ui.js)
-- **BaseWindow:** 962 lines (largest module)
-- **Taskbar:** 342 lines
-- **Core modules:** 776 lines total
-- **Main orchestrator:** 241 lines
-- **Total codebase:** ~8500 lines
-- **Commits:** 95+
+- **Bundle:** 1972 lines (dist/ui.js)
+- **Performance:** +25-50% FPS vs v2.1
+- **BaseWindow:** ~445 lines
+- **Taskbar:** ~126 lines
+- **WindowManager:** ~126 lines
+- **Total codebase:** ~9000 lines
+- **Commits:** 101+
 
 ---
 
 ## 🎯 Next Session Goals
 
-1. **FAZA C4:** Range slider (dual handle) + Vertical slider
-2. **Optional:** Inverted range mode for filtering
-3. **Test** advanced controls
-4. **Update** documentation
+**Priority 1:** Simulation Window Factory (2-4h)
+- Declarative window creation
+- Reduce boilerplate
+- Foundation for presets
 
-**Estimated time:** 2-3 hours
+**Priority 2:** Easy optimizations (45 min)
+- Package A (OPT-2, 4, 5)
+- Safe, tested, +7-15% gain
+
+**Priority 3:** Advanced features (as needed)
+- Range slider, vertical slider
+- Based on actual use cases
+
+**Estimated time:** 3-5 hours for Priority 1+2
