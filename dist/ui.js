@@ -887,11 +887,12 @@ class WindowManager {
         // Update all windows
         for (let window of this.windows) {
             if (window === topWindow) {
-                // Top window gets real mouse coordinates
+                // Top window gets real mouse coordinates and state
                 window.update(mouseX, mouseY, mouseDown, mouseClicked);
             } else {
-                // Other windows get dummy coordinates (no interaction)
-                window.update(-1, -1, mouseDown, false);
+                // CRITICAL: Other windows MUST get mouseDown=false
+                // Otherwise sliders/items keep dragging state!
+                window.update(-1, -1, false, false);
             }
         }
     }
@@ -1441,6 +1442,12 @@ class EventRouter {
         this.mouseX = e.clientX;
         this.mouseY = e.clientY;
 
+        // OPT-7: Early exit when nothing to do (no hover needed!)
+        // Skip processing if not dragging and no active window
+        if (!this.mouseDown && !this.windowManager.activeWindow && !this.isPanning) {
+            return;
+        }
+
         if (this.windowManager && this.windowManager.activeWindow) {
             this.windowManager.handleMouseMove(e.clientX, e.clientY);
         } else if (this.isPanning && this.camera) {
@@ -1914,14 +1921,18 @@ class BaseWindow {
             const itemBottom = absoluteY + itemHeight;
             const isInVisibleArea = itemBottom > contentTop && itemTop < contentBottom;
             
-            // Only update if visible and mouse in content area
+            // BUGFIX: Always call update() to handle drag state properly
+            // Items need mouseDown=false to stop dragging even when mouse leaves area
             if (isInVisibleArea && mouseInContentArea) {
-                // Pass STYLES to item for drawing
+                // Visible and mouse in area: normal update
                 item.STYLES = this.STYLES;
-                // Use absolute position
                 item.update(mouseX, mouseY, mouseDown, mouseClicked, this, itemX, absoluteY);
             } else {
-                // Reset hover if not visible
+                // Not visible or mouse outside: pass mouseDown to stop any dragging
+                item.STYLES = this.STYLES;
+                item.update(-1, -1, mouseDown, false, this, itemX, absoluteY);
+                
+                // Reset hover state
                 if (item.hovered !== undefined) {
                     item.hovered = false;
                 }

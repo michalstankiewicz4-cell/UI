@@ -426,14 +426,18 @@ class BaseWindow {
             const itemBottom = absoluteY + itemHeight;
             const isInVisibleArea = itemBottom > contentTop && itemTop < contentBottom;
             
-            // Only update if visible and mouse in content area
+            // BUGFIX: Always call update() to handle drag state properly
+            // Items need mouseDown=false to stop dragging even when mouse leaves area
             if (isInVisibleArea && mouseInContentArea) {
-                // Pass STYLES to item for drawing
+                // Visible and mouse in area: normal update
                 item.STYLES = this.STYLES;
-                // Use absolute position
                 item.update(mouseX, mouseY, mouseDown, mouseClicked, this, itemX, absoluteY);
             } else {
-                // Reset hover if not visible
+                // Not visible or mouse outside: pass mouseDown to stop any dragging
+                item.STYLES = this.STYLES;
+                item.update(-1, -1, mouseDown, false, this, itemX, absoluteY);
+                
+                // Reset hover state
                 if (item.hovered !== undefined) {
                     item.hovered = false;
                 }

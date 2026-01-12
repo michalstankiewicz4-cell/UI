@@ -56,11 +56,12 @@ class WindowManager {
         // Update all windows
         for (let window of this.windows) {
             if (window === topWindow) {
-                // Top window gets real mouse coordinates
+                // Top window gets real mouse coordinates and state
                 window.update(mouseX, mouseY, mouseDown, mouseClicked);
             } else {
-                // Other windows get dummy coordinates (no interaction)
-                window.update(-1, -1, mouseDown, false);
+                // CRITICAL: Other windows MUST get mouseDown=false
+                // Otherwise sliders/items keep dragging state!
+                window.update(-1, -1, false, false);
             }
         }
     }
