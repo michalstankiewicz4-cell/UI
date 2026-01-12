@@ -20,9 +20,11 @@ class Taskbar {
         // Menu items - names from windows
         this.menuItems = [];
         
-        // OPT: Button position cache
+        // OPT-11: Button position cache + canvas size tracking
         this.cachedPositions = [];
         this.cachedCount = 0;
+        this.cachedCanvasWidth = 0;
+        this.cachedCanvasHeight = 0;
     }
     
     // Calculate dynamic button width based on text
@@ -113,11 +115,17 @@ class Taskbar {
     }
 
     getTaskbarButtonBounds(index, ctx, minimizedWindows, measureTextCached) {
-        // OPT: Cache positions in O(n) instead of O(n²)
-        if (this.cachedCount !== minimizedWindows.length) {
+        // OPT-11: Cache positions + invalidate on canvas resize
+        const canvasWidth = ctx.canvas.width;
+        const canvasHeight = ctx.canvas.height;
+        
+        // Invalidate cache if window count OR canvas size changed
+        if (this.cachedCount !== minimizedWindows.length ||
+            this.cachedCanvasWidth !== canvasWidth ||
+            this.cachedCanvasHeight !== canvasHeight) {
+            
             this.cachedPositions = [];
             let x = this.startButtonWidth + 8;
-            const canvasHeight = ctx.canvas.height;
             const y = canvasHeight - this.height + this.verticalPadding;
             
             for (let i = 0; i < minimizedWindows.length; i++) {
@@ -134,7 +142,10 @@ class Taskbar {
                 x += width + this.buttonSpacing;
             }
             
+            // Update cache state
             this.cachedCount = minimizedWindows.length;
+            this.cachedCanvasWidth = canvasWidth;
+            this.cachedCanvasHeight = canvasHeight;
         }
         
         return this.cachedPositions[index];
