@@ -53,15 +53,14 @@ let autoSave = false;
 
 // Section: WINDOW FEATURES (zielony)
 demoWindow.addSection('window features');
-demoWindow.addText('Close = X button in header');
-demoWindow.addText('Minimize = _ button → taskbar');
-demoWindow.addText('HUD = ○ button → transparent');
-demoWindow.addText('Move window = Drag header');
-demoWindow.addText('Pasek przewijania = Scroll content');
+demoWindow.addText(`Close = X button in header
+Minimize = _ button → taskbar
+HUD = ○ button → transparent
+Move window = Drag header
+Pasek przewijania = Scroll content`);
 
 // Section: PRZEŁĄCZNIKI (zielony)
 demoWindow.addSection('przełączniki');
-
 demoWindow.addButton('NEW WINDOW', () => {
     console.log('🆕 Creating new window...');
     const newWin = new UI.BaseWindow(
@@ -136,12 +135,8 @@ demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
 demoWindow.addSection('statist. text content', 'statistics');
 demoWindow.addText(() => {
     const now = new Date();
-    return `Aktualna data: ${now.toLocaleDateString('pl-PL')}`;
-});
-
-demoWindow.addText(() => {
-    const now = new Date();
-    return `Aktualny czas: ${now.toLocaleTimeString('pl-PL')}`;
+    return `Aktualna data: ${now.toLocaleDateString('pl-PL')}
+Aktualny czas: ${now.toLocaleTimeString('pl-PL')}`;
 });
 
 // Section: STATIST. TEXT CONTENT (cyjan) - Blok statystyk
@@ -158,8 +153,6 @@ Taskbar Items: ${items}
 Speed Setting: ${speedValue.toFixed(2)}x
 Volume: ${(volumeValue * 100).toFixed(0)}%`;
 });
-
-demoWindow.addText('─── Koniec Demo ───', '#00ff88');
 
 windowManager.add(demoWindow);
 taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');

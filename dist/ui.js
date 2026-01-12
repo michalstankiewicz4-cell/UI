@@ -191,7 +191,13 @@ const CONST = {
 /**
  * Get height for a single item
  */
-function getItemHeight(item) {
+function getItemHeight(item, window) {
+    // Use item's own getHeight method if available (for dynamic sizing)
+    if (item.getHeight && typeof item.getHeight === 'function') {
+        return item.getHeight(window);
+    }
+    
+    // Fallback to static heights
     switch (item.type) {
         case 'button': return HEIGHT_BUTTON;
         case 'slider': return HEIGHT_SLIDER;
@@ -218,7 +224,7 @@ function computeLayout(items, window) {
     let currentY = window.headerHeight + window.padding;
     
     for (const item of items) {
-        const height = getItemHeight(item);
+        const height = getItemHeight(item, window);
         
         layout.push({
             type: item.type,
@@ -227,7 +233,18 @@ function computeLayout(items, window) {
             item: item
         });
         
-        currentY += height + SPACING_ITEM;
+        // Spacing rules:
+        // - Sections: 0px (visual dividers only)
+        // - Text blocks: 4px (compact but readable)
+        // - Other items: 8px (standard spacing)
+        let spacing = SPACING_ITEM;
+        if (item.type === 'section') {
+            spacing = 0;
+        } else if (item.type === 'text') {
+            spacing = 4;
+        }
+        
+        currentY += height + spacing;
     }
     
     return layout;
@@ -760,24 +777,37 @@ if (typeof module !== 'undefined' && module.exports) {
 
 
 /**
- * TextItem - Static text display
+ * TextItem - Static or dynamic text display (supports multiline)
  */
 class TextItem extends UIItem {
     constructor(text, color = '#00ff88') {
         super('text');
         this.text = text;
         this.color = color;
+        this.lines = null; // Will be calculated dynamically
     }
 
     getHeight(window) {
-        return 18; // Line height
+        // Get text content (resolve function if needed)
+        const textContent = typeof this.text === 'function' ? this.text() : this.text;
+        const lines = textContent.split('\n').length;
+        // 14px per line + 4px bottom padding for spacing
+        return (lines * 14) + 4;
     }
 
     draw(ctx, window, x, y) {
         const STYLES = this.STYLES || window.STYLES;
         ctx.fillStyle = this.color;
         ctx.font = STYLES.fonts.main;
-        ctx.fillText(this.text, x, y + 14);
+        
+        // Get text content (resolve function if needed)
+        const textContent = typeof this.text === 'function' ? this.text() : this.text;
+        const lines = textContent.split('\n');
+        
+        // Draw each line with proper baseline offset
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], x, y + 12 + (i * 14));
+        }
     }
 
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
