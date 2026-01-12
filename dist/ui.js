@@ -576,12 +576,14 @@ class ButtonItem extends UIItem {
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, width, height);
         
-        // Button text (centered)
+        // Button text (centered horizontally and vertically)
         ctx.fillStyle = STYLES.colors.panel;
         ctx.font = STYLES.fonts.mainBold;
         ctx.textAlign = 'center';
-        ctx.fillText(this.label, x + width / 2, y + height / 2 + 4);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.label, x + width / 2, y + height / 2);
         ctx.textAlign = 'left'; // Reset
+        ctx.textBaseline = 'top'; // Reset
     }
 
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
