@@ -270,7 +270,16 @@ class BaseWindow {
             for (let i = 0; i < 3; i++) {
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
-                    if (i === 0) this.transparent = !this.transparent;
+                    if (i === 0) {
+                        // Transparent button - toggle HUD mode
+                        this.transparent = !this.transparent;
+                        
+                        // If going transparent, hide window (like minimize)
+                        // Content stays visible, but window goes to taskbar
+                        if (this.transparent) {
+                            this.visible = false;
+                        }
+                    }
                     if (i === 1) { 
                         // Minimize button - hide window and mark as minimized
                         this.minimized = true;
@@ -346,7 +355,8 @@ class BaseWindow {
     // ═══════════════════════════════════════════════════════════════
     
     draw(ctx, STYLES) {
-        if (!this.visible) return;
+        // Don't draw if invisible (unless transparent mode)
+        if (!this.visible && !this.transparent) return;
         
         this.calculateSize(ctx);
         
@@ -355,7 +365,7 @@ class BaseWindow {
             return;
         }
         
-        // Window background
+        // Window background (skip in transparent mode)
         if (!this.transparent) {
             ctx.fillStyle = STYLES.panel.bgColor;
             ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -364,14 +374,16 @@ class BaseWindow {
             ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
         
-        // Header
-        drawHeader(ctx, this, STYLES);
+        // Header (skip in transparent mode)
+        if (!this.transparent) {
+            drawHeader(ctx, this, STYLES);
+        }
         
         // Content (with clipping)
         const contentX = this.x;
-        const contentY = this.y + this.headerHeight;
+        const contentY = this.transparent ? this.y : (this.y + this.headerHeight);
         const contentWidth = this.width;
-        const contentHeight = this.height - this.headerHeight;
+        const contentHeight = this.transparent ? this.height : (this.height - this.headerHeight);
         
         ctx.save();
         ctx.beginPath();
@@ -458,7 +470,11 @@ class BaseWindow {
     }
     
     update(mouseX, mouseY, mouseDown, mouseClicked) {
+        // Skip update if invisible (unless transparent - then skip interaction)
         if (!this.visible || this.minimized) return;
+        
+        // Transparent windows are HUD-only (no interaction)
+        if (this.transparent) return;
 
         // Check if mouse is in content area
         const contentTop = this.y + this.headerHeight;

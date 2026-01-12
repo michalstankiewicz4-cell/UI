@@ -439,6 +439,14 @@ class UIItem {
     }
 
     /**
+     * Get width of this item
+     * Override in subclasses for custom widths
+     */
+    getWidth(window) {
+        return window.width - window.padding * 2; // Default: full width
+    }
+
+    /**
      * Get height of this item
      * Override in subclasses for different heights
      */
@@ -459,8 +467,8 @@ class UIItem {
      * Override in subclasses
      */
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
-        // Update hover state
-        const width = window.width - window.padding * 2;
+        // Update hover state using getWidth() (respects custom widths!)
+        const width = this.getWidth(window);
         const height = this.getHeight(window);
         
         this.hovered = (
@@ -498,6 +506,27 @@ class ToggleItem extends UIItem {
 
     getHeight(window) {
         return 20;
+    }
+    
+    getWidth(window) {
+        // Checkbox width = checkbox + spacing + text
+        const checkboxSize = 16;
+        const spacing = 12;
+        
+        // Get canvas context for text measurement
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return 200; // Fallback
+        const ctx = canvas.getContext('2d');
+        
+        // Use default font if STYLES not available yet
+        const font = (this.STYLES && this.STYLES.fonts) ? 
+            this.STYLES.fonts.main : 
+            '12px "Courier New", monospace';
+        
+        ctx.font = font;
+        const textWidth = ctx.measureText(this.label).width;
+        
+        return checkboxSize + spacing + textWidth;
     }
 
     draw(ctx, window, x, y) {
@@ -563,9 +592,13 @@ class ButtonItem extends UIItem {
     getHeight(window) {
         return 26;
     }
+    
+    getWidth(window) {
+        return 100; // Fixed width
+    }
 
     draw(ctx, window, x, y) {
-        const width = window.width - window.padding * 2;
+        const width = this.getWidth(window);
         const height = this.getHeight(window);
         const STYLES = this.STYLES || window.STYLES;
         
@@ -627,10 +660,14 @@ class SliderItem extends UIItem {
     getHeight(window) {
         return 40;
     }
+    
+    getWidth(window) {
+        return 200; // Fixed track width (+ value text)
+    }
 
     draw(ctx, window, x, y) {
         const value = this.getValue();
-        const width = window.width - window.padding * 2;
+        const trackWidth = this.getWidth(window);
         const trackHeight = 6;
         const thumbSize = 16;
         const STYLES = this.STYLES || window.STYLES;
@@ -642,25 +679,30 @@ class SliderItem extends UIItem {
         ctx.textBaseline = 'top';
         ctx.fillText(this.label, x, y);
         
-        // Value display
+        // Value display (to the right of track)
         const valueText = value.toFixed(2);
-        ctx.textAlign = 'right';
-        ctx.fillText(valueText, x + width, y);
+        ctx.textAlign = 'left';
+        ctx.fillText(valueText, x + trackWidth + 10, y);
         
-        // Track
+        // Track background (full range visible)
         const trackY = y + 20;
         ctx.fillStyle = STYLES.colors.sliderTrack;
-        ctx.fillRect(x, trackY, width, trackHeight);
+        ctx.fillRect(x, trackY, trackWidth, trackHeight);
         
-        // Fill
+        // Track border (shows full range)
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, trackY, trackWidth, trackHeight);
+        
+        // Fill (shows current value)
         const range = this.max - this.min;
         const normalizedValue = (value - this.min) / range;
-        const fillWidth = normalizedValue * width;
+        const fillWidth = normalizedValue * trackWidth;
         ctx.fillStyle = STYLES.colors.panel;
         ctx.fillRect(x, trackY, fillWidth, trackHeight);
         
         // Thumb
-        const thumbX = x + normalizedValue * width;
+        const thumbX = x + normalizedValue * trackWidth;
         ctx.fillStyle = STYLES.colors.panel;
         ctx.beginPath();
         ctx.arc(thumbX, trackY + trackHeight / 2, thumbSize / 2, 0, Math.PI * 2);
@@ -670,7 +712,7 @@ class SliderItem extends UIItem {
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
         super.update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y);
         
-        const width = window.width - window.padding * 2;
+        const trackWidth = this.getWidth(window);
         const trackY = y + 20;
         
         // Start dragging
@@ -685,7 +727,7 @@ class SliderItem extends UIItem {
         
         // Update value while dragging
         if (this.dragging && mouseDown) {
-            const normalized = Math.max(0, Math.min(1, (mouseX - x) / width));
+            const normalized = Math.max(0, Math.min(1, (mouseX - x) / trackWidth));
             const newValue = this.min + normalized * (this.max - this.min);
             const steppedValue = Math.round(newValue / this.step) * this.step;
             const clampedValue = Math.max(this.min, Math.min(this.max, steppedValue));
@@ -1292,26 +1334,28 @@ class Taskbar {
             }
         }
 
-        // Check taskbar buttons (minimized windows)
-        const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && !item.window.visible
+        // Check taskbar buttons (minimized OR transparent windows)
+        const taskbarWindows = this.menuItems.filter(item => 
+            item.type === 'window' && !item.window.visible && 
+            (item.window.minimized || item.window.transparent)
         );
         
-        for (let i = 0; i < minimizedWindows.length; i++) {
-            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
+        for (let i = 0; i < taskbarWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
             
             if (mouseX >= btn.x && mouseX <= btn.x + btn.width &&
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
                 // Restore window
-                minimizedWindows[i].window.visible = true;
-                minimizedWindows[i].window.minimized = false;
+                taskbarWindows[i].window.visible = true;
+                taskbarWindows[i].window.minimized = false;
+                taskbarWindows[i].window.transparent = false; // Exit transparent mode
                 if (windowManager) {
                     // Check if window is in manager
-                    if (!windowManager.windows.includes(minimizedWindows[i].window)) {
-                        windowManager.add(minimizedWindows[i].window);
+                    if (!windowManager.windows.includes(taskbarWindows[i].window)) {
+                        windowManager.add(taskbarWindows[i].window);
                     }
-                    windowManager.bringToFront(minimizedWindows[i].window);
+                    windowManager.bringToFront(taskbarWindows[i].window);
                 }
                 return true;
             }
@@ -1439,26 +1483,33 @@ class Taskbar {
             }
         }
 
-        // Taskbar buttons (minimized windows)
-        const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && !item.window.visible
+        // Taskbar buttons (minimized OR transparent windows)
+        const taskbarWindows = this.menuItems.filter(item => 
+            item.type === 'window' && !item.window.visible && 
+            (item.window.minimized || item.window.transparent)
         );
         
-        for (let i = 0; i < minimizedWindows.length; i++) {
-            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
-            const item = minimizedWindows[i];
+        for (let i = 0; i < taskbarWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
+            const item = taskbarWindows[i];
+            
+            // Button colors - cyan for transparent, green for minimized
+            const isTransparent = item.window.transparent;
+            const bgColor = isTransparent ? 'rgba(0, 245, 255, 0.2)' : 'rgba(0, 255, 136, 0.2)'; // Cyan vs Green
+            const borderColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
+            const textColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
             
             // Button background
-            ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+            ctx.fillStyle = bgColor;
             ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button border
-            ctx.strokeStyle = '#00ff88';
+            ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button text
-            ctx.fillStyle = '#00ff88';
+            ctx.fillStyle = textColor;
             ctx.font = STYLES.fonts.mainBold;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1892,7 +1943,16 @@ class BaseWindow {
             for (let i = 0; i < 3; i++) {
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
-                    if (i === 0) this.transparent = !this.transparent;
+                    if (i === 0) {
+                        // Transparent button - toggle HUD mode
+                        this.transparent = !this.transparent;
+                        
+                        // If going transparent, hide window (like minimize)
+                        // Content stays visible, but window goes to taskbar
+                        if (this.transparent) {
+                            this.visible = false;
+                        }
+                    }
                     if (i === 1) { 
                         // Minimize button - hide window and mark as minimized
                         this.minimized = true;
@@ -1968,7 +2028,8 @@ class BaseWindow {
     // ═══════════════════════════════════════════════════════════════
     
     draw(ctx, STYLES) {
-        if (!this.visible) return;
+        // Don't draw if invisible (unless transparent mode)
+        if (!this.visible && !this.transparent) return;
         
         this.calculateSize(ctx);
         
@@ -1977,7 +2038,7 @@ class BaseWindow {
             return;
         }
         
-        // Window background
+        // Window background (skip in transparent mode)
         if (!this.transparent) {
             ctx.fillStyle = STYLES.panel.bgColor;
             ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -1986,14 +2047,16 @@ class BaseWindow {
             ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
         
-        // Header
-        drawHeader(ctx, this, STYLES);
+        // Header (skip in transparent mode)
+        if (!this.transparent) {
+            drawHeader(ctx, this, STYLES);
+        }
         
         // Content (with clipping)
         const contentX = this.x;
-        const contentY = this.y + this.headerHeight;
+        const contentY = this.transparent ? this.y : (this.y + this.headerHeight);
         const contentWidth = this.width;
-        const contentHeight = this.height - this.headerHeight;
+        const contentHeight = this.transparent ? this.height : (this.height - this.headerHeight);
         
         ctx.save();
         ctx.beginPath();
@@ -2080,7 +2143,11 @@ class BaseWindow {
     }
     
     update(mouseX, mouseY, mouseDown, mouseClicked) {
+        // Skip update if invisible (unless transparent - then skip interaction)
         if (!this.visible || this.minimized) return;
+        
+        // Transparent windows are HUD-only (no interaction)
+        if (this.transparent) return;
 
         // Check if mouse is in content area
         const contentTop = this.y + this.headerHeight;

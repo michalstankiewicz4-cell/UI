@@ -17,9 +17,13 @@ class ButtonItem extends UIItem {
     getHeight(window) {
         return 26;
     }
+    
+    getWidth(window) {
+        return 100; // Fixed width
+    }
 
     draw(ctx, window, x, y) {
-        const width = window.width - window.padding * 2;
+        const width = this.getWidth(window);
         const height = this.getHeight(window);
         const STYLES = this.STYLES || window.STYLES;
         

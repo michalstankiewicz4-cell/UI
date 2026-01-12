@@ -13,6 +13,14 @@ class UIItem {
     }
 
     /**
+     * Get width of this item
+     * Override in subclasses for custom widths
+     */
+    getWidth(window) {
+        return window.width - window.padding * 2; // Default: full width
+    }
+
+    /**
      * Get height of this item
      * Override in subclasses for different heights
      */
@@ -33,8 +41,8 @@ class UIItem {
      * Override in subclasses
      */
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
-        // Update hover state
-        const width = window.width - window.padding * 2;
+        // Update hover state using getWidth() (respects custom widths!)
+        const width = this.getWidth(window);
         const height = this.getHeight(window);
         
         this.hovered = (

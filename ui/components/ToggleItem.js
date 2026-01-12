@@ -18,6 +18,27 @@ class ToggleItem extends UIItem {
     getHeight(window) {
         return 20;
     }
+    
+    getWidth(window) {
+        // Checkbox width = checkbox + spacing + text
+        const checkboxSize = 16;
+        const spacing = 12;
+        
+        // Get canvas context for text measurement
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return 200; // Fallback
+        const ctx = canvas.getContext('2d');
+        
+        // Use default font if STYLES not available yet
+        const font = (this.STYLES && this.STYLES.fonts) ? 
+            this.STYLES.fonts.main : 
+            '12px "Courier New", monospace';
+        
+        ctx.font = font;
+        const textWidth = ctx.measureText(this.label).width;
+        
+        return checkboxSize + spacing + textWidth;
+    }
 
     draw(ctx, window, x, y) {
         const value = this.getValue();

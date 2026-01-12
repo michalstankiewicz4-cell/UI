@@ -22,10 +22,14 @@ class SliderItem extends UIItem {
     getHeight(window) {
         return 40;
     }
+    
+    getWidth(window) {
+        return 200; // Fixed track width (+ value text)
+    }
 
     draw(ctx, window, x, y) {
         const value = this.getValue();
-        const width = window.width - window.padding * 2;
+        const trackWidth = this.getWidth(window);
         const trackHeight = 6;
         const thumbSize = 16;
         const STYLES = this.STYLES || window.STYLES;
@@ -37,25 +41,30 @@ class SliderItem extends UIItem {
         ctx.textBaseline = 'top';
         ctx.fillText(this.label, x, y);
         
-        // Value display
+        // Value display (to the right of track)
         const valueText = value.toFixed(2);
-        ctx.textAlign = 'right';
-        ctx.fillText(valueText, x + width, y);
+        ctx.textAlign = 'left';
+        ctx.fillText(valueText, x + trackWidth + 10, y);
         
-        // Track
+        // Track background (full range visible)
         const trackY = y + 20;
         ctx.fillStyle = STYLES.colors.sliderTrack;
-        ctx.fillRect(x, trackY, width, trackHeight);
+        ctx.fillRect(x, trackY, trackWidth, trackHeight);
         
-        // Fill
+        // Track border (shows full range)
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, trackY, trackWidth, trackHeight);
+        
+        // Fill (shows current value)
         const range = this.max - this.min;
         const normalizedValue = (value - this.min) / range;
-        const fillWidth = normalizedValue * width;
+        const fillWidth = normalizedValue * trackWidth;
         ctx.fillStyle = STYLES.colors.panel;
         ctx.fillRect(x, trackY, fillWidth, trackHeight);
         
         // Thumb
-        const thumbX = x + normalizedValue * width;
+        const thumbX = x + normalizedValue * trackWidth;
         ctx.fillStyle = STYLES.colors.panel;
         ctx.beginPath();
         ctx.arc(thumbX, trackY + trackHeight / 2, thumbSize / 2, 0, Math.PI * 2);
@@ -65,7 +74,7 @@ class SliderItem extends UIItem {
     update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
         super.update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y);
         
-        const width = window.width - window.padding * 2;
+        const trackWidth = this.getWidth(window);
         const trackY = y + 20;
         
         // Start dragging
@@ -80,7 +89,7 @@ class SliderItem extends UIItem {
         
         // Update value while dragging
         if (this.dragging && mouseDown) {
-            const normalized = Math.max(0, Math.min(1, (mouseX - x) / width));
+            const normalized = Math.max(0, Math.min(1, (mouseX - x) / trackWidth));
             const newValue = this.min + normalized * (this.max - this.min);
             const steppedValue = Math.round(newValue / this.step) * this.step;
             const clampedValue = Math.max(this.min, Math.min(this.max, steppedValue));

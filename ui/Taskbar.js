@@ -210,26 +210,28 @@ class Taskbar {
             }
         }
 
-        // Check taskbar buttons (minimized windows)
-        const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && !item.window.visible
+        // Check taskbar buttons (minimized OR transparent windows)
+        const taskbarWindows = this.menuItems.filter(item => 
+            item.type === 'window' && !item.window.visible && 
+            (item.window.minimized || item.window.transparent)
         );
         
-        for (let i = 0; i < minimizedWindows.length; i++) {
-            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
+        for (let i = 0; i < taskbarWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
             
             if (mouseX >= btn.x && mouseX <= btn.x + btn.width &&
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
                 // Restore window
-                minimizedWindows[i].window.visible = true;
-                minimizedWindows[i].window.minimized = false;
+                taskbarWindows[i].window.visible = true;
+                taskbarWindows[i].window.minimized = false;
+                taskbarWindows[i].window.transparent = false; // Exit transparent mode
                 if (windowManager) {
                     // Check if window is in manager
-                    if (!windowManager.windows.includes(minimizedWindows[i].window)) {
-                        windowManager.add(minimizedWindows[i].window);
+                    if (!windowManager.windows.includes(taskbarWindows[i].window)) {
+                        windowManager.add(taskbarWindows[i].window);
                     }
-                    windowManager.bringToFront(minimizedWindows[i].window);
+                    windowManager.bringToFront(taskbarWindows[i].window);
                 }
                 return true;
             }
@@ -357,26 +359,33 @@ class Taskbar {
             }
         }
 
-        // Taskbar buttons (minimized windows)
-        const minimizedWindows = this.menuItems.filter(item => 
-            item.type === 'window' && item.window.minimized && !item.window.visible
+        // Taskbar buttons (minimized OR transparent windows)
+        const taskbarWindows = this.menuItems.filter(item => 
+            item.type === 'window' && !item.window.visible && 
+            (item.window.minimized || item.window.transparent)
         );
         
-        for (let i = 0; i < minimizedWindows.length; i++) {
-            const btn = this.getTaskbarButtonBounds(i, ctx, minimizedWindows, measureTextCached);
-            const item = minimizedWindows[i];
+        for (let i = 0; i < taskbarWindows.length; i++) {
+            const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
+            const item = taskbarWindows[i];
+            
+            // Button colors - cyan for transparent, green for minimized
+            const isTransparent = item.window.transparent;
+            const bgColor = isTransparent ? 'rgba(0, 245, 255, 0.2)' : 'rgba(0, 255, 136, 0.2)'; // Cyan vs Green
+            const borderColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
+            const textColor = isTransparent ? '#00f5ff' : '#00ff88'; // Cyan vs Green
             
             // Button background
-            ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
+            ctx.fillStyle = bgColor;
             ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button border
-            ctx.strokeStyle = '#00ff88';
+            ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button text
-            ctx.fillStyle = '#00ff88';
+            ctx.fillStyle = textColor;
             ctx.font = STYLES.fonts.mainBold;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
