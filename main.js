@@ -1,7 +1,7 @@
 // STANDALONE VERSION - No ES6 modules (works with file://)
 // Uses global variables from included scripts
 
-console.log('=== UI SYSTEM v2.1 - STANDALONE ===');
+console.log('=== UI SYSTEM v2.2 - STANDALONE ===');
 
 // Core system (globals from scripts)
 const eventBus = new EventBus();
@@ -27,200 +27,149 @@ const resizeCanvases = () => {
         }
     }
 };
-
 resizeCanvases();
 window.addEventListener('resize', resizeCanvases);
 
 // UI system
 const windowManager = new UI.WindowManager();
 const taskbar = new UI.Taskbar();
-taskbar.addSection('symulacje'); // Nowe okna tutaj!
-taskbar.addSection('system');    // System (stałe okna)
+taskbar.addSection('symulacje');
+taskbar.addSection('system');
 
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
 // ═════════════════════════════════════════════════
-//  PATCHES - UI Enhancements
+//  DEMO WINDOW - COMPLETE FEATURE SHOWCASE
 // ═════════════════════════════════════════════════
+const demoWindow = new UI.BaseWindow(50, 50, 'UI DEMO - ALL FEATURES');
+demoWindow.width = 400;
+demoWindow.height = 550;
 
-// PATCH: Button borders (green stroke)
-UI.BaseWindow.prototype.drawButton = function(ctx, STYLES, item, y) {
-    const buttonHeight = 20;
-    
-    // Background
-    ctx.fillStyle = 'rgba(0, 255, 136, 0.2)';
-    ctx.fillRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
-    
-    // Border (GREEN!)
-    ctx.strokeStyle = STYLES.colors.panel;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(this.x + this.padding, y, this.width - this.padding * 2, buttonHeight);
-    
-    // Text
-    ctx.fillStyle = STYLES.colors.panel;
-    ctx.font = STYLES.fonts.mainBold;
-    ctx.textAlign = 'center';
-    ctx.fillText(item.label, this.x + this.width / 2, y + 14);
-    ctx.textAlign = 'left';
-};
+// Demo variables
+let speedValue = 1.5;
+let volumeValue = 0.75;
+let gridEnabled = true;
+let autoSave = false;
 
-console.log('✅ Patches applied');
+// Section: WINDOW FEATURES (zielony)
+demoWindow.addSection('window features');
+demoWindow.addText('Close = X button in header');
+demoWindow.addText('Minimize = _ button → taskbar');
+demoWindow.addText('HUD = ○ button → transparent');
+demoWindow.addText('Move window = Drag header');
+demoWindow.addText('Pasek przewijania = Scroll content');
 
-// ═════════════════════════════════════════════════
-//  DEMO WINDOW
-// ═════════════════════════════════════════════════
-const demoWindow = new UI.BaseWindow(50, 50, 'UI Demo - All Features');
-demoWindow.width = 380;
-demoWindow.height = 500;
+// Section: PRZEŁĄCZNIKI (zielony)
+demoWindow.addSection('przełączniki');
 
-// Counter for dynamic content
-let counter = 0;
-
-// Demo variables for sliders and toggles
-let speedValue = 1.0;
-let volumeValue = 0.5;
-let gridEnabled = false;
-let autoSave = true;
-
-demoWindow.addSection('header buttons');
-demoWindow.addText('Test all header buttons:');
-demoWindow.addText('• X = Close');
-demoWindow.addText('• _ = Minimize');
-demoWindow.addText('• ○ = HUD mode');
-
-demoWindow.addSection('sliders & toggles');
-demoWindow.addSlider('Speed', 
-    () => speedValue, 
-    (v) => { speedValue = v; console.log('Speed:', v); }, 
-    0.1, 5.0, 0.05  // Changed step from 0.1 to 0.05 for smoother sliding
-);
-demoWindow.addSlider('Volume', 
-    () => volumeValue, 
-    (v) => { volumeValue = v; console.log('Volume:', v); }, 
-    0.0, 1.0, 0.01
-);
-demoWindow.addToggle('Show Grid', 
-    () => gridEnabled, 
-    (v) => { gridEnabled = v; console.log('Grid:', v); }
-);
-demoWindow.addToggle('Auto Save', 
-    () => autoSave, 
-    (v) => { autoSave = v; console.log('Auto Save:', v); }
-);
-
-demoWindow.addSection('scrollbar test');
-demoWindow.addText('Long content for scrollbar:');
-demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit.');
-demoWindow.addText('Sed do eiusmod tempor incididunt ut labore.');
-demoWindow.addText('Ut enim ad minim veniam quis nostrud.');
-demoWindow.addText('Duis aute irure dolor in reprehenderit.');
-demoWindow.addText('Esse cillum dolore eu fugiat nulla.');
-demoWindow.addText('Excepteur sint occaecat cupidatat.');
-demoWindow.addText('Sunt in culpa qui officia deserunt.');
-
-demoWindow.addSection('buttons');
-demoWindow.addButton('Open New Window', () => {
-    console.log('🔥 Open New Window clicked!');
+demoWindow.addButton('NEW WINDOW', () => {
+    console.log('🆕 Creating new window...');
     const newWin = new UI.BaseWindow(
         Math.random() * 400 + 100, 
         Math.random() * 300 + 100, 
-        'New Window'
+        `Window ${Date.now() % 1000}`
     );
-    newWin.width = 250;
-    newWin.height = 150;
-    newWin.addText('This is a new window!', '#00F5FF');
-    newWin.addText('Created dynamically.');
-    newWin.addButton('Close Me', () => {
-        console.log('Close Me clicked!');
+    newWin.width = 300;
+    newWin.height = 220;
+    newWin.addSection('info');
+    newWin.addText('Dynamically created window!', '#00F5FF');
+    newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`, '#00F5FF');
+    newWin.addSection('controls');
+    newWin.addButton('CLOSE ME', () => {
         windowManager.remove(newWin);
         taskbar.removeWindowItem(newWin);
     });
-    newWin.onClose = () => {
-        windowManager.remove(newWin);
-        taskbar.removeWindowItem(newWin);
-    };
     windowManager.add(newWin);
-    taskbar.addWindowItem(newWin.title, newWin, 'symulacje');  // Symulacje section!
+    taskbar.addWindowItem(newWin.title, newWin, 'symulacje');
     console.log('✅ New window created!');
 });
-demoWindow.addButton('Test Alert', () => {
-    console.log('🔥 Test Alert clicked!');
-    alert('Button works!');
+
+demoWindow.addButton('TEST ALERT', () => {
+    console.log('🔔 Alert button clicked!');
+    alert(`Button works!
+
+Speed: ${speedValue.toFixed(2)}
+Volume: ${volumeValue.toFixed(2)}
+Grid: ${gridEnabled}
+Auto Save: ${autoSave}`);
 });
 
-demoWindow.addSection('more content');
-demoWindow.addText('Sed ut perspiciatis unde omnis.');
-demoWindow.addText('Voluptatem accusantium doloremque.');
-demoWindow.addText('Eaque ipsa quae ab illo.');
-demoWindow.addText('Beatae vitae dicta sunt.');
-demoWindow.addText('Quia voluptas sit aspernatur.');
+demoWindow.addSlider('Speed Control', 
+    () => speedValue, 
+    (v) => { 
+        speedValue = v; 
+        console.log(`Speed: ${v.toFixed(2)}`); 
+    }, 
+    0.1, 5.0, 0.05
+);
 
-demoWindow.addSection('statistics');
-demoWindow.addText(() => `Counter: ${counter++}`, '#00F5FF');
-demoWindow.addText(() => `Timestamp: ${Date.now()}`, '#00F5FF');
-demoWindow.addText('✅ End of content');
+demoWindow.addSlider('Volume Control', 
+    () => volumeValue, 
+    (v) => { 
+        volumeValue = v; 
+        console.log(`Volume: ${v.toFixed(2)}`); 
+    }, 
+    0.0, 1.0, 0.01
+);
+
+demoWindow.addToggle('Show Grid', 
+    () => gridEnabled, 
+    (v) => { 
+        gridEnabled = v; 
+        console.log(`Grid: ${v}`); 
+    }
+);
+
+demoWindow.addToggle('Auto Save', 
+    () => autoSave, 
+    (v) => { 
+        autoSave = v; 
+        console.log(`Auto Save: ${v}`); 
+    }
+);
+
+// Section: STANDARD TEXT CONTENT (zielony)
+demoWindow.addSection('standard text content');
+demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
+
+// Section: STATIST. TEXT CONTENT (cyjan) - Data i czas
+demoWindow.addSection('statist. text content');
+demoWindow.addText(() => {
+    const now = new Date();
+    return `Aktualna data: ${now.toLocaleDateString('pl-PL')}`;
+}, '#00F5FF');
+
+demoWindow.addText(() => {
+    const now = new Date();
+    return `Aktualny czas: ${now.toLocaleTimeString('pl-PL')}`;
+}, '#00F5FF');
+
+// Section: STATIST. TEXT CONTENT (cyjan) - Blok statystyk
+demoWindow.addSection('statist. text content');
+demoWindow.addText(() => {
+    const fps = Math.round(performance.now() / 1000) % 60 + 30;
+    const memory = (Math.random() * 50 + 50).toFixed(1);
+    const windows = windowManager.windows.length;
+    const items = taskbar.menuItems.length;
+    return `System FPS: ${fps}
+Memory Usage: ${memory} MB
+Active Windows: ${windows}
+Taskbar Items: ${items}
+Speed Setting: ${speedValue.toFixed(2)}x
+Volume: ${(volumeValue * 100).toFixed(0)}%`;
+}, '#00F5FF');
+
+demoWindow.addText('─── Koniec Demo ───', '#00ff88');
 
 windowManager.add(demoWindow);
-taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');  // System section!
+taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');
 
 demoWindow.onClose = () => {
-    // Demo window nie znika z menu - tylko się chowa
     demoWindow.visible = false;
     windowManager.remove(demoWindow);
-    // taskbar.removeWindowItem NIE wywołujemy!
 };
 
-// ═════════════════════════════════════════════════
-//  MASTER CONTROLS WINDOW
-// ═════════════════════════════════════════════════
-const masterWindow = new UI.BaseWindow(800, 50, 'Master Controls');
-masterWindow.width = 280;
-masterWindow.height = 200;
-
-masterWindow.addSection('info');
-masterWindow.addText('UI System v2.1');
-masterWindow.addText('Core Architecture');
-
-masterWindow.addSection('controls');
-masterWindow.addButton('Reset UI', () => {
-    console.log('Reset UI clicked');
-    alert('UI reset functionality not implemented yet');
-});
-
-masterWindow.addButton('Toggle Grid', () => {
-    console.log('Toggle Grid clicked');
-    alert('Grid toggle not implemented yet');
-});
-
-windowManager.add(masterWindow);
-taskbar.addWindowItem(masterWindow.title, masterWindow, 'system');  // System section!
-
-masterWindow.onClose = () => {
-    masterWindow.visible = false;
-    windowManager.remove(masterWindow);
-};
-
-// ═════════════════════════════════════════════════
-//  STATS WINDOW
-// ═════════════════════════════════════════════════
-const statsWindow = new UI.BaseWindow(800, 270, 'System Stats');
-statsWindow.width = 280;
-statsWindow.height = 180;
-
-statsWindow.addSection('statistics');
-statsWindow.addText(() => `Windows: ${windowManager.windows.length}`, '#00F5FF');
-statsWindow.addText(() => `FPS: ${Math.round(performance.now() / 1000)}`, '#00F5FF');
-statsWindow.addText(() => `Memory: OK`, '#00F5FF');
-
-windowManager.add(statsWindow);
-taskbar.addWindowItem(statsWindow.title, statsWindow, 'system');  // System section!
-
-statsWindow.onClose = () => {
-    statsWindow.visible = false;
-    windowManager.remove(statsWindow);
-};
-
-console.log('✅ All windows created');
+console.log('✅ Demo window created');
 
 // ═════════════════════════════════════════════════
 //  RENDER LOOP
@@ -229,15 +178,13 @@ function render() {
     const ctx = canvases.ui.getContext('2d');
     ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
     
-    // Update window interactions
     windowManager.update(eventRouter.mouseX, eventRouter.mouseY, eventRouter.mouseDown, eventRouter.mouseClicked);
     
-    // Reset click flag
     if (eventRouter.mouseClicked) {
         eventRouter.mouseClicked = false;
     }
     
-    windowManager.windows.forEach(w => w.isDirty = true);
+    windowManager.windows.forEach(w => w.layoutDirty = true);
     windowManager.draw(ctx, UI.STYLES);
     
     ctx.save();
@@ -248,4 +195,4 @@ function render() {
 }
 
 render();
-console.log('✅ READY - No server needed!');
+console.log('✅ READY - Open index.html to see demo!');
