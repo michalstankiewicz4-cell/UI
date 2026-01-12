@@ -1893,7 +1893,12 @@ class BaseWindow {
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                     if (i === 0) this.transparent = !this.transparent;
-                    if (i === 1) { this.minimized = !this.minimized; this.layoutDirty = true; }
+                    if (i === 1) { 
+                        // Minimize button - hide window and mark as minimized
+                        this.minimized = true;
+                        this.visible = false;
+                        this.layoutDirty = true;
+                    }
                     if (i === 2) {
                         // Close button - call callback if exists
                         this.visible = false;
