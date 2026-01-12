@@ -160,6 +160,25 @@ const RADIUS_SLIDER_THUMB = 8;
 // Toggle
 const SIZE_TOGGLE_CHECKBOX = 16;
 
+// Export all constants as object for bundle compatibility
+const CONST = {
+    HEIGHT_BUTTON,
+    HEIGHT_SLIDER,
+    HEIGHT_TOGGLE,
+    HEIGHT_SECTION,
+    HEIGHT_TEXT_LINE,
+    SPACING_ITEM,
+    SPACING_PADDING,
+    HEIGHT_HEADER,
+    SIZE_BUTTON,
+    SPACING_BUTTON,
+    WIDTH_SCROLLBAR,
+    MIN_THUMB_HEIGHT,
+    HEIGHT_SLIDER_TRACK,
+    RADIUS_SLIDER_THUMB,
+    SIZE_TOGGLE_CHECKBOX
+};
+
 
 // â•â•â• ui/core/layout.js â•â•â•
 
