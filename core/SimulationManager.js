@@ -177,31 +177,41 @@ class SimulationManager {
      * @private
      */
     _bindSimulationData(simId, instance) {
-        // Common parameters (if methods exist)
-        if (typeof instance.setPaused === 'function') {
-            this.dataBridge.bindParameter(simId, 'paused', 
-                (value) => instance.setPaused(value));
+        const metadata = this.registry[simId]?.metadata;
+        
+        // AUTO-BIND parameters from metadata controls
+        if (metadata && metadata.controls) {
+            for (const control of metadata.controls) {
+                if (control.type === 'slider' || control.type === 'toggle') {
+                    // Find setter method (e.g., 'speed' → 'setSpeed')
+                    const setterName = 'set' + control.param.charAt(0).toUpperCase() + control.param.slice(1);
+                    
+                    if (typeof instance[setterName] === 'function') {
+                        this.dataBridge.bindParameter(simId, control.param, 
+                            (value) => instance[setterName](value)
+                        );
+                        console.log(`✅ Bound parameter: ${simId}.${control.param} → ${setterName}()`);
+                    } else {
+                        console.warn(`⚠️ Setter ${setterName} not found for param ${control.param}`);
+                    }
+                }
+            }
         }
         
-        if (typeof instance.reset === 'function') {
-            this.dataBridge.bindParameter(simId, 'reset', 
-                () => instance.reset());
-        }
-        
-        // Sim-specific parameters (add as needed)
-        if (typeof instance.setSpeed === 'function') {
-            this.dataBridge.bindParameter(simId, 'speed', 
-                (value) => instance.setSpeed(value));
-        }
-        
-        if (typeof instance.setGravity === 'function') {
-            this.dataBridge.bindParameter(simId, 'gravity', 
-                (value) => instance.setGravity(value));
-        }
-        
-        // Common stats
-        if (instance.hasOwnProperty('fps') || typeof instance.fps !== 'undefined') {
-            this.dataBridge.bindStat(simId, 'fps', () => instance.fps);
+        // AUTO-BIND stats from metadata
+        if (metadata && metadata.stats) {
+            for (const statName of metadata.stats) {
+                // Try getter or property
+                if (typeof instance[statName] === 'function') {
+                    this.dataBridge.bindStat(simId, statName, () => instance[statName]());
+                    console.log(`✅ Bound stat: ${simId}.${statName} (getter)`);
+                } else if (instance.hasOwnProperty(statName)) {
+                    this.dataBridge.bindStat(simId, statName, () => instance[statName]);
+                    console.log(`✅ Bound stat: ${simId}.${statName} (property)`);
+                } else {
+                    console.warn(`⚠️ Stat ${statName} not found on instance`);
+                }
+            }
         }
         
         // Emit event

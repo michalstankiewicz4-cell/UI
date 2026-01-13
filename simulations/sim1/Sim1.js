@@ -1,10 +1,18 @@
-// ═══════════════════════════════════════════════════════════════
-//   SIMULATION 1 - 2D Canvas Example
-// ═══════════════════════════════════════════════════════════════
+// SIMULATION 1 - 2D Canvas Particles
 // Template for 2D canvas-based simulation
-// Replace this with your actual simulation logic
 
 class Simulation1 {
+    // Metadata for auto-generating UI window
+    static metadata = {
+        name: 'SIM1 PARTICLES',
+        description: '2D particle bounce simulation',
+        controls: [
+            { type: 'slider', label: 'Speed', param: 'speed', min: 0.1, max: 5.0, step: 0.1 },
+            { type: 'slider', label: 'Particle Count', param: 'particleCount', min: 10, max: 200, step: 10 }
+        ],
+        stats: ['fps', 'activeParticles']
+    }
+    
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
@@ -75,9 +83,7 @@ class Simulation1 {
         }
     }
     
-    // ═════════════════════════════════════════════════
-    //  CONTROLS (called from UI)
-    // ═════════════════════════════════════════════════
+    // CONTROLS (called from UI via DataBridge)
     
     setParticleCount(count) {
         this.particleCount = count;
@@ -98,9 +104,7 @@ class Simulation1 {
         this.init();
     }
     
-    // ═════════════════════════════════════════════════
-    //  GETTERS (for UI stats)
-    // ═════════════════════════════════════════════════
+    // GETTERS (for UI stats via DataBridge)
     
     get activeParticles() {
         return this.particles.length;

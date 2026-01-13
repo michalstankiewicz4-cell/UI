@@ -1,9 +1,9 @@
-// STANDALONE VERSION - No ES6 modules (works with file://)
-// Uses global variables from included scripts
+// UI SYSTEM v2.3 - Integrated Simulations
+// Works with file:// protocol (no ES6 modules)
 
-console.log('=== UI SYSTEM v2.2 - STANDALONE ===');
+console.log('=== UI SYSTEM v2.3 - INTEGRATED SIMULATIONS ===');
 
-// Core system (globals from scripts)
+// Core system
 const eventBus = new EventBus();
 const dataBridge = new DataBridge(eventBus);
 const simulationManager = new SimulationManager(eventBus, dataBridge);
@@ -38,158 +38,173 @@ taskbar.addSection('system');
 
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
-// ═════════════════════════════════════════════════
-//  DEMO WINDOW - COMPLETE FEATURE SHOWCASE
-// ═════════════════════════════════════════════════
-const demoWindow = new UI.BaseWindow(50, 50, 'UI DEMO - ALL FEATURES');
-// Width auto-calculated from content (calculateSize)
-demoWindow.height = 550;
+// Register Simulation 1 (with async wrapper for compatibility)
+simulationManager.register('sim1', 
+    () => Promise.resolve(Simulation1), 
+    Simulation1.metadata
+);
 
-// Demo variables
+
+// SIMULATION CONTROLS WINDOW
+const controlsWindow = new UI.BaseWindow(50, 50, 'SIMULATION CONTROLS');
+
+controlsWindow.addSection('simulation management');
+
+controlsWindow.addButton('ADD SIM1', async () => {
+    if (simulationManager.isActive('sim1')) {
+        alert('Sim1 already running!');
+        return;
+    }
+    
+    console.log('🚀 Adding Sim1...');
+    const success = await simulationManager.addSimulation('sim1', canvases.sim1);
+    if (!success) {
+        alert('Failed to add Sim1!');
+        return;
+    }
+    
+    canvases.sim1.style.display = 'block';
+    canvases.sim1.style.zIndex = '1';
+    
+    const sim1Window = SimulationWindowFactory.create('sim1', simulationManager, dataBridge);
+    if (sim1Window) {
+        sim1Window.visible = true;
+        windowManager.add(sim1Window);
+        taskbar.addWindowItem(sim1Window.title, sim1Window, 'symulacje');
+        sim1Window.onClose = () => { sim1Window.visible = false; };
+    }
+    
+    console.log('✅ Sim1 added successfully!');
+});
+
+controlsWindow.addButton('REMOVE SIM1', () => {
+    if (!simulationManager.isActive('sim1')) {
+        alert('Sim1 is not running!');
+        return;
+    }
+    
+    simulationManager.removeSimulation('sim1');
+    canvases.sim1.style.display = 'none';
+    
+    const sim1Window = windowManager.windows.find(w => w.title === 'SIM1 PARTICLES');
+    if (sim1Window) {
+        windowManager.remove(sim1Window);
+        taskbar.removeWindowItem(sim1Window);
+    }
+    
+    console.log('✅ Sim1 removed');
+});
+
+controlsWindow.addSection('global controls');
+
+controlsWindow.addButton('PAUSE ALL', () => {
+    simulationManager.pauseAll();
+    console.log('⏸️ All paused');
+});
+
+controlsWindow.addButton('RESUME ALL', () => {
+    simulationManager.resumeAll();
+    console.log('▶️ All resumed');
+});
+
+controlsWindow.addButton('RESET ALL', () => {
+    simulationManager.resetAll();
+    console.log('🔄 All reset');
+});
+
+controlsWindow.addSection('statistics', 'statistics');
+controlsWindow.addText(() => {
+    const activeCount = simulationManager.getActiveCount();
+    const activeSims = simulationManager.getActiveSimulations();
+    const simList = activeSims.length > 0 ? activeSims.join(', ') : 'None';
+    return `Active Sims: ${activeCount}\nRunning: ${simList}`;
+});
+
+windowManager.add(controlsWindow);
+taskbar.addWindowItem(controlsWindow.title, controlsWindow, 'system');
+controlsWindow.onClose = () => { controlsWindow.visible = false; };
+
+console.log('✅ Controls window created');
+
+// UI DEMO WINDOW
+const uiDemoWindow = new UI.BaseWindow(400, 50, 'UI DEMO - ALL FEATURES');
+
 let speedValue = 1.5;
 let volumeValue = 0.75;
 let gridEnabled = true;
 let autoSave = false;
 
-// Section: WINDOW FEATURES (zielony)
-demoWindow.addSection('window features');
-demoWindow.addText(`Close = X button in header
-Minimize = _ button → taskbar
-HUD = ○ button → transparent
-Move window = Drag header
-Pasek przewijania = Scroll content`);
+uiDemoWindow.addSection('window features');
+uiDemoWindow.addText(`Close = X button
+Minimize = _ → taskbar
+HUD = ○ → transparent
+Drag header to move
+Scroll content`);
 
-// Section: PRZEŁĄCZNIKI (zielony)
-demoWindow.addSection('przełączniki');
-demoWindow.addButton('NEW WINDOW', () => {
-    console.log('🆕 Creating new window...');
+uiDemoWindow.addSection('controls');
+
+uiDemoWindow.addButton('NEW WINDOW', () => {
     const newWin = new UI.BaseWindow(
         Math.random() * 400 + 100, 
         Math.random() * 300 + 100, 
         `Window ${Date.now() % 1000}`
     );
-    newWin.visible = true; // Make it visible!
+    newWin.visible = true;
     newWin.addSection('info', 'statistics');
-    newWin.addText('Dynamically created window!');
+    newWin.addText('Dynamically created!');
     newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`);
     newWin.addSection('controls');
     newWin.addButton('CLOSE ME', () => {
-        // Hard close - usuń całkowicie
         windowManager.remove(newWin);
         taskbar.removeWindowItem(newWin);
     });
     windowManager.add(newWin);
-    windowManager.bringToFront(newWin); // Explicitly bring to front!
-    taskbar.addWindowItem(newWin.title, newWin, 'symulacje');
-    
-    // Setup close callback - [X] = soft close
-    newWin.onClose = () => {
-        newWin.visible = false; // Tylko ukryj, zostaw w menu
-    };
-    
-    console.log('✅ New window created at z-index:', newWin.zIndex);
+    windowManager.bringToFront(newWin);
+    taskbar.addWindowItem(newWin.title, newWin, 'system');
+    newWin.onClose = () => { newWin.visible = false; };
 });
 
-demoWindow.addButton('TEST ALERT', () => {
-    console.log('🔔 Alert button clicked!');
-    alert(`Button works!
-
-Speed: ${speedValue.toFixed(2)}
-Volume: ${volumeValue.toFixed(2)}
-Grid: ${gridEnabled}
-Auto Save: ${autoSave}`);
+uiDemoWindow.addButton('TEST ALERT', () => {
+    alert(`Controls work!\n\nSpeed: ${speedValue.toFixed(2)}\nVolume: ${volumeValue.toFixed(2)}\nGrid: ${gridEnabled}\nAuto Save: ${autoSave}`);
 });
 
-demoWindow.addSlider('Speed Control', 
-    () => speedValue, 
-    (v) => { 
-        speedValue = v; 
-        console.log(`Speed: ${v.toFixed(2)}`); 
-    }, 
-    0.1, 5.0, 0.05
-);
+uiDemoWindow.addSlider('Speed', () => speedValue, (v) => { speedValue = v; }, 0.1, 5.0, 0.05);
+uiDemoWindow.addSlider('Volume', () => volumeValue, (v) => { volumeValue = v; }, 0.0, 1.0, 0.01);
+uiDemoWindow.addToggle('Grid', () => gridEnabled, (v) => { gridEnabled = v; });
+uiDemoWindow.addToggle('Auto Save', () => autoSave, (v) => { autoSave = v; });
 
-demoWindow.addSlider('Volume Control', 
-    () => volumeValue, 
-    (v) => { 
-        volumeValue = v; 
-        console.log(`Volume: ${v.toFixed(2)}`); 
-    }, 
-    0.0, 1.0, 0.01
-);
+uiDemoWindow.addSection('text content');
+uiDemoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.');
 
-demoWindow.addToggle('Show Grid', 
-    () => gridEnabled, 
-    (v) => { 
-        gridEnabled = v; 
-        console.log(`Grid: ${v}`); 
-    }
-);
-
-demoWindow.addToggle('Auto Save', 
-    () => autoSave, 
-    (v) => { 
-        autoSave = v; 
-        console.log(`Auto Save: ${v}`); 
-    }
-);
-
-// Section: STANDARD TEXT CONTENT (zielony)
-demoWindow.addSection('standard text content');
-demoWindow.addText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
-
-// Section: STATIST. TEXT CONTENT (cyjan) - Data i czas
-demoWindow.addSection('statist. text content', 'statistics');
-demoWindow.addText(() => {
+uiDemoWindow.addSection('dynamic stats', 'statistics');
+uiDemoWindow.addText(() => {
     const now = new Date();
-    return `Aktualna data: ${now.toLocaleDateString('pl-PL')}
-Aktualny czas: ${now.toLocaleTimeString('pl-PL')}`;
+    return `Date: ${now.toLocaleDateString('pl-PL')}\nTime: ${now.toLocaleTimeString('pl-PL')}`;
 });
 
-// Section: STATIST. TEXT CONTENT (cyjan) - Blok statystyk
-demoWindow.addSection('statist. text content', 'statistics');
-demoWindow.addText(() => {
+uiDemoWindow.addSection('system stats', 'statistics');
+uiDemoWindow.addText(() => {
     const fps = Math.round(performance.now() / 1000) % 60 + 30;
     const memory = (Math.random() * 50 + 50).toFixed(1);
-    const windows = windowManager.windows.length;
-    const items = taskbar.menuItems.length;
-    return `System FPS: ${fps}
-Memory Usage: ${memory} MB
-Active Windows: ${windows}
-Taskbar Items: ${items}
-Speed Setting: ${speedValue.toFixed(2)}x
-Volume: ${(volumeValue * 100).toFixed(0)}%`;
+    return `FPS: ${fps}\nMemory: ${memory} MB\nWindows: ${windowManager.windows.length}\nSpeed: ${speedValue.toFixed(2)}x\nVolume: ${(volumeValue * 100).toFixed(0)}%`;
 });
 
-// Force width recalculation after adding all items
-demoWindow.layoutDirty = true;
-// Calculate size immediately (needs canvas context)
-const tempCtx = canvases.ui.getContext('2d');
-demoWindow.calculateSize(tempCtx);
-console.log('📏 Demo window width after calculateSize:', demoWindow.width);
+windowManager.add(uiDemoWindow);
+taskbar.addWindowItem(uiDemoWindow.title, uiDemoWindow, 'system');
+uiDemoWindow.onClose = () => { uiDemoWindow.visible = false; };
 
-windowManager.add(demoWindow);
-taskbar.addWindowItem(demoWindow.title, demoWindow, 'system');
+console.log('✅ UI Demo window created');
 
-demoWindow.onClose = () => {
-    // [X] = soft close - tylko ukryj, zostaw w taskbar menu
-    demoWindow.visible = false;
-};
-
-console.log('✅ Demo window created');
-
-// ═════════════════════════════════════════════════
-//  RENDER LOOP
-// ═════════════════════════════════════════════════
+// RENDER LOOP
 function render() {
+    simulationManager.updateAll();
+    simulationManager.renderAll();
+    
     const ctx = canvases.ui.getContext('2d');
     ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
     
     windowManager.update(eventRouter.mouseX, eventRouter.mouseY, eventRouter.mouseDown, eventRouter.mouseClicked);
-    
-    if (eventRouter.mouseClicked) {
-        eventRouter.mouseClicked = false;
-    }
+    if (eventRouter.mouseClicked) eventRouter.mouseClicked = false;
     
     windowManager.windows.forEach(w => w.layoutDirty = true);
     windowManager.draw(ctx, UI.STYLES);
@@ -202,4 +217,4 @@ function render() {
 }
 
 render();
-console.log('✅ READY - Open index.html to see demo!');
+console.log('✅ READY!');

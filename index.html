@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UI System v2.1 - Core Architecture Demo</title>
+    <title>UI System v2.3 - Integrated Simulations</title>
     <style>
         * {
             margin: 0;
@@ -38,55 +38,10 @@
         #canvas-sim3 { z-index: 3; display: none; }
         #canvas-sim4 { z-index: 4; display: none; }
         #canvas-ui { z-index: 100; pointer-events: auto; }
-        
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 15px;
-            border: 2px solid #00FF88;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 200;
-            max-width: 500px;
-        }
-        
-        #info h1 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #00F5FF;
-        }
-        
-        #info p {
-            margin: 5px 0;
-            line-height: 1.4;
-        }
-        
-        #info .key {
-            color: #00F5FF;
-            font-weight: bold;
-        }
-        
-        #close-info {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: #00FF88;
-            font-size: 20px;
-            cursor: pointer;
-            font-family: 'Courier New';
-        }
-        
-        #close-info:hover {
-            color: #00FFAA;
-        }
     </style>
 </head>
 <body>
-    <!-- Multi-canvas setup (simulations hidden for now) -->
+    <!-- Multi-canvas setup -->
     <div id="canvas-container">
         <canvas id="canvas-sim1"></canvas>
         <canvas id="canvas-sim2"></canvas>
@@ -98,12 +53,16 @@
     <!-- UI Library (bundled) -->
     <script src="dist/ui.js"></script>
     
-    <!-- Core modules (inline for file:// support) -->
+    <!-- Core modules (no ES6 imports for file://) -->
     <script src="core/EventBus.js"></script>
     <script src="core/DataBridge.js"></script>
     <script src="core/SimulationManager.js"></script>
+    <script src="core/SimulationWindowFactory.js"></script>
     
-    <!-- Main orchestrator (no ES6 modules) -->
+    <!-- Simulations -->
+    <script src="simulations/sim1/Sim1.js"></script>
+    
+    <!-- Main orchestrator -->
     <script src="main.js"></script>
 </body>
 </html>
