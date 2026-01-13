@@ -201,11 +201,19 @@ class SimulationManager {
         // AUTO-BIND stats from metadata
         if (metadata && metadata.stats) {
             for (const statName of metadata.stats) {
-                // Try getter or property
-                if (typeof instance[statName] === 'function') {
+                // Check for ES6 getter (in prototype chain)
+                const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(instance), statName);
+                
+                if (descriptor && descriptor.get) {
+                    // ES6 getter (get activeParticles() { ... })
+                    this.dataBridge.bindStat(simId, statName, () => instance[statName]);
+                    console.log(`✅ Bound stat: ${simId}.${statName} (ES6 getter)`);
+                } else if (typeof instance[statName] === 'function') {
+                    // Method (getFps() { ... })
                     this.dataBridge.bindStat(simId, statName, () => instance[statName]());
-                    console.log(`✅ Bound stat: ${simId}.${statName} (getter)`);
+                    console.log(`✅ Bound stat: ${simId}.${statName} (method)`);
                 } else if (instance.hasOwnProperty(statName)) {
+                    // Property (this.fps = ...)
                     this.dataBridge.bindStat(simId, statName, () => instance[statName]);
                     console.log(`✅ Bound stat: ${simId}.${statName} (property)`);
                 } else {
