@@ -1655,42 +1655,43 @@ class Taskbar {
             const item = taskbarWindows[i];
             
             // MODE SYSTEM: Button colors based on simulation mode or window state
-            let borderColor, textColor;
+            let borderColor, textColor, bgColor;
             
+            // ALWAYS use green for border and text on taskbar buttons
+            borderColor = STYLES.colors.panel;   // Green border (always!)
+            textColor = STYLES.colors.panel;     // Green text (always!)
+            
+            // Background color changes based on mode (like in menu!)
             if (item.simId && this.simulationManager) {
-                // Simulation window - color by mode
+                // Simulation window - background by mode
                 const mode = this.simulationManager.getMode(item.simId);
                 
                 if (mode === 'hud') {
-                    borderColor = '#FF4444';             // Red (canvas fullscreen)
-                    textColor = '#FF4444';
+                    bgColor = STYLES.colors.fullscreenBg;  // Red (canvas fullscreen)
                 } else if (mode === 'minimized') {
-                    borderColor = STYLES.colors.panel;   // Green (hidden)
-                    textColor = STYLES.colors.panel;
+                    bgColor = STYLES.colors.menuItemMin;   // Green (hidden)
                 } else {
-                    // window mode - should not appear on taskbar
-                    borderColor = STYLES.colors.panel;
-                    textColor = STYLES.colors.panel;
+                    bgColor = STYLES.colors.taskbarButtonBg; // Default
                 }
             } else {
-                // Regular window - color by state
+                // Regular window - background by state
                 const isFullscreen = item.window.fullscreen;
                 const isTransparent = item.window.transparent;
+                const isMinimized = item.window.minimized;
                 
                 if (isFullscreen) {
-                    borderColor = '#FFFF00';             // Yellow
-                    textColor = '#FFFF00';
+                    bgColor = STYLES.colors.windowFullscreen; // Yellow
                 } else if (isTransparent) {
-                    borderColor = STYLES.colors.stats;   // Cyan
-                    textColor = STYLES.colors.stats;
+                    bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
+                } else if (isMinimized) {
+                    bgColor = STYLES.colors.menuItemMin;      // Green
                 } else {
-                    borderColor = STYLES.colors.panel;   // Green (minimized)
-                    textColor = STYLES.colors.panel;
+                    bgColor = STYLES.colors.taskbarButtonBg;  // Default
                 }
             }
             
             // Button background
-            ctx.fillStyle = STYLES.colors.taskbarButtonBg;
+            ctx.fillStyle = bgColor;
             ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button border
