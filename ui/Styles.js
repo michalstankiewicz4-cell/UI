@@ -33,7 +33,10 @@ const STYLES = {
         menuItemMin: 'rgba(0, 255, 136, 0.15)',      // Minimized window in menu (green)
         menuItemNormal: 'rgba(0, 255, 136, 0.05)',   // Normal window in menu
         taskbarButtonBg: 'rgba(0, 255, 136, 0.2)',   // Taskbar button background
-        startButtonBg: 'rgba(0, 255, 136, 0.1)'      // Start button background
+        startButtonBg: 'rgba(0, 255, 136, 0.1)',     // Start button background
+        
+        // Simulation Modes
+        fullscreenBg: 'rgba(255, 68, 68, 0.2)'       // Red - HUD mode for simulations
     },
     spacing: {
         padding: 10,

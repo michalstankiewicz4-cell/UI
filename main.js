@@ -32,11 +32,37 @@ window.addEventListener('resize', resizeCanvases);
 
 // UI system
 const windowManager = new UI.WindowManager();
-const taskbar = new UI.Taskbar();
+const taskbar = new UI.Taskbar(simulationManager); // Pass SimulationManager
 taskbar.addSection('symulacje');
 taskbar.addSection('system');
 
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
+
+// ═══════════════════════════════════════════════════════════════
+//   MODE SYSTEM LISTENER - Canvas Visibility Control
+// ═══════════════════════════════════════════════════════════════
+
+eventBus.on('simulation:mode-changed', ({ simId, mode }) => {
+    console.log(`🎨 Mode changed: ${simId} → ${mode}`);
+    
+    const canvas = canvases[simId];
+    if (!canvas) return;
+    
+    if (mode === 'hud') {
+        // Canvas fullscreen (red on taskbar)
+        canvas.style.display = 'block';
+        canvas.style.zIndex = '1';
+    }
+    else if (mode === 'window') {
+        // Canvas background, window visible
+        canvas.style.display = 'block';
+        canvas.style.zIndex = '0';
+    }
+    else if (mode === 'minimized') {
+        // Everything hidden (green on taskbar)
+        canvas.style.display = 'none';
+    }
+});
 
 // Register Simulation 1 (with async wrapper for compatibility)
 simulationManager.register('sim1', 
@@ -63,14 +89,15 @@ controlsWindow.addButton('ADD SIM1', async () => {
         return;
     }
     
+    // MODE SYSTEM: Default mode is 'window' (visible)
     canvases.sim1.style.display = 'block';
-    canvases.sim1.style.zIndex = '1';
+    canvases.sim1.style.zIndex = '0';
     
     const sim1Window = SimulationWindowFactory.create('sim1', simulationManager, dataBridge);
     if (sim1Window) {
-        sim1Window.visible = true;
+        sim1Window.visible = true; // Start visible (window mode)
         windowManager.add(sim1Window);
-        taskbar.addWindowItem(sim1Window.title, sim1Window, 'symulacje');
+        taskbar.addWindowItem(sim1Window.title, sim1Window, 'symulacje', 'sim1'); // Pass simId
         sim1Window.onClose = () => { sim1Window.visible = false; };
     }
     

@@ -72,6 +72,11 @@ class BaseWindow {
         
         // OPT-1: Layout cache (30-50% performance gain!)
         this.layoutCache = null;
+        
+        // Hooks for simulation windows
+        this.onMinimize = null;            // Called when minimize button clicked
+        this.onToggleTransparent = null;   // Called when eye button clicked
+        this.onClose = null;               // Called when close button clicked (already existed)
     }
     
     // ═══════════════════════════════════════════════════════════════
@@ -272,22 +277,31 @@ class BaseWindow {
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                     if (i === 0) {
                         // Transparent button - toggle HUD mode
-                        this.transparent = !this.transparent;
-                        
-                        // If going transparent, hide window (like minimize)
-                        // Content stays visible, but window goes to taskbar
-                        if (this.transparent) {
-                            this.visible = false;
+                        if (this.onToggleTransparent) {
+                            // Custom logic for simulations
+                            this.onToggleTransparent();
+                        } else {
+                            // Default logic for normal windows
+                            this.transparent = !this.transparent;
+                            if (this.transparent) {
+                                this.visible = false;
+                            }
                         }
                     }
                     if (i === 1) { 
-                        // Minimize button - hide window and mark as minimized
-                        this.minimized = true;
-                        this.visible = false;
-                        this.layoutDirty = true;
+                        // Minimize button
+                        if (this.onMinimize) {
+                            // Custom logic for simulations (e.g., go to fullscreen)
+                            this.onMinimize();
+                        } else {
+                            // Default logic for normal windows
+                            this.minimized = true;
+                            this.visible = false;
+                            this.layoutDirty = true;
+                        }
                     }
                     if (i === 2) {
-                        // Close button - call callback if exists
+                        // Close button
                         this.visible = false;
                         if (this.onClose && typeof this.onClose === 'function') {
                             this.onClose();

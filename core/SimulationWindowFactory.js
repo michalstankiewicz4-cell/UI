@@ -19,6 +19,32 @@ class SimulationWindowFactory {
         const windowTitle = metadata.name || simId.toUpperCase();
         const window = new UI.BaseWindow(100, 100, windowTitle);
         
+        // ═══════════════════════════════════════════════════════════════
+        //   MODE SYSTEM - Simulation Window Hooks
+        // ═══════════════════════════════════════════════════════════════
+        
+        // Minimize → minimized mode (hide everything, green on taskbar)
+        window.onMinimize = () => {
+            simulationManager.setMode(simId, 'minimized');
+            window.visible = false;
+            window.minimized = true;
+        };
+        
+        // Eye button → HUD mode (canvas fullscreen, red on taskbar)
+        window.onToggleTransparent = () => {
+            simulationManager.setMode(simId, 'hud');
+            window.transparent = true;
+            window.visible = false;
+        };
+        
+        // Close → minimized mode (hide everything)
+        window.onClose = () => {
+            simulationManager.setMode(simId, 'minimized');
+            window.visible = false;
+        };
+        
+        // ═══════════════════════════════════════════════════════════════
+        
         // CONTROLS section
         if (metadata.controls && metadata.controls.length > 0) {
             window.addSection('controls');

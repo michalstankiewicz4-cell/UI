@@ -5,7 +5,7 @@
 // Extracted from Petrie Dish v5.1-C2
 // 
 // Version: 2.0.0 (Modular Architecture)
-// Date: 2026-01-12
+// Date: 2026-01-14
 // Source: https://github.com/michalstankiewicz4-cell/UI
 //
 // Architecture:
@@ -997,7 +997,10 @@ const STYLES = {
         menuItemMin: 'rgba(0, 255, 136, 0.15)',      // Minimized window in menu (green)
         menuItemNormal: 'rgba(0, 255, 136, 0.05)',   // Normal window in menu
         taskbarButtonBg: 'rgba(0, 255, 136, 0.2)',   // Taskbar button background
-        startButtonBg: 'rgba(0, 255, 136, 0.1)'      // Start button background
+        startButtonBg: 'rgba(0, 255, 136, 0.1)',     // Start button background
+        
+        // Simulation Modes
+        fullscreenBg: 'rgba(255, 68, 68, 0.2)'       // Red - HUD mode for simulations
     },
     spacing: {
         padding: 10,
@@ -1170,7 +1173,10 @@ if (typeof module !== 'undefined' && module.exports) {
 
 
 class Taskbar {
-    constructor() {
+    constructor(simulationManager = null) {
+        // Mode system
+        this.simulationManager = simulationManager;
+        
         this.buttonHeight = 32;
         this.verticalPadding = PADDING_TASKBAR_VERTICAL;
         this.height = this.buttonHeight + this.verticalPadding * 2;
@@ -1224,13 +1230,14 @@ class Taskbar {
         });
     }
     
-    addWindowItem(title, window, section = null) {
+    addWindowItem(title, window, section = null, simId = null) {
         // Add window to menu with custom display title
         const windowItem = {
             type: 'window',
             title: title,
             windowTitle: window.title,
             window: window,
+            simId: simId,  // NEW: simulation ID for mode coloring
             isOpen: true
         };
         
@@ -1351,23 +1358,35 @@ class Taskbar {
                     if (mouseX >= menu.x && mouseX <= menu.x + menu.width &&
                         mouseY >= currentY && mouseY <= currentY + itemHeight) {
                         
-                        // Toggle window visibility
-                        if (!item.window.visible) {
-                            // Window was closed/minimized/transparent - restore fully
+                        // MODE SYSTEM: Set to window mode for simulations
+                        if (item.simId && this.simulationManager) {
+                            // Simulation window - switch to window mode
+                            this.simulationManager.setMode(item.simId, 'window');
                             item.window.visible = true;
                             item.window.minimized = false;
-                            item.window.transparent = false; // Exit HUD mode
+                            item.window.transparent = false;
                             if (windowManager) {
-                                // Check if window is in manager
                                 if (!windowManager.windows.includes(item.window)) {
                                     windowManager.add(item.window);
                                 }
                                 windowManager.bringToFront(item.window);
                             }
                         } else {
-                            // Window is open - just bring to front
-                            if (windowManager) {
-                                windowManager.bringToFront(item.window);
+                            // Regular window - old logic
+                            if (!item.window.visible) {
+                                item.window.visible = true;
+                                item.window.minimized = false;
+                                item.window.transparent = false;
+                                if (windowManager) {
+                                    if (!windowManager.windows.includes(item.window)) {
+                                        windowManager.add(item.window);
+                                    }
+                                    windowManager.bringToFront(item.window);
+                                }
+                            } else {
+                                if (windowManager) {
+                                    windowManager.bringToFront(item.window);
+                                }
                             }
                         }
                         item.isOpen = true;
@@ -1381,11 +1400,19 @@ class Taskbar {
             }
         }
 
-        // Check taskbar buttons (minimized OR transparent windows)
-        const taskbarWindows = this.menuItems.filter(item => 
-            item.type === 'window' && !item.window.visible && 
-            (item.window.minimized || item.window.transparent)
-        );
+        // Check taskbar buttons (simulation windows OR minimized/transparent regular windows)
+        const taskbarWindows = this.menuItems.filter(item => {
+            if (item.type !== 'window') return false;
+            
+            // Simulation windows: show if not in 'window' mode
+            if (item.simId && this.simulationManager) {
+                const mode = this.simulationManager.getMode(item.simId);
+                return mode !== 'window'; // Show for fullscreen, hud, minimized
+            }
+            
+            // Regular windows: show if invisible AND (minimized OR transparent)
+            return !item.window.visible && (item.window.minimized || item.window.transparent);
+        });
         
         for (let i = 0; i < taskbarWindows.length; i++) {
             const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
@@ -1393,17 +1420,34 @@ class Taskbar {
             if (mouseX >= btn.x && mouseX <= btn.x + btn.width &&
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
-                // Restore window
-                taskbarWindows[i].window.visible = true;
-                taskbarWindows[i].window.minimized = false;
-                taskbarWindows[i].window.transparent = false; // Exit transparent mode
-                if (windowManager) {
-                    // Check if window is in manager
-                    if (!windowManager.windows.includes(taskbarWindows[i].window)) {
-                        windowManager.add(taskbarWindows[i].window);
+                // MODE SYSTEM: Set to window mode for simulations
+                const item = taskbarWindows[i];
+                
+                if (item.simId && this.simulationManager) {
+                    // Simulation window - switch to window mode
+                    this.simulationManager.setMode(item.simId, 'window');
+                    item.window.visible = true;
+                    item.window.minimized = false;
+                    item.window.transparent = false;
+                    if (windowManager) {
+                        if (!windowManager.windows.includes(item.window)) {
+                            windowManager.add(item.window);
+                        }
+                        windowManager.bringToFront(item.window);
                     }
-                    windowManager.bringToFront(taskbarWindows[i].window);
+                } else {
+                    // Regular window - old logic
+                    item.window.visible = true;
+                    item.window.minimized = false;
+                    item.window.transparent = false;
+                    if (windowManager) {
+                        if (!windowManager.windows.includes(item.window)) {
+                            windowManager.add(item.window);
+                        }
+                        windowManager.bringToFront(item.window);
+                    }
                 }
+                
                 return true;
             }
         }
@@ -1513,17 +1557,33 @@ class Taskbar {
                     // Window item
                     const itemHeight = this.menuItemHeight;
                     
-                    // Item background - cyan for transparent/HUD, green for minimized, light for normal
-                    const isTransparent = item.window.transparent && !item.window.visible;
-                    const isMinimized = item.window.minimized && !item.window.visible;
-                    
+                    // MODE SYSTEM: Color based on simulation mode or window state
                     let bgColor;
-                    if (isTransparent) {
-                        bgColor = STYLES.colors.menuItemHud;
-                    } else if (isMinimized) {
-                        bgColor = STYLES.colors.menuItemMin;
+                    
+                    if (item.simId && this.simulationManager) {
+                        // Simulation window - color by mode
+                        const mode = this.simulationManager.getMode(item.simId);
+                        
+                        if (mode === 'hud') {
+                            bgColor = STYLES.colors.fullscreenBg;  // Red (canvas fullscreen)
+                        } else if (mode === 'minimized') {
+                            bgColor = STYLES.colors.menuItemMin;   // Green (hidden)
+                        } else {
+                            // window mode or other
+                            bgColor = STYLES.colors.menuItemNormal;
+                        }
                     } else {
-                        bgColor = STYLES.colors.menuItemNormal;
+                        // Regular window - old logic
+                        const isTransparent = item.window.transparent && !item.window.visible;
+                        const isMinimized = item.window.minimized && !item.window.visible;
+                        
+                        if (isTransparent) {
+                            bgColor = STYLES.colors.menuItemHud;
+                        } else if (isMinimized) {
+                            bgColor = STYLES.colors.menuItemMin;
+                        } else {
+                            bgColor = STYLES.colors.menuItemNormal;
+                        }
                     }
                     
                     ctx.fillStyle = bgColor;
@@ -1541,30 +1601,60 @@ class Taskbar {
             }
         }
 
-        // Taskbar buttons (minimized OR transparent windows)
-        const taskbarWindows = this.menuItems.filter(item => 
-            item.type === 'window' && !item.window.visible && 
-            (item.window.minimized || item.window.transparent)
-        );
+        // Taskbar buttons (simulation windows OR minimized/transparent regular windows)
+        const taskbarWindows = this.menuItems.filter(item => {
+            if (item.type !== 'window') return false;
+            
+            // Simulation windows: show if not in 'window' mode
+            if (item.simId && this.simulationManager) {
+                const mode = this.simulationManager.getMode(item.simId);
+                return mode !== 'window'; // Show for fullscreen, hud, minimized
+            }
+            
+            // Regular windows: show if invisible AND (minimized OR transparent)
+            return !item.window.visible && (item.window.minimized || item.window.transparent);
+        });
         
         for (let i = 0; i < taskbarWindows.length; i++) {
             const btn = this.getTaskbarButtonBounds(i, ctx, taskbarWindows, measureTextCached);
             const item = taskbarWindows[i];
             
-            // Button colors - cyan for transparent, green for minimized
-            const isTransparent = item.window.transparent;
+            // MODE SYSTEM: Button colors based on simulation mode or window state
+            let borderColor, textColor;
+            
+            if (item.simId && this.simulationManager) {
+                // Simulation window - color by mode
+                const mode = this.simulationManager.getMode(item.simId);
+                
+                if (mode === 'hud') {
+                    borderColor = '#FF4444';             // Red (canvas fullscreen)
+                    textColor = '#FF4444';
+                } else if (mode === 'minimized') {
+                    borderColor = STYLES.colors.panel;   // Green (hidden)
+                    textColor = STYLES.colors.panel;
+                } else {
+                    // window mode - should not appear on taskbar
+                    borderColor = STYLES.colors.panel;
+                    textColor = STYLES.colors.panel;
+                }
+            } else {
+                // Regular window - old logic
+                const isTransparent = item.window.transparent;
+                borderColor = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
+                textColor = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
+            }
             
             // Button background
             ctx.fillStyle = STYLES.colors.taskbarButtonBg;
             ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
-            // Button border (cyan for HUD, green for minimized)
-            ctx.strokeStyle = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
+            // Button border
+            ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(btn.x, btn.y, btn.width, btn.height);
             
-            // Button text (same color as border)
-            ctx.fillStyle = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
+            // Button text
+            ctx.fillStyle = textColor;
             ctx.font = STYLES.fonts.mainBold;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -1800,6 +1890,11 @@ class BaseWindow {
         
         // OPT-1: Layout cache (30-50% performance gain!)
         this.layoutCache = null;
+        
+        // Hooks for simulation windows
+        this.onMinimize = null;            // Called when minimize button clicked
+        this.onToggleTransparent = null;   // Called when eye button clicked
+        this.onClose = null;               // Called when close button clicked (already existed)
     }
     
     // ═══════════════════════════════════════════════════════════════
@@ -2000,22 +2095,31 @@ class BaseWindow {
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                     if (i === 0) {
                         // Transparent button - toggle HUD mode
-                        this.transparent = !this.transparent;
-                        
-                        // If going transparent, hide window (like minimize)
-                        // Content stays visible, but window goes to taskbar
-                        if (this.transparent) {
-                            this.visible = false;
+                        if (this.onToggleTransparent) {
+                            // Custom logic for simulations
+                            this.onToggleTransparent();
+                        } else {
+                            // Default logic for normal windows
+                            this.transparent = !this.transparent;
+                            if (this.transparent) {
+                                this.visible = false;
+                            }
                         }
                     }
                     if (i === 1) { 
-                        // Minimize button - hide window and mark as minimized
-                        this.minimized = true;
-                        this.visible = false;
-                        this.layoutDirty = true;
+                        // Minimize button
+                        if (this.onMinimize) {
+                            // Custom logic for simulations (e.g., go to fullscreen)
+                            this.onMinimize();
+                        } else {
+                            // Default logic for normal windows
+                            this.minimized = true;
+                            this.visible = false;
+                            this.layoutDirty = true;
+                        }
                     }
                     if (i === 2) {
-                        // Close button - call callback if exists
+                        // Close button
                         this.visible = false;
                         if (this.onClose && typeof this.onClose === 'function') {
                             this.onClose();
