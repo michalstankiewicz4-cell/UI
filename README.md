@@ -7,6 +7,22 @@ Modular window system for Canvas API with centralized simulation management, hig
 
 ---
 
+## 🤖 For Claude AI (Important!)
+
+**BEFORE starting work:**
+- ❌ **DO NOT read `dist/ui.js`** - auto-generated bundle (2400+ lines, wastes tokens!)
+- ✅ **Work with source files** in `ui/` and `core/` directories
+- ✅ **Use `build.ps1`** to regenerate `dist/ui.js` after changes
+- ✅ **Read documentation first:**
+  - [docs/TODO.md](docs/TODO.md) - Current priorities & roadmap
+  - [docs/ROADMAP.md](docs/ROADMAP.md) - Performance optimizations
+  - [docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md) - Complete file reference
+  - [docs/CACHE_FIX.md](docs/CACHE_FIX.md) - Troubleshooting guide
+
+**Project location:** `C:\Users\micha\source\repos\UI`
+
+---
+
 ## 🚀 Quick Start
 
 ### Standalone (single file)
