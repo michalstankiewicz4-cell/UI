@@ -277,11 +277,12 @@ function computeLayout(items, window) {
 
 
 /**
- * Get header button bounds (close, minimize, eye)
+ * Get header button bounds (eye, maximize, minimize, close)
  */
 function getHeaderButtonBounds(window, index) {
-    const x = window.x + window.width - SIZE_BUTTON * (3 - index) 
-        - SPACING_BUTTON * (3 - index) - window.padding;
+    // 4 buttons now: eye(0), maximize(1), minimize(2), close(3)
+    const x = window.x + window.width - SIZE_BUTTON * (4 - index) 
+        - SPACING_BUTTON * (4 - index) - window.padding;
     const y = window.y + (HEIGHT_HEADER - SIZE_BUTTON) / 2;
     
     return { x, y, width: SIZE_BUTTON, height: SIZE_BUTTON };
@@ -307,7 +308,7 @@ function drawHeader(ctx, window, STYLES) {
 }
 
 /**
- * Draw header buttons (eye, minimize, close)
+ * Draw header buttons (eye, maximize, minimize, close)
  */
 function drawHeaderButtons(ctx, window, STYLES) {
     // Eye button (transparent toggle) - index 0
@@ -336,14 +337,27 @@ function drawHeaderButtons(ctx, window, STYLES) {
         ctx.fill();
     }
     
-    // Minimize button - index 1
-    const minBtn = getHeaderButtonBounds(window, 1);
+    // Maximize button - index 1 (square icon)
+    const maxBtn = getHeaderButtonBounds(window, 1);
+    ctx.strokeRect(maxBtn.x, maxBtn.y, maxBtn.width, maxBtn.height);
+    
+    if (window.fullscreen) {
+        // Fullscreen: two overlapping squares (restore icon)
+        ctx.strokeRect(maxBtn.x + 5, maxBtn.y + 5, 8, 8);
+        ctx.strokeRect(maxBtn.x + 7, maxBtn.y + 3, 8, 8);
+    } else {
+        // Normal: single square (maximize icon)
+        ctx.strokeRect(maxBtn.x + 4, maxBtn.y + 4, maxBtn.width - 8, maxBtn.height - 8);
+    }
+    
+    // Minimize button - index 2
+    const minBtn = getHeaderButtonBounds(window, 2);
     ctx.strokeRect(minBtn.x, minBtn.y, minBtn.width, minBtn.height);
     ctx.fillStyle = STYLES.colors.panel;
     ctx.fillRect(minBtn.x + 4, minBtn.y + minBtn.height / 2 - 1, minBtn.width - 8, 2);
     
-    // Close button - index 2
-    const closeBtn = getHeaderButtonBounds(window, 2);
+    // Close button - index 3
+    const closeBtn = getHeaderButtonBounds(window, 3);
     ctx.strokeRect(closeBtn.x, closeBtn.y, closeBtn.width, closeBtn.height);
     const cx = closeBtn.x + closeBtn.width / 2;
     const cy = closeBtn.y + closeBtn.height / 2;
@@ -1000,7 +1014,10 @@ const STYLES = {
         startButtonBg: 'rgba(0, 255, 136, 0.1)',     // Start button background
         
         // Simulation Modes
-        fullscreenBg: 'rgba(255, 68, 68, 0.2)'       // Red - HUD mode for simulations
+        fullscreenBg: 'rgba(255, 68, 68, 0.2)',      // Red - HUD mode for simulations
+        
+        // Window Modes
+        windowFullscreen: 'rgba(255, 255, 0, 0.2)'   // Yellow - fullscreen windows
     },
     spacing: {
         padding: 10,
@@ -1372,21 +1389,23 @@ class Taskbar {
                                 windowManager.bringToFront(item.window);
                             }
                         } else {
-                            // Regular window - old logic
-                            if (!item.window.visible) {
+                            // Regular window
+                            if (item.window.transparent) {
+                                // Transparent (HUD) - restore to normal window
+                                item.window.transparent = false;
                                 item.window.visible = true;
                                 item.window.minimized = false;
-                                item.window.transparent = false;
-                                if (windowManager) {
-                                    if (!windowManager.windows.includes(item.window)) {
-                                        windowManager.add(item.window);
-                                    }
-                                    windowManager.bringToFront(item.window);
+                            } else if (!item.window.visible) {
+                                // Closed or minimized - restore
+                                item.window.visible = true;
+                                item.window.minimized = false;
+                            }
+                            // Always bring to front
+                            if (windowManager) {
+                                if (!windowManager.windows.includes(item.window)) {
+                                    windowManager.add(item.window);
                                 }
-                            } else {
-                                if (windowManager) {
-                                    windowManager.bringToFront(item.window);
-                                }
+                                windowManager.bringToFront(item.window);
                             }
                         }
                         item.isOpen = true;
@@ -1407,11 +1426,14 @@ class Taskbar {
             // Simulation windows: show if not in 'window' mode
             if (item.simId && this.simulationManager) {
                 const mode = this.simulationManager.getMode(item.simId);
-                return mode !== 'window'; // Show for fullscreen, hud, minimized
+                return mode !== 'window'; // Show for hud, minimized
             }
             
-            // Regular windows: show if invisible AND (minimized OR transparent)
-            return !item.window.visible && (item.window.minimized || item.window.transparent);
+            // Regular windows: show if fullscreen, minimized, OR transparent (HUD)
+            if (item.window.fullscreen) return true;
+            if (item.window.minimized && !item.window.visible) return true;
+            if (item.window.transparent) return true; // HUD mode - show on taskbar
+            return false;
         });
         
         for (let i = 0; i < taskbarWindows.length; i++) {
@@ -1436,10 +1458,17 @@ class Taskbar {
                         windowManager.bringToFront(item.window);
                     }
                 } else {
-                    // Regular window - old logic
-                    item.window.visible = true;
-                    item.window.minimized = false;
-                    item.window.transparent = false;
+                    // Regular window
+                    if (item.window.fullscreen) {
+                        // Restore from fullscreen
+                        item.window.toggleFullscreen();
+                    } else {
+                        // Restore from minimized/transparent
+                        item.window.visible = true;
+                        item.window.minimized = false;
+                        item.window.transparent = false;
+                    }
+                    
                     if (windowManager) {
                         if (!windowManager.windows.includes(item.window)) {
                             windowManager.add(item.window);
@@ -1573,16 +1602,19 @@ class Taskbar {
                             bgColor = STYLES.colors.menuItemNormal;
                         }
                     } else {
-                        // Regular window - old logic
-                        const isTransparent = item.window.transparent && !item.window.visible;
+                        // Regular window - color by state
+                        const isFullscreen = item.window.fullscreen;
+                        const isTransparent = item.window.transparent; // HUD mode (visible or not)
                         const isMinimized = item.window.minimized && !item.window.visible;
                         
-                        if (isTransparent) {
-                            bgColor = STYLES.colors.menuItemHud;
+                        if (isFullscreen) {
+                            bgColor = STYLES.colors.windowFullscreen; // Yellow
+                        } else if (isTransparent) {
+                            bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
                         } else if (isMinimized) {
-                            bgColor = STYLES.colors.menuItemMin;
+                            bgColor = STYLES.colors.menuItemMin;      // Green
                         } else {
-                            bgColor = STYLES.colors.menuItemNormal;
+                            bgColor = STYLES.colors.menuItemNormal;   // Normal
                         }
                     }
                     
@@ -1601,18 +1633,21 @@ class Taskbar {
             }
         }
 
-        // Taskbar buttons (simulation windows OR minimized/transparent regular windows)
+        // Taskbar buttons (simulation windows OR minimized/transparent/fullscreen regular windows)
         const taskbarWindows = this.menuItems.filter(item => {
             if (item.type !== 'window') return false;
             
             // Simulation windows: show if not in 'window' mode
             if (item.simId && this.simulationManager) {
                 const mode = this.simulationManager.getMode(item.simId);
-                return mode !== 'window'; // Show for fullscreen, hud, minimized
+                return mode !== 'window'; // Show for hud, minimized
             }
             
-            // Regular windows: show if invisible AND (minimized OR transparent)
-            return !item.window.visible && (item.window.minimized || item.window.transparent);
+            // Regular windows: show if fullscreen, minimized, OR transparent (HUD)
+            if (item.window.fullscreen) return true;
+            if (item.window.minimized && !item.window.visible) return true;
+            if (item.window.transparent) return true; // HUD mode - show on taskbar
+            return false;
         });
         
         for (let i = 0; i < taskbarWindows.length; i++) {
@@ -1638,10 +1673,20 @@ class Taskbar {
                     textColor = STYLES.colors.panel;
                 }
             } else {
-                // Regular window - old logic
+                // Regular window - color by state
+                const isFullscreen = item.window.fullscreen;
                 const isTransparent = item.window.transparent;
-                borderColor = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
-                textColor = isTransparent ? STYLES.colors.stats : STYLES.colors.panel;
+                
+                if (isFullscreen) {
+                    borderColor = '#FFFF00';             // Yellow
+                    textColor = '#FFFF00';
+                } else if (isTransparent) {
+                    borderColor = STYLES.colors.stats;   // Cyan
+                    textColor = STYLES.colors.stats;
+                } else {
+                    borderColor = STYLES.colors.panel;   // Green (minimized)
+                    textColor = STYLES.colors.panel;
+                }
             }
             
             // Button background
@@ -1862,7 +1907,14 @@ class BaseWindow {
         this.visible = false;
         this.minimized = false;
         this.transparent = false;
+        this.fullscreen = false;        // NEW: fullscreen mode (maximize)
         this.zIndex = 0;
+        
+        // Fullscreen restore data
+        this.restoreX = x;
+        this.restoreY = y;
+        this.restoreWidth = 300;
+        this.restoreHeight = 200;
         
         // Dragging
         this.isDragging = false;
@@ -2090,7 +2142,7 @@ class BaseWindow {
         
         // Check header buttons (skip in transparent mode - header not visible)
         if (!this.transparent && this.containsHeader(mouseX, mouseY)) {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 4; i++) { // 4 buttons now: eye, maximize, minimize, close
                 const btn = getHeaderButtonBounds(this, i);
                 if (rectHit(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                     if (i === 0) {
@@ -2099,14 +2151,16 @@ class BaseWindow {
                             // Custom logic for simulations
                             this.onToggleTransparent();
                         } else {
-                            // Default logic for normal windows
+                            // Default logic for normal windows - just toggle transparent
+                            // DON'T set visible=false! Window stays in same place
                             this.transparent = !this.transparent;
-                            if (this.transparent) {
-                                this.visible = false;
-                            }
                         }
                     }
-                    if (i === 1) { 
+                    if (i === 1) {
+                        // Maximize button - toggle fullscreen
+                        this.toggleFullscreen();
+                    }
+                    if (i === 2) { 
                         // Minimize button
                         if (this.onMinimize) {
                             // Custom logic for simulations (e.g., go to fullscreen)
@@ -2118,7 +2172,7 @@ class BaseWindow {
                             this.layoutDirty = true;
                         }
                     }
-                    if (i === 2) {
+                    if (i === 3) {
                         // Close button
                         this.visible = false;
                         if (this.onClose && typeof this.onClose === 'function') {
@@ -2172,6 +2226,36 @@ class BaseWindow {
     }
     
     // ═══════════════════════════════════════════════════════════════
+    //   FULLSCREEN MODE
+    // ═══════════════════════════════════════════════════════════════
+    
+    toggleFullscreen() {
+        if (this.fullscreen) {
+            // Restore from fullscreen
+            this.x = this.restoreX;
+            this.y = this.restoreY;
+            this.width = this.restoreWidth;
+            this.height = this.restoreHeight;
+            this.fullscreen = false;
+            this.layoutDirty = true;
+        } else {
+            // Save current size/position
+            this.restoreX = this.x;
+            this.restoreY = this.y;
+            this.restoreWidth = this.width;
+            this.restoreHeight = this.height;
+            
+            // Go fullscreen - use window dimensions
+            this.x = 0;
+            this.y = 0;
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            this.fullscreen = true;
+            this.layoutDirty = true;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
     //   MOUSE INTERACTION
     // ═══════════════════════════════════════════════════════════════
     
@@ -2190,8 +2274,8 @@ class BaseWindow {
     // ═══════════════════════════════════════════════════════════════
     
     draw(ctx, STYLES) {
-        // Don't draw if invisible (unless transparent mode)
-        if (!this.visible && !this.transparent) return;
+        // Don't draw if invisible (unless transparent or fullscreen)
+        if (!this.visible && !this.transparent && !this.fullscreen) return;
         
         this.calculateSize(ctx);
         
@@ -2200,8 +2284,8 @@ class BaseWindow {
             return;
         }
         
-        // Window background (skip in transparent mode)
-        if (!this.transparent) {
+        // Window background (skip in transparent or fullscreen mode)
+        if (!this.transparent && !this.fullscreen) {
             ctx.fillStyle = STYLES.panel.bgColor;
             ctx.fillRect(this.x, this.y, this.width, this.height);
             ctx.strokeStyle = this.isDragging ? STYLES.colors.panelHover : STYLES.panel.borderColor;
@@ -2209,16 +2293,16 @@ class BaseWindow {
             ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
         
-        // Header (skip in transparent mode)
-        if (!this.transparent) {
+        // Header (skip in transparent or fullscreen mode - NO HEADER at all!)
+        if (!this.transparent && !this.fullscreen) {
             drawHeader(ctx, this, STYLES);
         }
         
         // Content (with clipping)
         const contentX = this.x;
-        const contentY = this.transparent ? this.y : (this.y + this.headerHeight);
+        const contentY = (this.transparent || this.fullscreen) ? this.y : (this.y + this.headerHeight);
         const contentWidth = this.width;
-        const contentHeight = this.transparent ? this.height : (this.height - this.headerHeight);
+        const contentHeight = (this.transparent || this.fullscreen) ? this.height : (this.height - this.headerHeight);
         
         ctx.save();
         ctx.beginPath();
@@ -2244,8 +2328,10 @@ class BaseWindow {
         
         ctx.restore();
         
-        // Scrollbar
-        drawScrollbar(ctx, this, STYLES);
+        // Scrollbar (skip in transparent or fullscreen mode)
+        if (!this.transparent && !this.fullscreen) {
+            drawScrollbar(ctx, this, STYLES);
+        }
     }
     
     // Matrix drawing (kept inline - too complex for component)

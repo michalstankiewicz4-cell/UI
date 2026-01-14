@@ -6,11 +6,12 @@ import { rectHit } from '../core/geometry.js';
 import { SIZE_BUTTON, SPACING_BUTTON, HEIGHT_HEADER, RADIUS_EYE } from '../core/constants.js';
 
 /**
- * Get header button bounds (close, minimize, eye)
+ * Get header button bounds (eye, maximize, minimize, close)
  */
 export function getHeaderButtonBounds(window, index) {
-    const x = window.x + window.width - SIZE_BUTTON * (3 - index) 
-        - SPACING_BUTTON * (3 - index) - window.padding;
+    // 4 buttons now: eye(0), maximize(1), minimize(2), close(3)
+    const x = window.x + window.width - SIZE_BUTTON * (4 - index) 
+        - SPACING_BUTTON * (4 - index) - window.padding;
     const y = window.y + (HEIGHT_HEADER - SIZE_BUTTON) / 2;
     
     return { x, y, width: SIZE_BUTTON, height: SIZE_BUTTON };
@@ -36,7 +37,7 @@ export function drawHeader(ctx, window, STYLES) {
 }
 
 /**
- * Draw header buttons (eye, minimize, close)
+ * Draw header buttons (eye, maximize, minimize, close)
  */
 export function drawHeaderButtons(ctx, window, STYLES) {
     // Eye button (transparent toggle) - index 0
@@ -65,14 +66,27 @@ export function drawHeaderButtons(ctx, window, STYLES) {
         ctx.fill();
     }
     
-    // Minimize button - index 1
-    const minBtn = getHeaderButtonBounds(window, 1);
+    // Maximize button - index 1 (square icon)
+    const maxBtn = getHeaderButtonBounds(window, 1);
+    ctx.strokeRect(maxBtn.x, maxBtn.y, maxBtn.width, maxBtn.height);
+    
+    if (window.fullscreen) {
+        // Fullscreen: two overlapping squares (restore icon)
+        ctx.strokeRect(maxBtn.x + 5, maxBtn.y + 5, 8, 8);
+        ctx.strokeRect(maxBtn.x + 7, maxBtn.y + 3, 8, 8);
+    } else {
+        // Normal: single square (maximize icon)
+        ctx.strokeRect(maxBtn.x + 4, maxBtn.y + 4, maxBtn.width - 8, maxBtn.height - 8);
+    }
+    
+    // Minimize button - index 2
+    const minBtn = getHeaderButtonBounds(window, 2);
     ctx.strokeRect(minBtn.x, minBtn.y, minBtn.width, minBtn.height);
     ctx.fillStyle = STYLES.colors.panel;
     ctx.fillRect(minBtn.x + 4, minBtn.y + minBtn.height / 2 - 1, minBtn.width - 8, 2);
     
-    // Close button - index 2
-    const closeBtn = getHeaderButtonBounds(window, 2);
+    // Close button - index 3
+    const closeBtn = getHeaderButtonBounds(window, 3);
     ctx.strokeRect(closeBtn.x, closeBtn.y, closeBtn.width, closeBtn.height);
     const cx = closeBtn.x + closeBtn.width / 2;
     const cy = closeBtn.y + closeBtn.height / 2;

@@ -36,7 +36,10 @@ const STYLES = {
         startButtonBg: 'rgba(0, 255, 136, 0.1)',     // Start button background
         
         // Simulation Modes
-        fullscreenBg: 'rgba(255, 68, 68, 0.2)'       // Red - HUD mode for simulations
+        fullscreenBg: 'rgba(255, 68, 68, 0.2)',      // Red - HUD mode for simulations
+        
+        // Window Modes
+        windowFullscreen: 'rgba(255, 255, 0, 0.2)'   // Yellow - fullscreen windows
     },
     spacing: {
         padding: 10,
