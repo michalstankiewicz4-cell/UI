@@ -1007,7 +1007,7 @@ const STYLES = {
         // Taskbar & Menu
         taskbarBg: 'rgba(0, 0, 0, 0.9)',             // Taskbar background
         menuBg: 'rgba(0, 0, 0, 0.95)',               // Menu background
-        menuItemHud: 'rgba(0, 245, 255, 0.15)',      // HUD window in menu (cyan)
+        menuItemHud: 'rgba(0, 245, 255, 0.20)',      // HUD window in menu (cyan) - OPT-B: increased from 0.15
         menuItemMin: 'rgba(0, 255, 136, 0.15)',      // Minimized window in menu (green)
         menuItemNormal: 'rgba(0, 255, 136, 0.05)',   // Normal window in menu
         taskbarButtonBg: 'rgba(0, 255, 136, 0.2)',   // Taskbar button background
@@ -1040,7 +1040,6 @@ const STYLES = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = STYLES;
 }
-
 
 // â•â•â• ui/WindowManager.js â•â•â•
 
@@ -1210,8 +1209,7 @@ class Taskbar {
         
         // OPT-11: Button position cache + canvas size tracking + window tracking
         this.cachedPositions = [];
-        this.cachedCount = 0;
-        this.cachedWindowKey = ''; // Track which windows are in taskbar
+        this.cachedCount = 0;        this.cachedWindowKey = ''; // Track which windows are in taskbar
         this.cachedCanvasWidth = 0;
         this.cachedCanvasHeight = 0;
     }
@@ -1241,8 +1239,7 @@ class Taskbar {
 
     addSection(title) {
         // Add section header to menu
-        this.menuItems.push({
-            type: 'section',
+        this.menuItems.push({            type: 'section',
             title: title
         });
     }
@@ -1272,8 +1269,7 @@ class Taskbar {
         
         // Default: add at end
         this.menuItems.push(windowItem);
-    }
-    
+    }    
     removeWindowItem(window) {
         // Remove window from taskbar menu
         const index = this.menuItems.findIndex(item => 
@@ -1282,6 +1278,43 @@ class Taskbar {
         if (index > -1) {
             this.menuItems.splice(index, 1);
         }
+    }
+
+    /**
+     * Restore window to normal state (unified logic)
+     * Used by both menu clicks and taskbar button clicks
+     * 
+     * @param {Object} item - Menu item with window reference
+     * @param {WindowManager} windowManager - Window manager instance
+     */
+    restoreWindow(item, windowManager) {
+        if (item.simId && this.simulationManager) {
+            // Simulation window - switch to window mode
+            this.simulationManager.setMode(item.simId, 'window');
+            item.window.visible = true;
+            item.window.minimized = false;
+            item.window.transparent = false;
+        } else {
+            // Regular window
+            if (item.window.fullscreen) {
+                // Restore from fullscreen
+                item.window.toggleFullscreen();            } else {
+                // Restore from minimized/transparent/hidden
+                item.window.visible = true;
+                item.window.minimized = false;
+                item.window.transparent = false;
+            }
+        }
+        
+        // Always bring to front and ensure in window manager
+        if (windowManager) {
+            if (!windowManager.windows.includes(item.window)) {
+                windowManager.add(item.window);
+            }
+            windowManager.bringToFront(item.window);
+        }
+        
+        item.isOpen = true;
     }
 
 
@@ -1295,8 +1328,7 @@ class Taskbar {
     }
 
     getMenuBounds(canvasHeight) {
-        const menuHeight = this.getMenuHeight();
-        return {
+        const menuHeight = this.getMenuHeight();        return {
             x: this.verticalPadding,
             y: canvasHeight - this.height - menuHeight,
             width: this.menuWidth,
@@ -1325,8 +1357,7 @@ class Taskbar {
                 const item = taskbarWindows[i];
                 const width = this.getButtonWidth(item.title, ctx, measureTextCached);
                 
-                this.cachedPositions.push({
-                    x: x,
+                this.cachedPositions.push({                    x: x,
                     y: y,
                     width: width,
                     height: this.buttonHeight
@@ -1375,40 +1406,8 @@ class Taskbar {
                     if (mouseX >= menu.x && mouseX <= menu.x + menu.width &&
                         mouseY >= currentY && mouseY <= currentY + itemHeight) {
                         
-                        // MODE SYSTEM: Set to window mode for simulations
-                        if (item.simId && this.simulationManager) {
-                            // Simulation window - switch to window mode
-                            this.simulationManager.setMode(item.simId, 'window');
-                            item.window.visible = true;
-                            item.window.minimized = false;
-                            item.window.transparent = false;
-                            if (windowManager) {
-                                if (!windowManager.windows.includes(item.window)) {
-                                    windowManager.add(item.window);
-                                }
-                                windowManager.bringToFront(item.window);
-                            }
-                        } else {
-                            // Regular window
-                            if (item.window.transparent) {
-                                // Transparent (HUD) - restore to normal window
-                                item.window.transparent = false;
-                                item.window.visible = true;
-                                item.window.minimized = false;
-                            } else if (!item.window.visible) {
-                                // Closed or minimized - restore
-                                item.window.visible = true;
-                                item.window.minimized = false;
-                            }
-                            // Always bring to front
-                            if (windowManager) {
-                                if (!windowManager.windows.includes(item.window)) {
-                                    windowManager.add(item.window);
-                                }
-                                windowManager.bringToFront(item.window);
-                            }
-                        }
-                        item.isOpen = true;
+                        // OPT-B: Use unified restore function
+                        this.restoreWindow(item, windowManager);
                         
                         this.menuOpen = false;
                         return true;
@@ -1442,45 +1441,13 @@ class Taskbar {
             if (mouseX >= btn.x && mouseX <= btn.x + btn.width &&
                 mouseY >= btn.y && mouseY <= btn.y + btn.height) {
                 
-                // MODE SYSTEM: Set to window mode for simulations
+                // OPT-B: Use unified restore function
                 const item = taskbarWindows[i];
-                
-                if (item.simId && this.simulationManager) {
-                    // Simulation window - switch to window mode
-                    this.simulationManager.setMode(item.simId, 'window');
-                    item.window.visible = true;
-                    item.window.minimized = false;
-                    item.window.transparent = false;
-                    if (windowManager) {
-                        if (!windowManager.windows.includes(item.window)) {
-                            windowManager.add(item.window);
-                        }
-                        windowManager.bringToFront(item.window);
-                    }
-                } else {
-                    // Regular window
-                    if (item.window.fullscreen) {
-                        // Restore from fullscreen
-                        item.window.toggleFullscreen();
-                    } else {
-                        // Restore from minimized/transparent
-                        item.window.visible = true;
-                        item.window.minimized = false;
-                        item.window.transparent = false;
-                    }
-                    
-                    if (windowManager) {
-                        if (!windowManager.windows.includes(item.window)) {
-                            windowManager.add(item.window);
-                        }
-                        windowManager.bringToFront(item.window);
-                    }
-                }
+                this.restoreWindow(item, windowManager);
                 
                 return true;
             }
         }
-
         // If menu is open, any click closes it
         if (this.menuOpen) {
             this.menuOpen = false;
@@ -1543,8 +1510,7 @@ class Taskbar {
             ctx.strokeRect(menu.x, menu.y, menu.width, menu.height);
             
             // Menu items
-            let currentY = menu.y + PADDING_MENU;
-            
+            let currentY = menu.y + PADDING_MENU;            
             for (let i = 0; i < this.menuItems.length; i++) {
                 const item = this.menuItems[i];
                 
@@ -1574,7 +1540,7 @@ class Taskbar {
                     ctx.textBaseline = 'middle';
                     const titleX = menu.x + 8 + lineLength + 4;
                     ctx.fillText(item.title, titleX, sectionY); // No toUpperCase()
-                    
+                                        
                     // Right line
                     ctx.beginPath();
                     ctx.moveTo(titleX + titleWidth + 4, sectionY);
@@ -1603,8 +1569,7 @@ class Taskbar {
                         }
                     } else {
                         // Regular window - color by state
-                        const isFullscreen = item.window.fullscreen;
-                        const isTransparent = item.window.transparent; // HUD mode (visible or not)
+                        const isFullscreen = item.window.fullscreen;                        const isTransparent = item.window.transparent; // HUD mode (visible or not)
                         const isMinimized = item.window.minimized && !item.window.visible;
                         
                         if (isFullscreen) {
@@ -1661,8 +1626,7 @@ class Taskbar {
             borderColor = STYLES.colors.panel;   // Green border (always!)
             textColor = STYLES.colors.panel;     // Green text (always!)
             
-            // Background color changes based on mode (like in menu!)
-            if (item.simId && this.simulationManager) {
+            // Background color changes based on mode (like in menu!)            if (item.simId && this.simulationManager) {
                 // Simulation window - background by mode
                 const mode = this.simulationManager.getMode(item.simId);
                 
@@ -1691,8 +1655,7 @@ class Taskbar {
             }
             
             // Button background
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
+            ctx.fillStyle = bgColor;            ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button border
             ctx.strokeStyle = borderColor;
@@ -1713,7 +1676,6 @@ class Taskbar {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = Taskbar;
 }
-
 
 // â•â•â• ui/EventRouter.js â•â•â•
 

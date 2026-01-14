@@ -29,7 +29,7 @@ const STYLES = {
         // Taskbar & Menu
         taskbarBg: 'rgba(0, 0, 0, 0.9)',             // Taskbar background
         menuBg: 'rgba(0, 0, 0, 0.95)',               // Menu background
-        menuItemHud: 'rgba(0, 245, 255, 0.15)',      // HUD window in menu (cyan)
+        menuItemHud: 'rgba(0, 245, 255, 0.20)',      // HUD window in menu (cyan) - OPT-B: increased from 0.15
         menuItemMin: 'rgba(0, 255, 136, 0.15)',      // Minimized window in menu (green)
         menuItemNormal: 'rgba(0, 255, 136, 0.05)',   // Normal window in menu
         taskbarButtonBg: 'rgba(0, 255, 136, 0.2)',   // Taskbar button background
