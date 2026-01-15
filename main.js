@@ -168,6 +168,17 @@ controlsWindow.onClose = () => { controlsWindow.visible = false; };
 
 console.log('✅ Controls window created');
 
+// SIMULATION VIEW WINDOW - SIM1
+const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
+sim1ViewWindow.addSection('simulation display');
+sim1ViewWindow.addSimulationView(canvases.sim1, 300);
+sim1ViewWindow.visible = true;
+windowManager.add(sim1ViewWindow);
+taskbar.addWindowItem(sim1ViewWindow.title, sim1ViewWindow, 'symulacje');
+sim1ViewWindow.onClose = () => { sim1ViewWindow.visible = false; };
+
+console.log('✅ Sim1 view window created');
+
 // UI DEMO WINDOW
 const uiDemoWindow = new UI.BaseWindow(400, 50, 'UI DEMO - ALL FEATURES');
 

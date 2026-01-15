@@ -15,6 +15,7 @@ import { ButtonItem } from './components/ButtonItem.js';
 import { SliderItem } from './components/SliderItem.js';
 import { SectionItem } from './components/SectionItem.js';
 import { TextItem } from './components/TextItem.js';
+import { SimulationViewItem } from './components/SimulationViewItem.js';
 
 // Component imports (for header/scrollbar only)
 import { drawHeader, drawHeaderButtons, drawMinimizedHeader, getHeaderButtonBounds } from './components/header.js';
@@ -133,6 +134,18 @@ class BaseWindow {
         this.items.push(new SectionItem(title, type));
         this.layoutDirty = true;
     }
+    
+    /**
+     * Add simulation view - displays simulation canvas content
+     * @param {HTMLCanvasElement} simCanvas - Simulation canvas to display
+     * @param {number} height - Height of the view in pixels
+     */
+    addSimulationView(simCanvas, height = 200) {
+        const item = new SimulationViewItem(simCanvas, height);
+        this.items.push(item);
+        this.layoutDirty = true;
+    }
+
     
     /**
      * Get last section item (for auto color detection)

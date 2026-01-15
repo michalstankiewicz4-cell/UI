@@ -978,6 +978,45 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
+// â•â•â• ui/components/SimulationViewItem.js â•â•â•
+
+// ═══════════════════════════════════════════════════════════════
+//   SIMULATION VIEW ITEM
+// ═══════════════════════════════════════════════════════════════
+
+
+/**
+ * SimulationViewItem - Displays simulation canvas content in a window
+ */
+class SimulationViewItem extends UIItem {
+    constructor(simCanvas, height = 200) {
+        super('simulationView');
+        this.simCanvas = simCanvas;
+        this.height = height;
+    }
+
+    getHeight(window) {
+        return this.height;
+    }
+
+    draw(ctx, window, x, y) {
+        const width = this.getWidth(window);
+        
+        // Draw simulation canvas content
+        ctx.drawImage(this.simCanvas, x, y, width, this.height);
+    }
+
+    update(mouseX, mouseY, mouseDown, mouseClicked, window, x, y) {
+        // Simulation view doesn't interact (yet)
+    }
+}
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SimulationViewItem };
+}
+
+
 // â•â•â• ui/Styles.js â•â•â•
 
 // ═══════════════════════════════════════════════════════════════
@@ -1920,6 +1959,18 @@ class BaseWindow {
         this.items.push(new SectionItem(title, type));
         this.layoutDirty = true;
     }
+    
+    /**
+     * Add simulation view - displays simulation canvas content
+     * @param {HTMLCanvasElement} simCanvas - Simulation canvas to display
+     * @param {number} height - Height of the view in pixels
+     */
+    addSimulationView(simCanvas, height = 200) {
+        const item = new SimulationViewItem(simCanvas, height);
+        this.items.push(item);
+        this.layoutDirty = true;
+    }
+
     
     /**
      * Get last section item (for auto color detection)
