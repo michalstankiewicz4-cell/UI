@@ -70,7 +70,9 @@ UI/
 ├── core/                   # Central architecture
 │   ├── SimulationManager.js    # Controller (360 lines)
 │   ├── EventBus.js             # Pub-sub events (192 lines)
-│   └── DataBridge.js           # Data flow (224 lines)
+│   ├── DataBridge.js           # Data flow (224 lines)
+│   ├── SimulationWindowFactory.js # Auto-window factory
+│   └── index.js                # Central export point
 │
 ├── ui/                     # UI library source
 │   ├── BaseWindow.js           # Windows (~445 lines)
@@ -94,24 +96,29 @@ UI/
 │
 ├── simulations/            # 4 placeholder sims
 │   ├── sim1/                   # 2D Particles
+│   │   ├── Sim1.js             # Particle simulation logic
+│   │   └── README.md           # Sim1 documentation
 │   ├── sim2/                   # 3D Cubes
+│   │   ├── Sim2.js             # 3D cube simulation logic
+│   │   └── README.md           # Sim2 documentation
 │   ├── sim3/                   # Physics
+│   │   ├── Sim3.js             # Physics simulation logic
+│   │   └── README.md           # Sim3 documentation
 │   └── sim4/                   # Automata
-│
-├── ui-config/              # Configuration layer
-│   ├── windows.js              # Window setup
-│   ├── controls.js             # Dynamic controls
-│   └── sync.js                 # Cross-sim sync
+│       ├── Sim4.js             # Cellular automata logic
+│       └── README.md           # Sim4 documentation
 │
 ├── data/                   # Import/Export (future)
+│   ├── README.md               # Data folder documentation
 │   ├── presets/                # Ready configs
 │   └── exports/                # User data
 │
 ├── docs/                   # Documentation
 │   ├── TODO.md                 # Project roadmap
-│   ├── ROADMAP.md              # Optimization roadmap (NEW!)
+│   ├── ROADMAP.md              # Optimization roadmap
 │   ├── CACHE_FIX.md            # Cache troubleshooting
-│   └── GITHUB_SETUP.md         # GitHub setup
+│   ├── FILE_STRUCTURE.md       # Complete file reference (544 lines)
+│   └── TREE.md                 # Visual file tree (293 lines)
 │
 ├── themes/                 # Custom themes (future)
 ├── dist/ui.js              # Built bundle (1972 lines)
@@ -283,7 +290,8 @@ Output: `dist/ui.js` (1972 lines, ~71KB)
 
 - **[docs/TODO.md](docs/TODO.md)** - Project roadmap and priorities
 - **[docs/ROADMAP.md](docs/ROADMAP.md)** - Performance optimization details
-- **[docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md)** - Complete file reference
+- **[docs/FILE_STRUCTURE.md](docs/FILE_STRUCTURE.md)** - Complete file reference (544 lines)
+- **[docs/TREE.md](docs/TREE.md)** - Visual file tree structure (293 lines)
 - **[docs/CACHE_FIX.md](docs/CACHE_FIX.md)** - Browser cache troubleshooting
 
 ---
