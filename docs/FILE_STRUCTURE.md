@@ -1,7 +1,7 @@
 # UI System - File & Folder Structure
 
-**Updated:** 2026-01-12  
-**Version:** v2.2  
+**Updated:** 2026-01-15  
+**Version:** v2.3  
 **Purpose:** Complete file and folder reference
 
 ---
@@ -17,7 +17,6 @@ UI/
 ├── build.sh                # Build script (Linux/Mac bash)
 ├── core/                   # Central architecture ↓
 ├── ui/                     # UI library source ↓
-├── ui-config/              # Configuration layer ↓
 ├── simulations/            # Placeholder simulations ↓
 ├── data/                   # Import/Export (future) ↓
 ├── docs/                   # Documentation ↓
@@ -47,7 +46,7 @@ UI/
 
 ### `README.md` - Documentation
 - **Purpose:** Project overview and quick start guide
-- **Lines:** 291
+- **Lines:** 293
 - **Sections:**
   - Quick start
   - Architecture overview
@@ -100,7 +99,7 @@ UI/
   - Callback management
 
 ### `index.js`
-- **Purpose:** Exports all core modules
+- **Purpose:** Centralny punkt eksportów (entry point)
 - **Lines:** ~10
 - **Exports:** SimulationManager, EventBus, DataBridge
 
@@ -283,16 +282,16 @@ UI/
 simulations/
 ├── sim1/
 │   ├── Sim1.js          # 2D Particles (114 lines)
-│   └── README.md        # Description
+│   └── README.md        # Sim1 documentation (26 lines)
 ├── sim2/
 │   ├── Sim2.js          # 3D Cubes (123 lines)
-│   └── README.md
+│   └── README.md        # Sim2 documentation (30 lines)
 ├── sim3/
 │   ├── Sim3.js          # Physics Balls (132 lines)
-│   └── README.md
+│   └── README.md        # Sim3 documentation (30 lines)
 └── sim4/
     ├── Sim4.js          # Cellular Automata (158 lines)
-    └── README.md
+    └── README.md        # Sim4 documentation (30 lines)
 ```
 
 **Purpose:** Example simulations showing how to integrate with the system
@@ -302,36 +301,7 @@ simulations/
 - Can register with SimulationManager
 - Can bind data to UI via DataBridge
 - Independent canvas rendering
-
----
-
-## ⚙️ /ui-config/ - Configuration Layer
-
-**Location:** `C:\Users\micha\source\repos\UI\ui-config\`
-
-### `windows.js`
-- **Purpose:** Window creation and setup
-- **Lines:** 146
-- **Creates:**
-  - Master Controls window
-  - System Stats window
-  - Demo window (if enabled)
-
-### `controls.js`
-- **Purpose:** Dynamic control creation
-- **Lines:** 121
-- **Features:**
-  - Control callbacks
-  - Data binding setup
-  - Event handlers
-
-### `sync.js`
-- **Purpose:** Cross-simulation synchronization
-- **Lines:** 200
-- **Features:**
-  - EventBus integration
-  - Multi-sim coordination
-  - State synchronization
+- Documentation in README.md with description, controls, stats, implementation notes
 
 ---
 
@@ -342,9 +312,9 @@ simulations/
 ### Structure
 ```
 data/
+├── README.md           # Import/Export documentation (52 lines)
 ├── presets/            # Ready-to-use configurations (empty)
-├── exports/            # User-exported data (empty)
-└── README.md           # Import/Export documentation
+└── exports/            # User-exported data (empty)
 ```
 
 **Purpose:** Reserved for future preset system
@@ -354,6 +324,15 @@ data/
 - Simulation configurations
 - User data export
 - JSON-based storage
+
+### `README.md`
+- **Purpose:** Documentation for import/export system
+- **Lines:** 52
+- **Content:**
+  - Description of /presets/ and /exports/ folders
+  - Usage examples
+  - Future features
+  - JSON format specification
 
 ---
 
@@ -387,13 +366,21 @@ data/
   - Hard refresh instructions
   - Build verification
 
-### `GITHUB_SETUP.md`
-- **Purpose:** GitHub repository setup guide
-- **Lines:** 35
+### `FILE_STRUCTURE.md`
+- **Purpose:** Complete file and folder reference (this document)
+- **Lines:** 544
 - **Sections:**
-  - Repository creation
-  - Initial commit
-  - Push instructions
+  - Detailed file descriptions
+  - Usage examples
+  - Quick reference tables
+
+### `TREE.md`
+- **Purpose:** Visual file tree representation
+- **Lines:** 293
+- **Sections:**
+  - ASCII art directory tree
+  - Statistics by folder
+  - Navigation guide
 
 ### `.gitkeep`
 - **Purpose:** Placeholder to keep empty /docs/ in git
@@ -454,7 +441,7 @@ data/
 
 ### `.git/` - Git Repository
 - **Purpose:** Version control
-- **Commits:** 108+
+- **Commits:** 111+
 - **Branches:** main
 - **Remote:** https://github.com/michalstankiewicz4-cell/UI
 
@@ -464,14 +451,14 @@ data/
 
 | Component | Files | Lines | Size |
 |-----------|-------|-------|------|
-| **Core** | 4 | 776 | ~30 KB |
+| **Core** | 5 | 786 | ~31 KB |
 | **UI Source** | 17 | ~1400 | ~55 KB |
-| **Simulations** | 4 | 527 | ~20 KB |
-| **UI Config** | 3 | 467 | ~18 KB |
+| **Simulations** | 8 | 643 | ~25 KB |
 | **Main** | 1 | 204 | ~8 KB |
-| **Docs** | 4 | 777 | ~30 KB |
+| **Docs** | 6 | 1379 | ~55 KB |
+| **Data** | 1 | 52 | ~2 KB |
 | **Bundle** | 1 | 1972 | ~71 KB |
-| **TOTAL** | 34+ | ~6000+ | ~230 KB |
+| **TOTAL** | 39+ | ~6400+ | ~245 KB |
 
 ---
 
@@ -494,8 +481,9 @@ Open: index.html
 ### To Add New Simulation
 ```
 1. Create: simulations/mysim/MySim.js
-2. Edit: main.js (register simulation)
-3. Done!
+2. Add: simulations/mysim/README.md
+3. Edit: main.js (register simulation)
+4. Done!
 ```
 
 ### To Add New Window
@@ -531,13 +519,13 @@ window.addText('Content', '#color');
 | Extension | Purpose | Count |
 |-----------|---------|-------|
 | `.js` | JavaScript source | 28 |
-| `.md` | Markdown documentation | 9 |
+| `.md` | Markdown documentation | 11 |
 | `.html` | HTML entry point | 1 |
 | `.ps1` | PowerShell build script | 1 |
 | `.sh` | Bash build script | 1 |
-| `.gitkeep` | Git placeholder | 2 |
+| `.gitkeep` | Git placeholder | 3 |
 
 ---
 
-**Last Updated:** 2026-01-12  
-**Version:** v2.2
+**Last Updated:** 2026-01-15  
+**Version:** v2.3

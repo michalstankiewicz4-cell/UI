@@ -1,8 +1,8 @@
 # UI System - Visual File Tree
 
-**Generated:** 2026-01-12  
-**Version:** v2.2  
-**Total Files:** 43
+**Generated:** 2026-01-15  
+**Version:** v2.3  
+**Total Files:** 42
 
 ---
 
@@ -17,11 +17,11 @@ UI/
 ├── 📄 build.ps1               ← Build script (Windows)
 ├── 📄 build.sh                ← Build script (Linux/Mac)
 │
-├── 📁 core/                   ← Central Architecture (776 lines)
+├── 📁 core/                   ← Central Architecture (786 lines)
 │   ├── SimulationManager.js   ← Sim controller (360 lines)
 │   ├── EventBus.js            ← Pub-sub events (192 lines)
 │   ├── DataBridge.js          ← Data flow (224 lines)
-│   └── index.js               ← Exports (~10 lines)
+│   └── index.js               ← Centralny punkt eksportów (entry point)
 │
 ├── 📁 ui/                     ← UI Library Source (~1400 lines)
 │   │
@@ -47,41 +47,36 @@ UI/
 │       ├── header.js          ← Window header rendering
 │       └── scrollbar.js       ← Scrollbar rendering
 │
-├── 📁 simulations/            ← Placeholder Simulations (527 lines)
+├── 📁 simulations/            ← Placeholder Simulations (643 lines)
 │   ├── 📁 sim1/               ← 2D Particles
 │   │   ├── Sim1.js            ← (114 lines)
-│   │   └── README.md
+│   │   └── README.md          ← Sim1 documentation (26 lines)
 │   │
 │   ├── 📁 sim2/               ← 3D Cubes
 │   │   ├── Sim2.js            ← (123 lines)
-│   │   └── README.md
+│   │   └── README.md          ← Sim2 documentation (30 lines)
 │   │
 │   ├── 📁 sim3/               ← Physics Balls
 │   │   ├── Sim3.js            ← (132 lines)
-│   │   └── README.md
+│   │   └── README.md          ← Sim3 documentation (30 lines)
 │   │
 │   └── 📁 sim4/               ← Cellular Automata
 │       ├── Sim4.js            ← (158 lines)
-│       └── README.md
-│
-├── 📁 ui-config/              ← Configuration Layer (467 lines)
-│   ├── windows.js             ← Window setup (146 lines)
-│   ├── controls.js            ← Control callbacks (121 lines)
-│   └── sync.js                ← Cross-sim sync (200 lines)
+│       └── README.md          ← Sim4 documentation (30 lines)
 │
 ├── 📁 data/                   ← Import/Export (Future)
-│   ├── README.md              ← Import/Export docs
+│   ├── README.md              ← Import/Export docs (52 lines)
 │   ├── 📁 presets/            ← Ready configs (empty)
 │   │   └── .gitkeep
 │   └── 📁 exports/            ← User data (empty)
 │       └── .gitkeep
 │
-├── 📁 docs/                   ← Documentation (777 lines)
+├── 📁 docs/                   ← Documentation (1379 lines)
 │   ├── TODO.md                ← Roadmap (207 lines)
 │   ├── ROADMAP.md             ← Optimization roadmap (236 lines)
-│   ├── FILE_STRUCTURE.md      ← This document (544 lines)
+│   ├── FILE_STRUCTURE.md      ← Complete file reference (476 lines)
+│   ├── TREE.md                ← This document (293 lines)
 │   ├── CACHE_FIX.md           ← Cache troubleshooting (49 lines)
-│   ├── GITHUB_SETUP.md        ← GitHub setup (35 lines)
 │   └── .gitkeep
 │
 ├── 📁 themes/                 ← Custom Themes (Future, empty)
@@ -90,7 +85,7 @@ UI/
 ├── 📁 dist/                   ← Built Bundle
 │   └── ui.js                  ← Complete bundle (1972 lines, ~71 KB)
 │
-└── 📁 .git/                   ← Git Repository (108+ commits)
+└── 📁 .git/                   ← Git Repository (111+ commits)
 ```
 
 ---
@@ -99,18 +94,17 @@ UI/
 
 | Folder | Files | Lines | Purpose |
 |--------|-------|-------|---------|
-| **core/** | 4 | 776 | Central architecture |
+| **core/** | 5 | 786 | Central architecture |
 | **ui/** | 5 | ~890 | Main UI modules |
 | **ui/core/** | 4 | ~200 | Core utilities |
 | **ui/components/** | 8 | ~350 | UI controls |
-| **simulations/** | 8 | 527 | Example sims |
-| **ui-config/** | 3 | 467 | Configuration |
-| **docs/** | 6 | 777 | Documentation |
-| **data/** | 3 | - | Future (empty) |
+| **simulations/** | 8 | 643 | Example sims |
+| **docs/** | 6 | 1379 | Documentation |
+| **data/** | 1 | 52 | Future (preset system) |
 | **themes/** | 1 | - | Future (empty) |
 | **dist/** | 1 | 1972 | Bundle |
-| **Root** | 12+ | 204+ | Main files |
-| **TOTAL** | **55+** | **~6000+** | Full project |
+| **Root** | 5 | 204+ | Main files |
+| **TOTAL** | **44+** | **~6400+** | Full project |
 
 ---
 
@@ -138,9 +132,9 @@ UI/
 📁 docs/
 ├── TODO.md              ← What's next
 ├── ROADMAP.md           ← Optimization plan
-├── FILE_STRUCTURE.md    ← This file
-├── CACHE_FIX.md         ← Troubleshooting
-└── GITHUB_SETUP.md      ← GitHub guide
+├── FILE_STRUCTURE.md    ← Complete reference
+├── TREE.md              ← This file
+└── CACHE_FIX.md         ← Troubleshooting
 ```
 
 ---
@@ -149,15 +143,14 @@ UI/
 
 ### JavaScript Source
 ```
-core/*.js              (4 files)
+core/*.js              (5 files)
 ui/*.js                (5 files)
 ui/core/*.js           (4 files)
 ui/components/*.js     (8 files)
 simulations/*/*.js     (4 files)
-ui-config/*.js         (3 files)
 main.js                (1 file)
 ---
-TOTAL: 29 .js files
+TOTAL: 27 .js files
 ```
 
 ### Documentation
@@ -201,7 +194,7 @@ tree /F /A > tree.txt
 ```
 📁 simulations/newsim/
 ├── NewSim.js          ← Your simulation code
-└── README.md          ← Description
+└── README.md          ← Description and documentation
 ```
 
 ### New UI Component?
@@ -266,7 +259,6 @@ tree /F /A > tree.txt
 | **Built bundle** | `dist/ui.js` |
 | **Docs** | `docs/*.md` |
 | **Examples** | `simulations/*/` |
-| **Config** | `ui-config/*.js` |
 
 ---
 
@@ -287,6 +279,6 @@ ui/components/*.js   ──┘
 
 ---
 
-**Last Updated:** 2026-01-12  
+**Last Updated:** 2026-01-15  
 **Generated By:** `tree /F /A` command  
-**Version:** v2.2
+**Version:** v2.3
