@@ -39,6 +39,21 @@ taskbar.addSection('system');
 const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
 
 // ═══════════════════════════════════════════════════════════════
+//   WINDOW STATISTICS TRACKING
+// ═══════════════════════════════════════════════════════════════
+
+const windowStats = {
+    closedCount: 0
+};
+
+// Track window closes
+const originalWindowManagerRemove = windowManager.remove.bind(windowManager);
+windowManager.remove = function(window) {
+    windowStats.closedCount++;
+    return originalWindowManagerRemove(window);
+};
+
+// ═══════════════════════════════════════════════════════════════
 //   MODE SYSTEM LISTENER - Canvas Visibility Control
 // ═══════════════════════════════════════════════════════════════
 
@@ -191,8 +206,46 @@ uiDemoWindow.addButton('NEW WINDOW', () => {
     newWin.onClose = () => { newWin.visible = false; };
 });
 
-uiDemoWindow.addButton('TEST ALERT', () => {
-    alert(`Controls work!\n\nSpeed: ${speedValue.toFixed(2)}\nVolume: ${volumeValue.toFixed(2)}\nGrid: ${gridEnabled}\nAuto Save: ${autoSave}`);
+uiDemoWindow.addButton('WINDOW STATS', () => {
+    // Create statistics window
+    const statsWin = new UI.BaseWindow(
+        Math.random() * 200 + 200,
+        Math.random() * 150 + 100,
+        'WINDOW STATISTICS'
+    );
+    statsWin.visible = true;
+    
+    statsWin.addSection('window counts', 'statistics');
+    statsWin.addText(() => {
+        const allWindows = windowManager.windows;
+        // Use correct properties (minimized, transparent, fullscreen, visible)
+        const openWindows = allWindows.filter(w => w.visible && !w.minimized && !w.transparent && !w.fullscreen).length;
+        const minimizedWindows = allWindows.filter(w => w.minimized).length;
+        const hudWindows = allWindows.filter(w => w.transparent && w.visible).length;
+        const fullscreenWindows = allWindows.filter(w => w.fullscreen).length;
+        
+        return `Otwarte okna: ${openWindows}\nZminimalizowane: ${minimizedWindows}\nTryb HUD: ${hudWindows}\nZmaksymalizowane: ${fullscreenWindows}`;
+    });
+    
+    statsWin.addSection('history', 'statistics');
+    statsWin.addText(() => {
+        return `Zamknięte okna: ${windowStats.closedCount}`;
+    });
+    
+    statsWin.addSection('controls');
+    statsWin.addButton('RESET COUNTERS', () => {
+        windowStats.closedCount = 0;
+    });
+    
+    statsWin.addButton('CLOSE', () => {
+        windowManager.remove(statsWin);
+        taskbar.removeWindowItem(statsWin);
+    });
+    
+    windowManager.add(statsWin);
+    windowManager.bringToFront(statsWin);
+    taskbar.addWindowItem(statsWin.title, statsWin, 'system');
+    statsWin.onClose = () => { statsWin.visible = false; };
 });
 
 uiDemoWindow.addSlider('Speed', () => speedValue, (v) => { speedValue = v; }, 0.1, 5.0, 0.05);

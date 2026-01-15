@@ -27,7 +27,8 @@ class Taskbar {
         
         // OPT-11: Button position cache + canvas size tracking + window tracking
         this.cachedPositions = [];
-        this.cachedCount = 0;        this.cachedWindowKey = ''; // Track which windows are in taskbar
+        this.cachedCount = 0;
+        this.cachedWindowKey = ''; // Track which windows are in taskbar
         this.cachedCanvasWidth = 0;
         this.cachedCanvasHeight = 0;
     }
@@ -106,22 +107,15 @@ class Taskbar {
      * @param {WindowManager} windowManager - Window manager instance
      */
     restoreWindow(item, windowManager) {
-        if (item.simId && this.simulationManager) {
-            // Simulation window - switch to window mode
-            this.simulationManager.setMode(item.simId, 'window');
+        // Regular window restore logic
+        if (item.window.fullscreen) {
+            // Restore from fullscreen
+            item.window.toggleFullscreen();
+        } else {
+            // Restore from minimized/transparent/hidden
             item.window.visible = true;
             item.window.minimized = false;
             item.window.transparent = false;
-        } else {
-            // Regular window
-            if (item.window.fullscreen) {
-                // Restore from fullscreen
-                item.window.toggleFullscreen();            } else {
-                // Restore from minimized/transparent/hidden
-                item.window.visible = true;
-                item.window.minimized = false;
-                item.window.transparent = false;
-            }
         }
         
         // Always bring to front and ensure in window manager
@@ -146,7 +140,8 @@ class Taskbar {
     }
 
     getMenuBounds(canvasHeight) {
-        const menuHeight = this.getMenuHeight();        return {
+        const menuHeight = this.getMenuHeight();
+        return {
             x: this.verticalPadding,
             y: canvasHeight - this.height - menuHeight,
             width: this.menuWidth,
@@ -240,13 +235,7 @@ class Taskbar {
         const taskbarWindows = this.menuItems.filter(item => {
             if (item.type !== 'window') return false;
             
-            // Simulation windows: show if not in 'window' mode
-            if (item.simId && this.simulationManager) {
-                const mode = this.simulationManager.getMode(item.simId);
-                return mode !== 'window'; // Show for hud, minimized
-            }
-            
-            // Regular windows: show if fullscreen, minimized, OR transparent (HUD)
+            // Show windows if fullscreen, minimized, OR transparent (HUD)
             if (item.window.fullscreen) return true;
             if (item.window.minimized && !item.window.visible) return true;
             if (item.window.transparent) return true; // HUD mode - show on taskbar
@@ -370,35 +359,21 @@ class Taskbar {
                     // Window item
                     const itemHeight = this.menuItemHeight;
                     
-                    // MODE SYSTEM: Color based on simulation mode or window state
+                    // Color based on window state only
                     let bgColor;
                     
-                    if (item.simId && this.simulationManager) {
-                        // Simulation window - color by mode
-                        const mode = this.simulationManager.getMode(item.simId);
-                        
-                        if (mode === 'hud') {
-                            bgColor = STYLES.colors.fullscreenBg;  // Red (canvas fullscreen)
-                        } else if (mode === 'minimized') {
-                            bgColor = STYLES.colors.menuItemMin;   // Green (hidden)
-                        } else {
-                            // window mode or other
-                            bgColor = STYLES.colors.menuItemNormal;
-                        }
+                    const isFullscreen = item.window.fullscreen;
+                    const isTransparent = item.window.transparent; // HUD mode (visible or not)
+                    const isMinimized = item.window.minimized && !item.window.visible;
+                    
+                    if (isFullscreen) {
+                        bgColor = STYLES.colors.windowFullscreen; // Yellow
+                    } else if (isTransparent) {
+                        bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
+                    } else if (isMinimized) {
+                        bgColor = STYLES.colors.menuItemMin;      // Green
                     } else {
-                        // Regular window - color by state
-                        const isFullscreen = item.window.fullscreen;                        const isTransparent = item.window.transparent; // HUD mode (visible or not)
-                        const isMinimized = item.window.minimized && !item.window.visible;
-                        
-                        if (isFullscreen) {
-                            bgColor = STYLES.colors.windowFullscreen; // Yellow
-                        } else if (isTransparent) {
-                            bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
-                        } else if (isMinimized) {
-                            bgColor = STYLES.colors.menuItemMin;      // Green
-                        } else {
-                            bgColor = STYLES.colors.menuItemNormal;   // Normal
-                        }
+                        bgColor = STYLES.colors.menuItemNormal;   // Normal
                     }
                     
                     ctx.fillStyle = bgColor;
@@ -420,13 +395,7 @@ class Taskbar {
         const taskbarWindows = this.menuItems.filter(item => {
             if (item.type !== 'window') return false;
             
-            // Simulation windows: show if not in 'window' mode
-            if (item.simId && this.simulationManager) {
-                const mode = this.simulationManager.getMode(item.simId);
-                return mode !== 'window'; // Show for hud, minimized
-            }
-            
-            // Regular windows: show if fullscreen, minimized, OR transparent (HUD)
+            // Show windows if fullscreen, minimized, OR transparent (HUD)
             if (item.window.fullscreen) return true;
             if (item.window.minimized && !item.window.visible) return true;
             if (item.window.transparent) return true; // HUD mode - show on taskbar
@@ -444,36 +413,24 @@ class Taskbar {
             borderColor = STYLES.colors.panel;   // Green border (always!)
             textColor = STYLES.colors.panel;     // Green text (always!)
             
-            // Background color changes based on mode (like in menu!)            if (item.simId && this.simulationManager) {
-                // Simulation window - background by mode
-                const mode = this.simulationManager.getMode(item.simId);
-                
-                if (mode === 'hud') {
-                    bgColor = STYLES.colors.fullscreenBg;  // Red (canvas fullscreen)
-                } else if (mode === 'minimized') {
-                    bgColor = STYLES.colors.menuItemMin;   // Green (hidden)
-                } else {
-                    bgColor = STYLES.colors.taskbarButtonBg; // Default
-                }
+            // Background color based on window state only
+            const isFullscreen = item.window.fullscreen;
+            const isTransparent = item.window.transparent;
+            const isMinimized = item.window.minimized;
+            
+            if (isFullscreen) {
+                bgColor = STYLES.colors.windowFullscreen; // Yellow
+            } else if (isTransparent) {
+                bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
+            } else if (isMinimized) {
+                bgColor = STYLES.colors.menuItemMin;      // Green
             } else {
-                // Regular window - background by state
-                const isFullscreen = item.window.fullscreen;
-                const isTransparent = item.window.transparent;
-                const isMinimized = item.window.minimized;
-                
-                if (isFullscreen) {
-                    bgColor = STYLES.colors.windowFullscreen; // Yellow
-                } else if (isTransparent) {
-                    bgColor = STYLES.colors.menuItemHud;      // Cyan (HUD)
-                } else if (isMinimized) {
-                    bgColor = STYLES.colors.menuItemMin;      // Green
-                } else {
-                    bgColor = STYLES.colors.taskbarButtonBg;  // Default
-                }
+                bgColor = STYLES.colors.taskbarButtonBg;  // Default
             }
             
             // Button background
-            ctx.fillStyle = bgColor;            ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(btn.x, btn.y, btn.width, btn.height);
             
             // Button border
             ctx.strokeStyle = borderColor;

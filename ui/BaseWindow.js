@@ -178,9 +178,16 @@ class BaseWindow {
     /**
      * OPT-1: Get cached layout (30-50% performance gain!)
      * Recomputes only when layoutDirty = true
+     * For windows with dynamic text, always recompute to get fresh values
      */
     getLayout() {
-        if (this.layoutDirty || !this.layoutCache) {
+        // Check if window has dynamic text items (functions)
+        const hasDynamicText = this.items.some(item => 
+            item.type === 'text' && typeof item.text === 'function'
+        );
+        
+        // For dynamic text windows, always recompute layout
+        if (hasDynamicText || this.layoutDirty || !this.layoutCache) {
             this.layoutCache = computeLayout(this.items, this);
         }
         return this.layoutCache;

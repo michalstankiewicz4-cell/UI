@@ -90,8 +90,12 @@ class TextItem extends UIItem {
         // Calculate available width for text
         const maxWidth = window.width - window.padding * 2;
         
-        // Cache wrapped lines if window width unchanged
-        if (!this.wrappedLines || this.lastWidth !== maxWidth) {
+        // Cache wrapped lines if window width unchanged AND text is static
+        // For dynamic text (functions), always recalculate
+        const isDynamicText = typeof this.text === 'function';
+        const needsRecalculation = isDynamicText || !this.wrappedLines || this.lastWidth !== maxWidth;
+        
+        if (needsRecalculation) {
             const paragraphs = textContent.split('\n');
             this.wrappedLines = [];
             

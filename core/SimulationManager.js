@@ -34,9 +34,6 @@ class SimulationManager {
         
         // Global state
         this.isPaused = false;
-        
-        // MODES SYSTEM: { simId: 'fullscreen' | 'window' | 'hud' | 'minimized' }
-        this.modes = {};
     }
     
     // ═════════════════════════════════════════════════
@@ -121,9 +118,6 @@ class SimulationManager {
             
             // Bind data (parameters & stats)
             this._bindSimulationData(simId, instance);
-            
-            // Set default mode: window (visible)
-            this.setMode(simId, 'window');
             
             // Emit event
             this.eventBus.emit('simulation:added', { 
@@ -381,32 +375,21 @@ class SimulationManager {
     // ═════════════════════════════════════════════════
     
     /**
-     * Get current mode of a simulation
+     * Get current mode of a simulation (DEPRECATED - always returns 'window')
      * @param {string} simId - Simulation ID
-     * @returns {string} Mode ('window' | 'hud' | 'minimized')
+     * @returns {string} Mode (always 'window')
      */
     getMode(simId) {
-        return this.modes[simId] || 'window';
+        return 'window'; // Always return window mode
     }
     
     /**
-     * Set mode of a simulation
+     * Set mode of a simulation (DEPRECATED - no-op)
      * @param {string} simId - Simulation ID
-     * @param {string} mode - Mode ('window' | 'hud' | 'minimized')
+     * @param {string} mode - Mode (ignored)
      */
     setMode(simId, mode) {
-        if (!this.simulations[simId]) {
-            console.warn(`Cannot set mode for non-existent simulation: ${simId}`);
-            return;
-        }
-        
-        const oldMode = this.modes[simId];
-        this.modes[simId] = mode;
-        
-        console.log(`🎨 ${simId} mode: ${oldMode || 'fullscreen'} → ${mode}`);
-        
-        // Emit event
-        this.eventBus.emit('simulation:mode-changed', { simId, mode, oldMode });
+        // Do nothing - modes are handled by window properties only
     }
 }
 
