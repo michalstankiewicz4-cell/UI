@@ -105,7 +105,7 @@ controlsWindow.addButton('ADD SIM1', async () => {
     }
     
     // MODE SYSTEM: Default mode is 'window' (visible)
-    canvases.sim1.style.display = 'block';
+    canvases.sim1.style.display = 'none'; // Hide background canvas - only visible in window
     canvases.sim1.style.zIndex = '0';
     
     const sim1Window = SimulationWindowFactory.create('sim1', simulationManager, dataBridge);
@@ -115,6 +115,17 @@ controlsWindow.addButton('ADD SIM1', async () => {
         taskbar.addWindowItem(sim1Window.title, sim1Window, 'symulacje', 'sim1'); // Pass simId
         sim1Window.onClose = () => { sim1Window.visible = false; };
     }
+    
+    // Create simulation view window
+    const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
+    sim1ViewWindow.addSection('simulation display');
+    sim1ViewWindow.addSimulationView(canvases.sim1, 300);
+    sim1ViewWindow.visible = true;
+    windowManager.add(sim1ViewWindow);
+    taskbar.addWindowItem(sim1ViewWindow.title, sim1ViewWindow, 'symulacje');
+    sim1ViewWindow.onClose = () => { 
+        sim1ViewWindow.visible = false;
+    };
     
     console.log('✅ Sim1 added successfully!');
 });
@@ -132,6 +143,12 @@ controlsWindow.addButton('REMOVE SIM1', () => {
     if (sim1Window) {
         windowManager.remove(sim1Window);
         taskbar.removeWindowItem(sim1Window);
+    }
+    
+    const sim1ViewWindow = windowManager.windows.find(w => w.title === 'SIM1 VIEW');
+    if (sim1ViewWindow) {
+        windowManager.remove(sim1ViewWindow);
+        taskbar.removeWindowItem(sim1ViewWindow);
     }
     
     console.log('✅ Sim1 removed');
@@ -167,17 +184,6 @@ taskbar.addWindowItem(controlsWindow.title, controlsWindow, 'system');
 controlsWindow.onClose = () => { controlsWindow.visible = false; };
 
 console.log('✅ Controls window created');
-
-// SIMULATION VIEW WINDOW - SIM1
-const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
-sim1ViewWindow.addSection('simulation display');
-sim1ViewWindow.addSimulationView(canvases.sim1, 300);
-sim1ViewWindow.visible = true;
-windowManager.add(sim1ViewWindow);
-taskbar.addWindowItem(sim1ViewWindow.title, sim1ViewWindow, 'symulacje');
-sim1ViewWindow.onClose = () => { sim1ViewWindow.visible = false; };
-
-console.log('✅ Sim1 view window created');
 
 // UI DEMO WINDOW
 const uiDemoWindow = new UI.BaseWindow(400, 50, 'UI DEMO - ALL FEATURES');
