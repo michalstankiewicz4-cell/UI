@@ -427,6 +427,77 @@ function drawScrollbar(ctx, window, STYLES) {
     ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
 }
 
+// ═══════════════════════════════════════════════════════════════
+//   HORIZONTAL SCROLLBAR
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Compute horizontal scrollbar geometry
+ */
+function computeScrollbarH(window) {
+    if (window.contentWidth <= window.width) {
+        return null; // No scrollbar needed
+    }
+    
+    const contentAreaWidth = window.width;
+    
+    // Track bounds
+    const trackX = window.x + 2;
+    const trackY = window.y + window.height - WIDTH_SCROLLBAR - 2;
+    const trackWidth = contentAreaWidth - 4;
+    
+    // Thumb bounds
+    const thumbWidth = Math.max(MIN_THUMB_HEIGHT, 
+        (window.width / window.contentWidth) * trackWidth);
+    const maxScroll = window.contentWidth - window.width;
+    const thumbX = trackX + (window.scrollOffsetX / maxScroll) * (trackWidth - thumbWidth);
+    
+    return {
+        track: { x: trackX, y: trackY, width: trackWidth, height: WIDTH_SCROLLBAR },
+        thumb: { x: thumbX, y: trackY, width: thumbWidth, height: WIDTH_SCROLLBAR }
+    };
+}
+
+/**
+ * Check if mouse hits horizontal scrollbar thumb
+ */
+function hitScrollbarThumbH(window, mouseX, mouseY) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return false;
+    
+    const { thumb } = scroll;
+    return rectHit(mouseX, mouseY, thumb.x, thumb.y, thumb.width, thumb.height);
+}
+
+/**
+ * Check if mouse hits horizontal scrollbar track
+ */
+function hitScrollbarTrackH(window, mouseX, mouseY) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return false;
+    
+    const { track } = scroll;
+    return rectHit(mouseX, mouseY, track.x, track.y, track.width, track.height);
+}
+
+/**
+ * Draw horizontal scrollbar
+ */
+function drawScrollbarH(ctx, window, STYLES) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return;
+    
+    const { track, thumb } = scroll;
+    
+    // Track
+    ctx.fillStyle = STYLES.colors.scrollbarTrack;
+    ctx.fillRect(track.x, track.y, track.width, track.height);
+    
+    // Thumb
+    ctx.fillStyle = STYLES.colors.panel;
+    ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
+}
+
 
 // ═══ ui/components/UIItem.js ═══
 
@@ -2229,10 +2300,15 @@ class BaseWindow {
         this.resizeHandleSize = 12;
         this.manuallyResized = false; // Flag to prevent auto-resize
         
-        // Scrollbar
+        // Scrollbar (vertical)
         this.scrollOffset = 0;
         this.isDraggingThumb = false;
         this.thumbDragOffset = 0;
+        
+        // Scrollbar (horizontal)
+        this.scrollOffsetX = 0;
+        this.isDraggingThumbX = false;
+        this.thumbDragOffsetX = 0;
         
         // Layout (use constants)
         this.padding = CONST.SPACING_PADDING;
@@ -2242,6 +2318,7 @@ class BaseWindow {
         // Content
         this.items = [];
         this.contentHeight = 0;
+        this.contentWidth = 0;
         this.layoutDirty = true;
         
         // OPT-1: Layout cache (30-50% performance gain!)
@@ -2380,7 +2457,7 @@ class BaseWindow {
         
         // Skip auto-resize if user manually resized the window
         if (this.manuallyResized) {
-            // Only recalculate contentHeight for scrollbar
+            // Only recalculate contentHeight and contentWidth for scrollbar
             const layout = this.getLayout();
             this.contentHeight = this.headerHeight + this.padding;
             if (layout.length > 0) {
@@ -2388,8 +2465,23 @@ class BaseWindow {
                 this.contentHeight = lastItem.y + lastItem.height + this.padding;
             }
             
+            // Calculate contentWidth from items
+            this.contentWidth = this.width;
+            for (const item of this.items) {
+                let itemWidth = this.width - this.padding * 2;
+                if (item.type === 'matrix') {
+                    itemWidth = item.labelWidth + item.cols * item.cellSize + this.padding * 2;
+                } else if (item.type === 'slider' && item.getWidth) {
+                    itemWidth = item.getWidth(this) + 50 + this.padding * 2; // track + value text
+                }
+                this.contentWidth = Math.max(this.contentWidth, itemWidth);
+            }
+            
             const maxScroll = Math.max(0, this.contentHeight - this.height);
             this.scrollOffset = clamp(this.scrollOffset, 0, maxScroll);
+            
+            const maxScrollX = Math.max(0, this.contentWidth - this.width);
+            this.scrollOffsetX = clamp(this.scrollOffsetX, 0, maxScrollX);
             return;
         }
         
@@ -2433,6 +2525,18 @@ class BaseWindow {
             this.contentHeight = lastItem.y + lastItem.height + this.padding;
         }
         
+        // Calculate contentWidth from items
+        this.contentWidth = maxWidth;
+        for (const item of this.items) {
+            let itemWidth = maxWidth - this.padding * 2;
+            if (item.type === 'matrix') {
+                itemWidth = item.labelWidth + item.cols * item.cellSize + this.padding * 2;
+            } else if (item.type === 'slider' && item.getWidth) {
+                itemWidth = item.getWidth(this) + 50 + this.padding * 2; // track + value text
+            }
+            this.contentWidth = Math.max(this.contentWidth, itemWidth);
+        }
+        
         // Set final size
         if (this.minimized) {
             this.width = maxWidth;
@@ -2450,6 +2554,9 @@ class BaseWindow {
             // Clamp scroll offset
             const maxScroll = Math.max(0, this.contentHeight - this.height);
             this.scrollOffset = clamp(this.scrollOffset, 0, maxScroll);
+            
+            const maxScrollX = Math.max(0, this.contentWidth - this.width);
+            this.scrollOffsetX = clamp(this.scrollOffsetX, 0, maxScrollX);
         }
         
         this.layoutDirty = false;
@@ -2495,6 +2602,27 @@ class BaseWindow {
                 const clickRatio = (mouseY - scroll.track.y) / scroll.track.height;
                 const maxScroll = this.contentHeight - this.height;
                 this.scrollOffset = clamp(clickRatio * maxScroll, 0, maxScroll);
+            }
+            return true; // Handled
+        }
+        
+        // Check horizontal scrollbar
+        if (hitScrollbarThumbH(this, mouseX, mouseY)) {
+            this.isDraggingThumbX = true;
+            const scroll = computeScrollbarH(this);
+            if (scroll) {
+                this.thumbDragOffsetX = mouseX - scroll.thumb.x;
+            }
+            return true; // Handled
+        }
+        
+        if (hitScrollbarTrackH(this, mouseX, mouseY)) {
+            // Click on track - jump to position
+            const scroll = computeScrollbarH(this);
+            if (scroll) {
+                const clickRatio = (mouseX - scroll.track.x) / scroll.track.width;
+                const maxScroll = this.contentWidth - this.width;
+                this.scrollOffsetX = clamp(clickRatio * maxScroll, 0, maxScroll);
             }
             return true; // Handled
         }
@@ -2574,6 +2702,16 @@ class BaseWindow {
                 const maxScroll = this.contentHeight - this.height;
                 this.scrollOffset = clamp(scrollRatio * maxScroll, 0, maxScroll);
             }
+        } else if (this.isDraggingThumbX) {
+            const scroll = computeScrollbarH(this);
+            if (scroll) {
+                const newThumbX = mouseX - this.thumbDragOffsetX;
+                const maxThumbX = scroll.track.x + scroll.track.width - scroll.thumb.width;
+                const clampedThumbX = clamp(newThumbX, scroll.track.x, maxThumbX);
+                const scrollRatio = (clampedThumbX - scroll.track.x) / (scroll.track.width - scroll.thumb.width);
+                const maxScroll = this.contentWidth - this.width;
+                this.scrollOffsetX = clamp(scrollRatio * maxScroll, 0, maxScroll);
+            }
         } else if (this.isDragging) {
             const dx = mouseX - this.dragStartX;
             const dy = mouseY - this.dragStartY;
@@ -2590,6 +2728,7 @@ class BaseWindow {
     stopDrag() {
         this.isDragging = false;
         this.isDraggingThumb = false;
+        this.isDraggingThumbX = false;
         this.isResizing = false;
     }
     
@@ -2681,6 +2820,7 @@ class BaseWindow {
         for (const entry of layout) {
             const { item, y } = entry;
             const adjustedY = y - this.scrollOffset;
+            const adjustedX = this.x + this.padding - this.scrollOffsetX;
             
             // CRITICAL: Convert to absolute screen position for culling
             const absoluteY = this.y + adjustedY;
@@ -2690,8 +2830,8 @@ class BaseWindow {
             
             // Pass STYLES to item and call its draw method
             item.STYLES = STYLES;
-            // Use absolute position for drawing
-            item.draw(ctx, this, this.x + this.padding, absoluteY);
+            // Use absolute position for drawing (with horizontal scroll offset)
+            item.draw(ctx, this, adjustedX, absoluteY);
         }
         
         ctx.restore();
@@ -2699,6 +2839,7 @@ class BaseWindow {
         // Scrollbar (skip in transparent or fullscreen mode)
         if (!this.transparent && !this.fullscreen) {
             drawScrollbar(ctx, this, STYLES);
+            drawScrollbarH(ctx, this, STYLES);
         }
         
         // Resize handle (skip in transparent or fullscreen mode)
@@ -2730,7 +2871,7 @@ class BaseWindow {
         for (const entry of layout) {
             const { item, y } = entry;
             const adjustedY = y - this.scrollOffset;
-            const itemX = this.x + this.padding;
+            const itemX = this.x + this.padding - this.scrollOffsetX;
             
             // CRITICAL: Convert to absolute screen position
             const absoluteY = this.y + adjustedY;

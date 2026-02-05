@@ -71,3 +71,74 @@ export function drawScrollbar(ctx, window, STYLES) {
     ctx.fillStyle = STYLES.colors.panel;
     ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
 }
+
+// ═══════════════════════════════════════════════════════════════
+//   HORIZONTAL SCROLLBAR
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Compute horizontal scrollbar geometry
+ */
+export function computeScrollbarH(window) {
+    if (window.contentWidth <= window.width) {
+        return null; // No scrollbar needed
+    }
+    
+    const contentAreaWidth = window.width;
+    
+    // Track bounds
+    const trackX = window.x + 2;
+    const trackY = window.y + window.height - WIDTH_SCROLLBAR - 2;
+    const trackWidth = contentAreaWidth - 4;
+    
+    // Thumb bounds
+    const thumbWidth = Math.max(MIN_THUMB_HEIGHT, 
+        (window.width / window.contentWidth) * trackWidth);
+    const maxScroll = window.contentWidth - window.width;
+    const thumbX = trackX + (window.scrollOffsetX / maxScroll) * (trackWidth - thumbWidth);
+    
+    return {
+        track: { x: trackX, y: trackY, width: trackWidth, height: WIDTH_SCROLLBAR },
+        thumb: { x: thumbX, y: trackY, width: thumbWidth, height: WIDTH_SCROLLBAR }
+    };
+}
+
+/**
+ * Check if mouse hits horizontal scrollbar thumb
+ */
+export function hitScrollbarThumbH(window, mouseX, mouseY) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return false;
+    
+    const { thumb } = scroll;
+    return rectHit(mouseX, mouseY, thumb.x, thumb.y, thumb.width, thumb.height);
+}
+
+/**
+ * Check if mouse hits horizontal scrollbar track
+ */
+export function hitScrollbarTrackH(window, mouseX, mouseY) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return false;
+    
+    const { track } = scroll;
+    return rectHit(mouseX, mouseY, track.x, track.y, track.width, track.height);
+}
+
+/**
+ * Draw horizontal scrollbar
+ */
+export function drawScrollbarH(ctx, window, STYLES) {
+    const scroll = computeScrollbarH(window);
+    if (!scroll) return;
+    
+    const { track, thumb } = scroll;
+    
+    // Track
+    ctx.fillStyle = STYLES.colors.scrollbarTrack;
+    ctx.fillRect(track.x, track.y, track.width, track.height);
+    
+    // Thumb
+    ctx.fillStyle = STYLES.colors.panel;
+    ctx.fillRect(thumb.x, thumb.y, thumb.width, thumb.height);
+}
