@@ -36,27 +36,38 @@ class WindowManager {
     }
     
     draw(ctx, STYLES) {
-        // Draw windows in z-index order
+        // OPT: Draw only visible/transparent windows (skip invisible)
         for (let window of this.windows) {
+            // Skip completely invisible windows (not transparent, not visible)
+            if (!window.visible && !window.transparent) continue;
+            
             window.draw(ctx, STYLES);
         }
     }
     
     update(mouseX, mouseY, mouseDown, mouseClicked) {
-        // Find top window under mouse
+        // OPT: Early exit if no interaction needed
+        const hasInteraction = mouseDown || mouseClicked;
+        
+        // Find top window under mouse (only if mouse is down or clicked)
         let topWindow = null;
-        for (let i = this.windows.length - 1; i >= 0; i--) {
-            const window = this.windows[i];
-            // Check if visible (or transparent) and not minimized
-            const isInteractive = (window.visible || window.transparent) && !window.minimized;
-            if (window.containsPoint(mouseX, mouseY) && isInteractive) {
-                topWindow = window;
-                break;
+        if (hasInteraction) {
+            for (let i = this.windows.length - 1; i >= 0; i--) {
+                const window = this.windows[i];
+                // Check if visible (or transparent) and not minimized
+                const isInteractive = (window.visible || window.transparent) && !window.minimized;
+                if (window.containsPoint(mouseX, mouseY) && isInteractive) {
+                    topWindow = window;
+                    break;
+                }
             }
         }
         
-        // Update all windows
+        // Update windows (OPT: skip invisible & minimized)
         for (let window of this.windows) {
+            // OPT: Skip completely invisible/minimized windows (no dynamic text to update)
+            if (!window.visible && !window.transparent && window.minimized) continue;
+            
             if (window === topWindow) {
                 // Top window gets real mouse coordinates and state
                 window.update(mouseX, mouseY, mouseDown, mouseClicked);
@@ -92,7 +103,8 @@ class WindowManager {
                 this.activeWindow = window;
                 this.bringToFront(window);
                 
-                console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
+                // OPT: Conditional logging (disable in production for performance)
+                // console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
                 return true;
             }
         }

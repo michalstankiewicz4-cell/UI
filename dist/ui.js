@@ -1,11 +1,11 @@
-﻿// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════
 //   UI LIBRARY - COMPLETE BUNDLE (MODULAR)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════
 // Single-file bundle of entire UI system
 // Extracted from Petrie Dish v5.1-C2
 // 
 // Version: 2.0.0 (Modular Architecture)
-// Date: 2026-01-15
+// Date: 2026-02-05
 // Source: https://github.com/michalstankiewicz4-cell/UI
 //
 // Architecture:
@@ -24,13 +24,13 @@
 //     window.addButton('Click', () => console.log('Clicked!'));
 //     manager.add(window);
 //   </script>
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════
 
 (function(global) {
     'use strict';
 
 
-// â•â•â• ui/core/geometry.js â•â•â•
+// ═══ ui/core/geometry.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   GEOMETRY UTILITIES
@@ -75,7 +75,7 @@ function unlerp(a, b, value) {
 }
 
 
-// â•â•â• ui/core/text-cache.js â•â•â•
+// ═══ ui/core/text-cache.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   TEXT MEASUREMENT CACHE
@@ -126,7 +126,7 @@ function getTextCacheStats() {
 }
 
 
-// â•â•â• ui/core/constants.js â•â•â•
+// ═══ ui/core/constants.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   UI CONSTANTS
@@ -198,7 +198,7 @@ const CONST = {
 };
 
 
-// â•â•â• ui/core/layout.js â•â•â•
+// ═══ ui/core/layout.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   LAYOUT ENGINE
@@ -269,7 +269,7 @@ function computeLayout(items, window) {
 }
 
 
-// â•â•â• ui/components/header.js â•â•â•
+// ═══ ui/components/header.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   WINDOW HEADER
@@ -378,7 +378,7 @@ function drawMinimizedHeader(ctx, window, STYLES) {
 }
 
 
-// â•â•â• ui/components/scrollbar.js â•â•â•
+// ═══ ui/components/scrollbar.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   SCROLLBAR COMPONENT
@@ -453,7 +453,7 @@ function drawScrollbar(ctx, window, STYLES) {
 }
 
 
-// â•â•â• ui/components/UIItem.js â•â•â•
+// ═══ ui/components/UIItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   UI ITEM BASE CLASS
@@ -517,7 +517,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/ToggleItem.js â•â•â•
+// ═══ ui/components/ToggleItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   TOGGLE ITEM
@@ -603,7 +603,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/ButtonItem.js â•â•â•
+// ═══ ui/components/ButtonItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   BUTTON ITEM
@@ -666,7 +666,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/SliderItem.js â•â•â•
+// ═══ ui/components/SliderItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   SLIDER ITEM
@@ -773,7 +773,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/SectionItem.js â•â•â•
+// ═══ ui/components/SectionItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   SECTION ITEM
@@ -847,7 +847,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/TextItem.js â•â•â•
+// ═══ ui/components/TextItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   TEXT ITEM
@@ -978,7 +978,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/components/SimulationViewItem.js â•â•â•
+// ═══ ui/components/SimulationViewItem.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   SIMULATION VIEW ITEM
@@ -1017,7 +1017,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/Styles.js â•â•â•
+// ═══ ui/Styles.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   UI STYLES
@@ -1084,7 +1084,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = STYLES;
 }
 
-// â•â•â• ui/WindowManager.js â•â•â•
+// ═══ ui/WindowManager.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   WINDOW MANAGER
@@ -1124,27 +1124,38 @@ class WindowManager {
     }
     
     draw(ctx, STYLES) {
-        // Draw windows in z-index order
+        // OPT: Draw only visible/transparent windows (skip invisible)
         for (let window of this.windows) {
+            // Skip completely invisible windows (not transparent, not visible)
+            if (!window.visible && !window.transparent) continue;
+            
             window.draw(ctx, STYLES);
         }
     }
     
     update(mouseX, mouseY, mouseDown, mouseClicked) {
-        // Find top window under mouse
+        // OPT: Early exit if no interaction needed
+        const hasInteraction = mouseDown || mouseClicked;
+        
+        // Find top window under mouse (only if mouse is down or clicked)
         let topWindow = null;
-        for (let i = this.windows.length - 1; i >= 0; i--) {
-            const window = this.windows[i];
-            // Check if visible (or transparent) and not minimized
-            const isInteractive = (window.visible || window.transparent) && !window.minimized;
-            if (window.containsPoint(mouseX, mouseY) && isInteractive) {
-                topWindow = window;
-                break;
+        if (hasInteraction) {
+            for (let i = this.windows.length - 1; i >= 0; i--) {
+                const window = this.windows[i];
+                // Check if visible (or transparent) and not minimized
+                const isInteractive = (window.visible || window.transparent) && !window.minimized;
+                if (window.containsPoint(mouseX, mouseY) && isInteractive) {
+                    topWindow = window;
+                    break;
+                }
             }
         }
         
-        // Update all windows
+        // Update windows (OPT: skip invisible & minimized)
         for (let window of this.windows) {
+            // OPT: Skip completely invisible/minimized windows (no dynamic text to update)
+            if (!window.visible && !window.transparent && window.minimized) continue;
+            
             if (window === topWindow) {
                 // Top window gets real mouse coordinates and state
                 window.update(mouseX, mouseY, mouseDown, mouseClicked);
@@ -1180,7 +1191,8 @@ class WindowManager {
                 this.activeWindow = window;
                 this.bringToFront(window);
                 
-                console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
+                // OPT: Conditional logging (disable in production for performance)
+                // console.log('🎯 Window clicked:', window.title, 'z-index:', window.zIndex);
                 return true;
             }
         }
@@ -1222,7 +1234,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/Taskbar.js â•â•â•
+// ═══ ui/Taskbar.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   TASKBAR (Windows-style)
@@ -1677,7 +1689,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = Taskbar;
 }
 
-// â•â•â• ui/EventRouter.js â•â•â•
+// ═══ ui/EventRouter.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   EVENT ROUTER
@@ -1773,7 +1785,7 @@ class EventRouter {
         this.mouseX = e.clientX;
         this.mouseY = e.clientY;
 
-        // OPT-7: Early exit when nothing to do (no hover needed!)
+        // OPT: Early exit when nothing to do (no hover needed!)
         // Skip processing if not dragging and no active window
         if (!this.mouseDown && !this.windowManager.activeWindow && !this.isPanning) {
             return;
@@ -1830,7 +1842,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
-// â•â•â• ui/BaseWindow.js â•â•â•
+// ═══ ui/BaseWindow.js ═══
 
 // ═══════════════════════════════════════════════════════════════
 //   BASE WINDOW (REFACTORED)
@@ -2422,9 +2434,9 @@ class BaseWindow {
 
 
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════
     //   EXPORT TO GLOBAL
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═══════════════════════════════════════════════════════════════
     
     global.UI = {
         // Core
@@ -2443,8 +2455,8 @@ class BaseWindow {
         EventRouter: typeof EventRouter !== 'undefined' ? EventRouter : null
     };
     
-    console.log('âś… UI Library v2.0.0 loaded (modular)!');
-    console.log('đź“¦ Modules: core (4) + components (7) + main (5)');
-    console.log('đźŽŻ Ready: new UI.BaseWindow(x, y, title)');
+    console.log('✅ UI Library v2.0.0 loaded (modular)!');
+    console.log('📦 Modules: core (4) + components (7) + main (5)');
+    console.log('🎯 Ready: new UI.BaseWindow(x, y, title)');
 
 })(typeof window !== 'undefined' ? window : global);

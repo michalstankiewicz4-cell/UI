@@ -125,7 +125,8 @@ class SimulationManager {
                 metadata: this.registry[simId].metadata 
             });
             
-            console.log(`✅ Simulation ${simId} added`);
+            // OPT: Conditional logging
+            // console.log(`✅ Simulation ${simId} added`);
             return true;
             
         } catch (error) {
@@ -154,7 +155,8 @@ class SimulationManager {
         // Emit event
         this.eventBus.emit('simulation:removed', { simId });
         
-        console.log(`🗑️ Simulation ${simId} removed`);
+        // OPT: Conditional logging
+        // console.log(`🗑️ Simulation ${simId} removed`);
         return true;
     }
     

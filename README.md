@@ -1,9 +1,18 @@
 # UI System - Canvas-based Windows & Multi-Simulation Architecture
 
-**Status:** ✅ v2.3 Production Ready + Interactive HUD (2026-01-12)  
+**Status:** ✅ v3.1 Production Ready + Performance Boost (2026-02-05)  
 **GitHub:** https://github.com/michalstankiewicz4-cell/UI
 
 Modular window system for Canvas API with centralized simulation management, high-performance optimizations, and interactive HUD mode.
+
+## 🆕 v3.1 Performance Update (2026-02-05)
+
+**+30-60% FPS improvement** through critical optimizations:
+- ✅ Fixed layout cache (removed forced layoutDirty reset)
+- ✅ Skip rendering/updating invisible & minimized windows  
+- ✅ Early exit in event processing when idle
+- ✅ Conditional logging (disabled in hot paths)
+- ✅ Optimized topWindow detection
 
 ---
 

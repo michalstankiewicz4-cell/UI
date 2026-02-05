@@ -92,7 +92,7 @@ class EventRouter {
         this.mouseX = e.clientX;
         this.mouseY = e.clientY;
 
-        // OPT-7: Early exit when nothing to do (no hover needed!)
+        // OPT: Early exit when nothing to do (no hover needed!)
         // Skip processing if not dragging and no active window
         if (!this.mouseDown && !this.windowManager.activeWindow && !this.isPanning) {
             return;
