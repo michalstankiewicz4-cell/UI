@@ -22,11 +22,6 @@ class EventBus {
     constructor() {
         // Event listeners: { eventName: [callback1, callback2, ...] }
         this.listeners = {};
-        
-        // Event history (for debugging)
-        this.history = [];
-        this.maxHistory = 100;
-        this.recordHistory = false; // Enable in debug mode
     }
     
     // ═════════════════════════════════════════════════
@@ -94,20 +89,7 @@ class EventBus {
      * @param {*} data - Data to pass to callbacks
      */
     emit(eventName, data) {
-        // Record in history (if enabled)
-        if (this.recordHistory) {
-            this.history.push({
-                event: eventName,
-                data: data,
-                timestamp: performance.now()
-            });
-            
-            // Limit history size
-            if (this.history.length > this.maxHistory) {
-                this.history.shift();
-            }
-        }
-        
+
         // Call all listeners for this event
         if (this.listeners[eventName]) {
             for (let callback of this.listeners[eventName]) {

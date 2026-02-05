@@ -371,28 +371,6 @@ class SimulationManager {
     getActiveCount() {
         return Object.keys(this.simulations).length;
     }
-    
-    // ═════════════════════════════════════════════════
-    //  MODES SYSTEM (fullscreen / window / hud / minimized)
-    // ═════════════════════════════════════════════════
-    
-    /**
-     * Get current mode of a simulation (DEPRECATED - always returns 'window')
-     * @param {string} simId - Simulation ID
-     * @returns {string} Mode (always 'window')
-     */
-    getMode(simId) {
-        return 'window'; // Always return window mode
-    }
-    
-    /**
-     * Set mode of a simulation (DEPRECATED - no-op)
-     * @param {string} simId - Simulation ID
-     * @param {string} mode - Mode (ignored)
-     */
-    setMode(simId, mode) {
-        // Do nothing - modes are handled by window properties only
-    }
 }
 
 // Export for use in modules

@@ -45,34 +45,13 @@ function rectHit(x, y, rx, ry, rw, rh) {
 }
 
 /**
- * Check if point is inside circle
- */
-function circleHit(x, y, cx, cy, radius) {
-    const dx = x - cx;
-    const dy = y - cy;
-    return (dx * dx + dy * dy) <= (radius * radius);
-}
 
-/**
  * Clamp value between min and max
  */
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Linear interpolation
- */
-function lerp(a, b, t) {
-    return a + (b - a) * t;
-}
-
-/**
- * Inverse linear interpolation (get t from value)
- */
-function unlerp(a, b, value) {
-    return (value - a) / (b - a);
-}
 
 
 // ═══ ui/core/text-cache.js ═══
@@ -867,6 +846,14 @@ class TextItem extends UIItem {
     }
 
     /**
+     * Resolve text content (handle function or string) - DRY helper
+     * @returns {string} Resolved text
+     */
+    _resolveText() {
+        return typeof this.text === 'function' ? this.text() : this.text;
+    }
+
+    /**
      * Word wrap text to fit within available width
      * @param {string} text - Text to wrap
      * @param {CanvasRenderingContext2D} ctx - Canvas context
@@ -902,7 +889,7 @@ class TextItem extends UIItem {
 
     getHeight(window) {
         // Get text content (resolve function if needed)
-        const textContent = typeof this.text === 'function' ? this.text() : this.text;
+        const textContent = this._resolveText();
         
         // Calculate available width for text
         const maxWidth = window.width - window.padding * 2;
@@ -935,7 +922,7 @@ class TextItem extends UIItem {
         ctx.font = STYLES.fonts.main;
         
         // Get text content (resolve function if needed)
-        const textContent = typeof this.text === 'function' ? this.text() : this.text;
+        const textContent = this._resolveText();
         
         // Calculate available width for text
         const maxWidth = window.width - window.padding * 2;

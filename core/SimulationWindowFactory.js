@@ -25,22 +25,23 @@ class SimulationWindowFactory {
         
         // Minimize → minimized mode (hide everything, green on taskbar)
         window.onMinimize = () => {
-            simulationManager.setMode(simId, 'minimized');
             window.visible = false;
             window.minimized = true;
+            simulationManager.eventBus.emit('simulation:mode-changed', { simId, mode: 'minimized' });
         };
         
-        // Eye button → HUD mode (canvas fullscreen, red on taskbar)
+        // Eye button → toggle transparent (just window transparency, NO canvas change)
         window.onToggleTransparent = () => {
-            simulationManager.setMode(simId, 'hud');
-            window.transparent = true;
-            window.visible = false;
+            // Simple toggle like normal windows - NO mode change event!
+            window.transparent = !window.transparent;
+            // Don't emit mode-changed - we don't want to affect canvas visibility
         };
         
         // Close → minimized mode (hide everything)
         window.onClose = () => {
-            simulationManager.setMode(simId, 'minimized');
             window.visible = false;
+            window.minimized = false;
+            simulationManager.eventBus.emit('simulation:mode-changed', { simId, mode: 'minimized' });
         };
         
         // ═══════════════════════════════════════════════════════════════

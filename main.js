@@ -8,6 +8,33 @@ const eventBus = new EventBus();
 const dataBridge = new DataBridge(eventBus);
 const simulationManager = new SimulationManager(eventBus, dataBridge);
 
+// ═══════════════════════════════════════════════════════════════
+//   WINDOW HELPERS (DRY pattern)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Register window (add to manager, taskbar, set visible)
+ * @param {BaseWindow} window - Window to register
+ * @param {string} section - Taskbar section
+ * @param {string} simId - Optional simulation ID
+ */
+function registerWindow(window, section = 'system', simId = null) {
+    window.visible = true;
+    windowManager.add(window);
+    taskbar.addWindowItem(window.title, window, section, simId);
+    window.onClose = () => { window.visible = false; };
+    return window;
+}
+
+/**
+ * Unregister window (remove from manager and taskbar)
+ * @param {BaseWindow} window - Window to unregister
+ */
+function unregisterWindow(window) {
+    windowManager.remove(window);
+    taskbar.removeWindowItem(window);
+}
+
 // Canvas setup
 const canvases = {
     sim1: document.getElementById('canvas-sim1'),
@@ -110,22 +137,14 @@ controlsWindow.addButton('ADD SIM1', async () => {
     
     const sim1Window = SimulationWindowFactory.create('sim1', simulationManager, dataBridge);
     if (sim1Window) {
-        sim1Window.visible = true; // Start visible (window mode)
-        windowManager.add(sim1Window);
-        taskbar.addWindowItem(sim1Window.title, sim1Window, 'symulacje', 'sim1'); // Pass simId
-        sim1Window.onClose = () => { sim1Window.visible = false; };
+        registerWindow(sim1Window, 'symulacje', 'sim1');
     }
     
     // Create simulation view window
     const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
     sim1ViewWindow.addSection('simulation display');
-    sim1ViewWindow.addSimulationView(canvases.sim1, 200); // Reduced from 300 to 200
-    sim1ViewWindow.visible = true;
-    windowManager.add(sim1ViewWindow);
-    taskbar.addWindowItem(sim1ViewWindow.title, sim1ViewWindow, 'symulacje');
-    sim1ViewWindow.onClose = () => { 
-        sim1ViewWindow.visible = false;
-    };
+    sim1ViewWindow.addSimulationView(canvases.sim1, 200);
+    registerWindow(sim1ViewWindow, 'symulacje');
     
     console.log('✅ Sim1 added successfully!');
 });
@@ -140,16 +159,10 @@ controlsWindow.addButton('REMOVE SIM1', () => {
     canvases.sim1.style.display = 'none';
     
     const sim1Window = windowManager.windows.find(w => w.title === 'SIM1 PARTICLES');
-    if (sim1Window) {
-        windowManager.remove(sim1Window);
-        taskbar.removeWindowItem(sim1Window);
-    }
+    if (sim1Window) unregisterWindow(sim1Window);
     
     const sim1ViewWindow = windowManager.windows.find(w => w.title === 'SIM1 VIEW');
-    if (sim1ViewWindow) {
-        windowManager.remove(sim1ViewWindow);
-        taskbar.removeWindowItem(sim1ViewWindow);
-    }
+    if (sim1ViewWindow) unregisterWindow(sim1ViewWindow);
     
     console.log('✅ Sim1 removed');
 });
@@ -179,9 +192,7 @@ controlsWindow.addText(() => {
     return `Active Sims: ${activeCount}\nRunning: ${simList}`;
 });
 
-windowManager.add(controlsWindow);
-taskbar.addWindowItem(controlsWindow.title, controlsWindow, 'system');
-controlsWindow.onClose = () => { controlsWindow.visible = false; };
+registerWindow(controlsWindow, 'system');
 
 console.log('✅ Controls window created');
 
@@ -214,13 +225,10 @@ uiDemoWindow.addButton('NEW WINDOW', () => {
     newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`);
     newWin.addSection('controls');
     newWin.addButton('CLOSE ME', () => {
-        windowManager.remove(newWin);
-        taskbar.removeWindowItem(newWin);
+        unregisterWindow(newWin);
     });
-    windowManager.add(newWin);
+    registerWindow(newWin, 'system');
     windowManager.bringToFront(newWin);
-    taskbar.addWindowItem(newWin.title, newWin, 'system');
-    newWin.onClose = () => { newWin.visible = false; };
 });
 
 uiDemoWindow.addButton('WINDOW STATS', () => {
@@ -255,14 +263,11 @@ uiDemoWindow.addButton('WINDOW STATS', () => {
     });
     
     statsWin.addButton('CLOSE', () => {
-        windowManager.remove(statsWin);
-        taskbar.removeWindowItem(statsWin);
+        unregisterWindow(statsWin);
     });
     
-    windowManager.add(statsWin);
+    registerWindow(statsWin, 'system');
     windowManager.bringToFront(statsWin);
-    taskbar.addWindowItem(statsWin.title, statsWin, 'system');
-    statsWin.onClose = () => { statsWin.visible = false; };
 });
 
 uiDemoWindow.addSlider('Speed', () => speedValue, (v) => { speedValue = v; }, 0.1, 5.0, 0.05);
@@ -286,9 +291,7 @@ uiDemoWindow.addText(() => {
     return `FPS: ${fps}\nMemory: ${memory} MB\nWindows: ${windowManager.windows.length}\nSpeed: ${speedValue.toFixed(2)}x\nVolume: ${(volumeValue * 100).toFixed(0)}%`;
 });
 
-windowManager.add(uiDemoWindow);
-taskbar.addWindowItem(uiDemoWindow.title, uiDemoWindow, 'system');
-uiDemoWindow.onClose = () => { uiDemoWindow.visible = false; };
+registerWindow(uiDemoWindow, 'system');
 
 console.log('✅ UI Demo window created');
 
