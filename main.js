@@ -1,7 +1,8 @@
-// UI SYSTEM v3.1 - Optimized Performance (+30-60% FPS!)
-// Works with file:// protocol (no ES6 modules)
+// ═══════════════════════════════════════════════════════════════
+//   UI SYSTEM v3.1 - MODERN CSS/DOM EDITION
+// ═══════════════════════════════════════════════════════════════
 
-console.log('=== UI SYSTEM v3.1 - OPTIMIZED PERFORMANCE (+30-60% FPS!) ===');
+console.log('=== UI SYSTEM v3.1 - MODERN CSS/DOM EDITION ===');
 
 // Core system
 const eventBus = new EventBus();
@@ -14,34 +15,33 @@ const simulationManager = new SimulationManager(eventBus, dataBridge);
 
 /**
  * Register window (add to manager, taskbar, set visible)
- * @param {BaseWindow} window - Window to register
- * @param {string} section - Taskbar section
- * @param {string} simId - Optional simulation ID
  */
 function registerWindow(window, section = 'system', simId = null) {
     window.visible = true;
     windowManager.add(window);
     taskbar.addWindowItem(window.title, window, section, simId);
-    window.onClose = () => { window.visible = false; };
+    window.onClose = () => { 
+        window.visible = false;
+        taskbar.update();
+    };
+    window.show();
     return window;
 }
 
 /**
  * Unregister window (remove from manager and taskbar)
- * @param {BaseWindow} window - Window to unregister
  */
 function unregisterWindow(window) {
     windowManager.remove(window);
     taskbar.removeWindowItem(window);
 }
 
-// Canvas setup
+// Canvas setup (for simulations only)
 const canvases = {
     sim1: document.getElementById('canvas-sim1'),
     sim2: document.getElementById('canvas-sim2'),
     sim3: document.getElementById('canvas-sim3'),
-    sim4: document.getElementById('canvas-sim4'),
-    ui: document.getElementById('canvas-ui')
+    sim4: document.getElementById('canvas-sim4')
 };
 
 const resizeCanvases = () => {
@@ -57,28 +57,12 @@ const resizeCanvases = () => {
 resizeCanvases();
 window.addEventListener('resize', resizeCanvases);
 
-// UI system
-const windowManager = new UI.WindowManager();
-const taskbar = new UI.Taskbar(simulationManager); // Pass SimulationManager
+// UI system - DOM version
+const windowManager = new WindowManagerDOM();
+const taskbar = new TaskbarDOM(simulationManager);
+window.windowManager = windowManager;  // Make accessible globally
 taskbar.addSection('symulacje');
 taskbar.addSection('system');
-
-const eventRouter = new UI.EventRouter(canvases.ui, null, windowManager, taskbar, null);
-
-// ═══════════════════════════════════════════════════════════════
-//   WINDOW STATISTICS TRACKING
-// ═══════════════════════════════════════════════════════════════
-
-const windowStats = {
-    closedCount: 0
-};
-
-// Track window closes
-const originalWindowManagerRemove = windowManager.remove.bind(windowManager);
-windowManager.remove = function(window) {
-    windowStats.closedCount++;
-    return originalWindowManagerRemove(window);
-};
 
 // ═══════════════════════════════════════════════════════════════
 //   MODE SYSTEM LISTENER - Canvas Visibility Control
@@ -91,7 +75,7 @@ eventBus.on('simulation:mode-changed', ({ simId, mode }) => {
     if (!canvas) return;
     
     if (mode === 'hud') {
-        // Canvas fullscreen (red on taskbar)
+        // Canvas fullscreen
         canvas.style.display = 'block';
         canvas.style.zIndex = '1';
     }
@@ -101,12 +85,12 @@ eventBus.on('simulation:mode-changed', ({ simId, mode }) => {
         canvas.style.zIndex = '0';
     }
     else if (mode === 'minimized') {
-        // Everything hidden (green on taskbar)
+        // Everything hidden
         canvas.style.display = 'none';
     }
 });
 
-// Register Simulation 1 (with async wrapper for compatibility)
+// Register Simulation 1
 simulationManager.register('sim1', 
     () => Promise.resolve(Simulation1), 
     Simulation1.metadata
@@ -114,7 +98,7 @@ simulationManager.register('sim1',
 
 
 // SIMULATION CONTROLS WINDOW
-const controlsWindow = new UI.BaseWindow(50, 50, 'SIMULATION CONTROLS');
+const controlsWindow = new BaseWindowDOM(50, 50, 'SIMULATION CONTROLS');
 
 controlsWindow.addSection('simulation management');
 
@@ -131,17 +115,17 @@ controlsWindow.addButton('ADD SIM1', async () => {
         return;
     }
     
-    // MODE SYSTEM: Default mode is 'window' (visible)
-    canvases.sim1.style.display = 'none'; // Hide background canvas - only visible in window
+    // Hide background canvas
+    canvases.sim1.style.display = 'none';
     canvases.sim1.style.zIndex = '0';
     
-    const sim1Window = SimulationWindowFactory.create('sim1', simulationManager, dataBridge);
+    const sim1Window = SimulationWindowFactoryDOM.create('sim1', simulationManager, dataBridge);
     if (sim1Window) {
         registerWindow(sim1Window, 'symulacje', 'sim1');
     }
     
     // Create simulation view window
-    const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
+    const sim1ViewWindow = new BaseWindowDOM(750, 50, 'SIM1 VIEW');
     sim1ViewWindow.addSection('simulation display');
     sim1ViewWindow.addSimulationView(canvases.sim1, 200);
     registerWindow(sim1ViewWindow, 'symulacje');
@@ -197,12 +181,7 @@ registerWindow(controlsWindow, 'system');
 console.log('✅ Controls window created');
 
 // UI DEMO WINDOW
-const uiDemoWindow = new UI.BaseWindow(400, 50, 'UI DEMO - ALL FEATURES');
-
-let speedValue = 1.5;
-let volumeValue = 0.75;
-let gridEnabled = true;
-let autoSave = false;
+const uiDemoWindow = new BaseWindowDOM(400, 50, 'UI DEMO - ALL FEATURES');
 
 uiDemoWindow.addSection('window features');
 uiDemoWindow.addText(`Close = X button
@@ -214,12 +193,11 @@ Scroll content`);
 uiDemoWindow.addSection('controls');
 
 uiDemoWindow.addButton('NEW WINDOW', () => {
-    const newWin = new UI.BaseWindow(
+    const newWin = new BaseWindowDOM(
         Math.random() * 400 + 100, 
         Math.random() * 300 + 100, 
         `Window ${Date.now() % 1000}`
     );
-    newWin.visible = true;
     newWin.addSection('info', 'statistics');
     newWin.addText('Dynamically created!');
     newWin.addText(() => `Time: ${new Date().toLocaleTimeString('pl-PL')}`);
@@ -231,44 +209,10 @@ uiDemoWindow.addButton('NEW WINDOW', () => {
     windowManager.bringToFront(newWin);
 });
 
-uiDemoWindow.addButton('WINDOW STATS', () => {
-    // Create statistics window
-    const statsWin = new UI.BaseWindow(
-        Math.random() * 200 + 200,
-        Math.random() * 150 + 100,
-        'WINDOW STATISTICS'
-    );
-    statsWin.visible = true;
-    
-    statsWin.addSection('window counts', 'statistics');
-    statsWin.addText(() => {
-        const allWindows = windowManager.windows;
-        // Use correct properties (minimized, transparent, fullscreen, visible)
-        const openWindows = allWindows.filter(w => w.visible && !w.minimized && !w.transparent && !w.fullscreen).length;
-        const minimizedWindows = allWindows.filter(w => w.minimized).length;
-        const hudWindows = allWindows.filter(w => w.transparent && w.visible).length;
-        const fullscreenWindows = allWindows.filter(w => w.fullscreen).length;
-        
-        return `Otwarte okna: ${openWindows}\nZminimalizowane: ${minimizedWindows}\nTryb HUD: ${hudWindows}\nZmaksymalizowane: ${fullscreenWindows}`;
-    });
-    
-    statsWin.addSection('history', 'statistics');
-    statsWin.addText(() => {
-        return `Zamknięte okna: ${windowStats.closedCount}`;
-    });
-    
-    statsWin.addSection('controls');
-    statsWin.addButton('RESET COUNTERS', () => {
-        windowStats.closedCount = 0;
-    });
-    
-    statsWin.addButton('CLOSE', () => {
-        unregisterWindow(statsWin);
-    });
-    
-    registerWindow(statsWin, 'system');
-    windowManager.bringToFront(statsWin);
-});
+let speedValue = 1.0;
+let volumeValue = 0.5;
+let gridEnabled = false;
+let autoSave = true;
 
 uiDemoWindow.addSlider('Speed', () => speedValue, (v) => { speedValue = v; }, 0.1, 5.0, 0.05);
 uiDemoWindow.addSlider('Volume', () => volumeValue, (v) => { volumeValue = v; }, 0.0, 1.0, 0.01);
@@ -312,27 +256,21 @@ registerWindow(uiDemoWindow, 'system');
 
 console.log('✅ UI Demo window created');
 
-// RENDER LOOP
-function render() {
+// Handle window clicks
+document.addEventListener('mousedown', (e) => {
+    windowManager.handleMouseDown(e.clientX, e.clientY);
+});
+
+// UPDATE LOOP
+function update() {
     simulationManager.updateAll();
     simulationManager.renderAll();
     
-    const ctx = canvases.ui.getContext('2d');
-    ctx.clearRect(0, 0, canvases.ui.width, canvases.ui.height);
+    windowManager.update();
+    taskbar.update();
     
-    windowManager.update(eventRouter.mouseX, eventRouter.mouseY, eventRouter.mouseDown, eventRouter.mouseClicked);
-    if (eventRouter.mouseClicked) eventRouter.mouseClicked = false;
-    
-    // OPT: Don't force layoutDirty - let cache work! (30-50% FPS boost)
-    // windowManager.windows.forEach(w => w.layoutDirty = true); // ❌ REMOVED
-    windowManager.draw(ctx, UI.STYLES);
-    
-    ctx.save();
-    taskbar.draw(ctx, UI.STYLES, UI.measureTextCached);
-    ctx.restore();
-    
-    requestAnimationFrame(render);
+    requestAnimationFrame(update);
 }
 
-render();
+update();
 console.log('✅ READY!');
