@@ -119,7 +119,7 @@ controlsWindow.addButton('ADD SIM1', async () => {
     // Create simulation view window
     const sim1ViewWindow = new UI.BaseWindow(750, 50, 'SIM1 VIEW');
     sim1ViewWindow.addSection('simulation display');
-    sim1ViewWindow.addSimulationView(canvases.sim1, 300);
+    sim1ViewWindow.addSimulationView(canvases.sim1, 200); // Reduced from 300 to 200
     sim1ViewWindow.visible = true;
     windowManager.add(sim1ViewWindow);
     taskbar.addWindowItem(sim1ViewWindow.title, sim1ViewWindow, 'symulacje');
