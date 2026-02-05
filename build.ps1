@@ -176,6 +176,12 @@ $content = Strip-ES6 $content
 Add-Content -Path $OUTPUT -Value "`n// ═══ ui/components/SimulationViewItem.js ═══`n" -Encoding UTF8
 Add-Content -Path $OUTPUT -Value $content -Encoding UTF8
 
+Write-Host "Adding ui/components/MatrixItem.js..." -ForegroundColor Cyan
+$content = Get-Content "ui/components/MatrixItem.js" -Raw -Encoding UTF8
+$content = Strip-ES6 $content
+Add-Content -Path $OUTPUT -Value "`n// ═══ ui/components/MatrixItem.js ═══`n" -Encoding UTF8
+Add-Content -Path $OUTPUT -Value $content -Encoding UTF8
+
 # Main UI classes (depend on core + components)
 Write-Host "Adding ui/Styles.js..." -ForegroundColor Cyan
 $content = Get-Content "ui/Styles.js" -Raw -Encoding UTF8

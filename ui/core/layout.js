@@ -31,10 +31,6 @@ export function getItemHeight(item, window) {
             const lines = item.lines || 1;
             return lines * HEIGHT_TEXT_LINE;
         }
-        case 'matrix': {
-            // Matrix: 16×16 cells + labels + title
-            return 16 * item.cellSize + item.labelWidth + 30;
-        }
         default: return 20;
     }
 }

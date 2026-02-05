@@ -16,6 +16,7 @@ import { SliderItem } from './components/SliderItem.js';
 import { SectionItem } from './components/SectionItem.js';
 import { TextItem } from './components/TextItem.js';
 import { SimulationViewItem } from './components/SimulationViewItem.js';
+import { MatrixItem } from './components/MatrixItem.js';
 
 // Component imports (for header/scrollbar only)
 import { drawHeader, drawHeaderButtons, drawMinimizedHeader, getHeaderButtonBounds } from './components/header.js';
@@ -160,15 +161,18 @@ class BaseWindow {
         return null;
     }
     
-    addMatrix(getMatrix, setMatrix, colorNames) {
-        this.items.push({
-            type: 'matrix',
-            getMatrix: getMatrix,
-            setMatrix: setMatrix,
-            colorNames: colorNames,
-            cellSize: 18,
-            labelWidth: 30
-        });
+    /**
+     * Add interactive matrix - editable value grid
+     * @param {number} rows - Number of rows
+     * @param {number} cols - Number of columns
+     * @param {function} getValue - (row, col) => value
+     * @param {function} setValue - (row, col, value) => void
+     * @param {number} minValue - Minimum allowed value
+     * @param {number} maxValue - Maximum allowed value
+     * @param {string} label - Matrix label
+     */
+    addMatrix(rows, cols, getValue, setValue, minValue = -1, maxValue = 1, label = 'Matrix') {
+        this.items.push(new MatrixItem(rows, cols, getValue, setValue, minValue, maxValue, label));
         this.layoutDirty = true;
     }
     
@@ -488,62 +492,6 @@ class BaseWindow {
         // Scrollbar (skip in transparent or fullscreen mode)
         if (!this.transparent && !this.fullscreen) {
             drawScrollbar(ctx, this, STYLES);
-        }
-    }
-    
-    // Matrix drawing (kept inline - too complex for component)
-    drawMatrix(ctx, item, y, STYLES) {
-        const matrix = item.getMatrix();
-        
-        ctx.fillStyle = STYLES.colors.panel;
-        ctx.font = 'bold 12px Courier New';
-        ctx.textAlign = 'left';
-        ctx.fillText('INTERACTION MATRIX', this.x + this.padding, y + 12);
-        
-        const matrixStartY = y + 25;
-        const matrixX = this.x + item.labelWidth;
-        const matrixY = matrixStartY + 15;
-        
-        ctx.font = '9px Courier New';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // Column labels
-        for (let col = 0; col < 16; col++) {
-            const labelX = matrixX + col * item.cellSize + item.cellSize / 2;
-            const labelY = matrixY - 10;
-            ctx.fillStyle = STYLES.colors.panel;
-            ctx.fillText(item.colorNames[col].substring(0, 2), labelX, labelY);
-        }
-        
-        // Rows
-        for (let row = 0; row < 16; row++) {
-            const labelX = this.x + item.labelWidth - 5;
-            const labelY = matrixY + row * item.cellSize + item.cellSize / 2;
-            ctx.fillStyle = STYLES.colors.panel;
-            ctx.textAlign = 'right';
-            ctx.fillText(item.colorNames[row].substring(0, 2), labelX, labelY);
-            ctx.textAlign = 'center';
-            
-            for (let col = 0; col < 16; col++) {
-                const cellX = matrixX + col * item.cellSize;
-                const cellY = matrixY + row * item.cellSize;
-                const value = matrix[row][col];
-                
-                const normalized = (value + 2) / 4;
-                let r, g, b;
-                if (normalized < 0.5) {
-                    r = 255; g = Math.floor(normalized * 2 * 255); b = 0;
-                } else {
-                    r = Math.floor((1 - (normalized - 0.5) * 2) * 255); g = 255; b = 0;
-                }
-                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
-                ctx.fillRect(cellX, cellY, item.cellSize, item.cellSize);
-                
-                ctx.strokeStyle = STYLES.colors.matrixCell;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(cellX, cellY, item.cellSize, item.cellSize);
-            }
         }
     }
     

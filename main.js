@@ -291,6 +291,23 @@ uiDemoWindow.addText(() => {
     return `FPS: ${fps}\nMemory: ${memory} MB\nWindows: ${windowManager.windows.length}\nSpeed: ${speedValue.toFixed(2)}x\nVolume: ${(volumeValue * 100).toFixed(0)}%`;
 });
 
+// Matrix demo
+uiDemoWindow.addSection('interactive matrix');
+const demoMatrix = [
+    [0.5, -0.3, 0.0],
+    [-0.2, 0.8, 0.4],
+    [0.6, -0.5, 0.9]
+];
+
+uiDemoWindow.addMatrix(
+    3, 3,
+    (row, col) => demoMatrix[row][col],
+    (row, col, value) => { demoMatrix[row][col] = value; },
+    -1.0,
+    1.0,
+    'Values 3x3'
+);
+
 registerWindow(uiDemoWindow, 'system');
 
 console.log('✅ UI Demo window created');
