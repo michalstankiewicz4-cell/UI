@@ -89,6 +89,27 @@ class SimulationWindowFactory {
             });
         }
         
+        // INTERACTION MATRIX (sim1 only)
+        if (simId === 'sim1' && typeof sim.getInteractionForce === 'function') {
+            window.addSection('color interactions');
+            
+            window.addText('Red / Green / Blue\n-1.0 = repel, +1.0 = attract');
+            
+            // Matrix: 3 colors x 3 colors
+            window.addMatrix(
+                3, 3,
+                (row, col) => {
+                    return sim.getInteractionForce(row, col);
+                },
+                (row, col, value) => {
+                    sim.setInteractionForce(row, col, value);
+                },
+                -1.0,
+                1.0,
+                'Force Matrix'
+            );
+        }
+        
         // STATISTICS section
         if (metadata.stats && metadata.stats.length > 0) {
             window.addSection('statistics', 'statistics');
